@@ -1,0 +1,30 @@
+<svg width="512" height="256" viewBox="0 0 512 256"
+     xmlns="http://www.w3.org/2000/svg">
+
+    <path
+        d="M50 80 L50 150
+        M75 55
+        A25 25, 0, 0, 0, 50 80
+        M75 55 L300 55"
+        stroke="black"
+        stroke-width="20"
+        fill="none"/>
+
+        <path
+        d="M50 100 L90 70 H105 V85 L50 125"
+        stroke="black"
+        fill="black"/>
+
+        <path
+        d="M50 125 L90 150 H105 V135 L50 100"
+        stroke="black"
+        fill="black"/>
+    
+        <path
+        d=""
+        stroke="black"
+        stroke-width="20"
+        fill="none"/>
+    
+
+</svg>
