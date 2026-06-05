@@ -29,11 +29,7 @@ namespace knot {
         
         unsigned int indexCount = 0;
 
-        ~Mesh() {
-            glDeleteVertexArrays(1, &vao);
-            glDeleteBuffers(1, &vbo);
-            glDeleteBuffers(1, &ebo);
-        }
+        ~Mesh();
     };
 
     struct Object {
@@ -45,15 +41,7 @@ namespace knot {
         glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 
         Object(Mesh* m, unsigned int _id) : mesh(m), id(_id) {}
-        glm::mat4 getWorldMatrix() const {
-            glm::mat4 trans = glm::translate(glm::mat4(1.0f), position);
-            
-            glm::mat4 rot = glm::mat4_cast(rotation);
-            
-            glm::mat4 sca = glm::scale(glm::mat4(1.0f), scale);
-
-            return trans * rot * sca;
-        }
+        glm::mat4 getWorldMatrix() const;
         
     };
 

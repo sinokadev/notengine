@@ -146,4 +146,20 @@ namespace knot {
         glDeleteProgram(shader_program);
     }
 
+    Mesh::~Mesh() {
+        glDeleteVertexArrays(1, &vao);
+        glDeleteBuffers(1, &vbo);
+        glDeleteBuffers(1, &ebo);
+    }
+
+    glm::mat4 Object::getWorldMatrix() const {
+        glm::mat4 trans = glm::translate(glm::mat4(1.0f), position);
+        
+        glm::mat4 rot = glm::mat4_cast(rotation);
+        
+        glm::mat4 sca = glm::scale(glm::mat4(1.0f), scale);
+
+        return trans * rot * sca;
+    }
+
 }

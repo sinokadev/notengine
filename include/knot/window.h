@@ -1,3 +1,20 @@
 #pragma once
 
-namespace knot {}
+#include <GLFW/glfw3.h>
+
+namespace knot {
+    class Window {
+        private:
+        GLFWwindow* n_Id;
+        bool n_Initialized = false;
+
+        public:
+        bool init();
+
+        bool active();
+
+        bool update();
+
+        ~Window();
+    };
+}
