@@ -12,8 +12,17 @@
 #include <glm/gtc/quaternion.hpp>
 
 namespace knot {
+    struct Vertex {
+        glm::vec3 Position;
+        glm::vec2 TexCoords;
+        glm::vec3 Normal;
+        glm::vec3 Tangent;
+    };
 
     struct Mesh {
+        std::vector<Vertex> vertices;
+        std::vector<unsigned int> indices;
+
         unsigned int vao = 0;
         unsigned int vbo = 0;
         unsigned int ebo = 0;
@@ -29,11 +38,13 @@ namespace knot {
 
     struct Object {
         Mesh* mesh;
+        const unsigned int id;
 
         glm::vec3 position = glm::vec3(0.0f);
         glm::vec3 scale = glm::vec3(1.0f);
         glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 
+        Object(Mesh* m, unsigned int _id) : mesh(m), id(_id) {}
         glm::mat4 getWorldMatrix() const {
             glm::mat4 trans = glm::translate(glm::mat4(1.0f), position);
             
@@ -43,6 +54,7 @@ namespace knot {
 
             return trans * rot * sca;
         }
+        
     };
 
     class Shader {
