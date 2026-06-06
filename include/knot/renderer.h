@@ -3,6 +3,7 @@
 
 namespace knot {
     class Renderer {
+    public:
         bool renderObject(const Object &object);
     };
 }
