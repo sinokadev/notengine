@@ -24,4 +24,8 @@ namespace knot {
         return nullptr;
     }
 
+    std::vector<Object>& ObjectManager::getObjectList() {
+        return objects;
+    }
+
 }

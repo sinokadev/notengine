@@ -33,18 +33,20 @@ bool Window::active() {
     return true;
 }
 
-bool Window::update() {
-    if (!n_Initialized) return false;
+void Window::loop() {
     glfwSwapBuffers(n_Id);
 
     glfwPollEvents();
-    return !glfwWindowShouldClose(n_Id);
 }
 
 Window::~Window() {
     if (n_Id) {
         glfwDestroyWindow(n_Id);
     }
+}
+
+bool Window::isClose() {
+    return glfwWindowShouldClose(n_Id);
 }
 
 }

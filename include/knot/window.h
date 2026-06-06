@@ -13,7 +13,9 @@ namespace knot {
 
         bool active();
 
-        bool update();
+        void loop();
+
+        bool isClose();
 
         ~Window();
     };

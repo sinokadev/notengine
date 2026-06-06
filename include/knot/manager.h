@@ -11,6 +11,8 @@ namespace knot {
 
         Object* getObjectById(unsigned int id);
 
+        std::vector<Object>& getObjectList();
+
     private:
         std::vector<Object> objects;
         std::unordered_map<unsigned int, size_t> idToIndex;
