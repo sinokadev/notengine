@@ -2,6 +2,6 @@
 
 #define def auto
 
-def main() -> int{
+def main() -> int {
 
 }
