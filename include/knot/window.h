@@ -1,6 +1,7 @@
 #pragma once
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
+#include <string>
 
 namespace knot {
     class Window {
@@ -9,7 +10,7 @@ namespace knot {
         bool n_Initialized = false;
 
         public:
-        bool init();
+        bool init(int width, int height, std::string title);
 
         bool active();
 

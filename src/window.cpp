@@ -1,10 +1,11 @@
 #include <knot/window.h>
 #include <iostream>
+#include <string>
 
 namespace knot {
 
 
-bool Window::init() {
+bool Window::init(int width, int height, std::string title) {
     if (!glfwInit()) {
         std::cerr << "[Error] Failed to initialize GLFW" << std::endl;
         return false;
@@ -14,7 +15,7 @@ bool Window::init() {
     // glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    n_Id = glfwCreateWindow(100, 100, "asdf", NULL, NULL);
+    n_Id = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
     if (!n_Id) {
         std::cerr << "[Error] Failed to create window" << std::endl;
         glfwTerminate();
