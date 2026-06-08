@@ -10,6 +10,8 @@ namespace knot {
         bool init();
 
         int run();
+
+        ObjectManager& getObjectManager();
     private:
         Window window;
         Renderer renderer;

@@ -8,12 +8,11 @@
 namespace knot {
         bool Engine::init() {
             if (!window.init()) return false;
-            window.active();
 
-            glEnable(GL_MULTISAMPLE);
-            glEnable(GL_DEPTH_TEST);
+            if (!window.active()) return false;
+            if (!renderer.init(window.getProcAddress())) return false;
 
-            glfwSwapInterval(1);
+            window.enableVsync();
 
             n_Initialized = true;
             return true;
@@ -46,5 +45,9 @@ namespace knot {
             for (const auto& obj : objectManager.getObjectList()) {
                 renderer.renderObject(obj);
             }
+        }
+
+        ObjectManager& Engine::getObjectManager() {
+            return objectManager;
         }
 }

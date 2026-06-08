@@ -1,6 +1,5 @@
-#include <GLFW/glfw3.h>
-#include <iostream>
 #include <knot/window.h>
+#include <iostream>
 
 namespace knot {
 
@@ -47,6 +46,14 @@ Window::~Window() {
 
 bool Window::isClose() {
     return glfwWindowShouldClose(n_Id);
+}
+
+void Window::enableVsync() {
+    glfwSwapInterval(1);
+}
+
+GLADloadfunc Window::getProcAddress() {
+    return reinterpret_cast<GLADloadfunc>(glfwGetProcAddress);
 }
 
 }

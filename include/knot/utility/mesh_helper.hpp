@@ -4,6 +4,8 @@
 
 
 namespace knot {
+    void setupMesh(Mesh& mesh);
+
     class MeshGen {
     public:
 static Mesh createCube() {
