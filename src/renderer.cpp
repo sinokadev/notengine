@@ -1,4 +1,5 @@
 // Rendering the object
+#include <glad/gl.h>
 #include <knot/resources.h>
 #include <knot/renderer.h>
 
@@ -21,5 +22,14 @@ namespace knot {
         
         return true;
     }
+    bool Renderer::init(GLADloadfunc loadProc) {
+        if (!gladLoadGL(loadProc)) {
+            return false;
+        }
 
+        glEnable(GL_MULTISAMPLE);
+        glEnable(GL_DEPTH_TEST);
+
+        return true;
+    }
 }
