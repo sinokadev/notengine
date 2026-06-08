@@ -1,21 +1,23 @@
 #pragma once
 
-#include <vector>
+#include <list>
+#include <unordered_map>
+#include <string>
 #include <knot/resources.h>
 
 namespace knot {
         class ObjectManager {
     public:
 
-        Object& createObject(Mesh* mesh);
+        Object& createObject(std::shared_ptr<Mesh> mesh);
 
         Object* getObjectById(unsigned int id);
 
-        std::vector<Object>& getObjectList();
+        std::list<Object>& getObjectList();
 
     private:
-        std::vector<Object> objects;
-        std::unordered_map<unsigned int, size_t> idToIndex;
+        std::list<Object> objects;
+        std::unordered_map<unsigned int, std::list<Object>::iterator> idToIterator;
 
         unsigned int nextId = 1;
     };

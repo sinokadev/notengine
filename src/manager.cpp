@@ -1,30 +1,35 @@
-#include <vector>
+#include <list>
+#include <unordered_map>
+#include <string>
 #include <knot/resources.h>
 #include <knot/manager.h>
 
 namespace knot {
 
 
-    Object& ObjectManager::createObject(Mesh* mesh) {
+    Object& ObjectManager::createObject(std::shared_ptr<Mesh> mesh) {
         unsigned int newId = nextId++;
         
         objects.emplace_back(mesh, newId);
+        
+        auto it = --objects.end(); 
 
-        idToIndex[newId] = objects.size() - 1;
-
-        return objects.back(); 
+        idToIterator[newId] = it;
+        
+        return *it;
     }
 
     Object* ObjectManager::getObjectById(unsigned int id) {
-        auto it = idToIndex.find(id);
-        if (it != idToIndex.end()) {
-
-            return &objects[it->second];
+        auto it = idToIterator.find(id);
+        
+        if (it != idToIterator.end()) {
+            return &(*it->second);
         }
+        
         return nullptr;
     }
 
-    std::vector<Object>& ObjectManager::getObjectList() {
+    std::list<Object>& ObjectManager::getObjectList() {
         return objects;
     }
 

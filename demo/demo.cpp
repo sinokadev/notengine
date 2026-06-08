@@ -9,9 +9,9 @@ def main() -> int {
     engine.init(1920/2,1080/2, "Hello");
 
     knot::MeshGen meshgen;
-    knot::Mesh mesh = meshgen.createRegularPolygon(3, 1);
+    auto mesh = meshgen.createRegularPolygon(3, 1);
 
-    engine.getObjectManager().createObject(&mesh);
+    auto& obj = engine.getObjectManager().createObject(mesh);
 
     return engine.run();
 }
