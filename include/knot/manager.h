@@ -11,7 +11,7 @@ namespace knot {
 
         Object& createObject(std::shared_ptr<Mesh> mesh);
 
-        Object* getObjectById(unsigned int id);
+        Object* getObject(unsigned int id);
 
         std::list<Object>& getObjectList();
 

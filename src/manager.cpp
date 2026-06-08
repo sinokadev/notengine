@@ -19,7 +19,7 @@ namespace knot {
         return *it;
     }
 
-    Object* ObjectManager::getObjectById(unsigned int id) {
+    Object* ObjectManager::getObject(unsigned int id) {
         auto it = idToIterator.find(id);
         
         if (it != idToIterator.end()) {
