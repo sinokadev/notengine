@@ -3,6 +3,7 @@
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include <memory>
 #include <fstream>
 
 #include <glad/gl.h>
@@ -30,19 +31,20 @@ namespace knot {
         unsigned int indexCount = 0;
 
         ~Mesh();
+        void setup();
     };
 
     struct Object {
-        Mesh* mesh;
+        std::shared_ptr<Mesh> mesh;
         const unsigned int id;
 
         glm::vec3 position = glm::vec3(0.0f);
         glm::vec3 scale = glm::vec3(1.0f);
         glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 
-        Object(Mesh* m, unsigned int _id) : mesh(m), id(_id) {}
-        glm::mat4 getWorldMatrix() const;
+        Object(std::shared_ptr<Mesh> m, unsigned int _id) : mesh(m), id(_id) {}
         
+        glm::mat4 getWorldMatrix() const;
     };
 
     class Shader {
