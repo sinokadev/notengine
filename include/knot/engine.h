@@ -7,8 +7,7 @@
 namespace knot {
     class Engine {
     public:
-        bool init();
-
+        bool init(int width, int height, std::string title);
         int run();
 
         ObjectManager& getObjectManager();
@@ -16,6 +15,8 @@ namespace knot {
         Window window;
         Renderer renderer;
         ObjectManager objectManager;
+        int width, height;
+        std::string title;
 
         bool n_Initialized = false;
 

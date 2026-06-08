@@ -6,8 +6,12 @@
 #include <knot/engine.h>
 
 namespace knot {
-        bool Engine::init() {
-            if (!window.init()) return false;
+        bool Engine::init(int width, int height, std::string title) {
+            this->width = width;
+            this->height = height;
+            this->title = title;
+
+            if (!window.init(width, height, title)) return false;
 
             if (!window.active()) return false;
             if (!renderer.init(window.getProcAddress())) return false;
@@ -19,6 +23,7 @@ namespace knot {
         }
 
         int Engine::run() {
+            if (!n_Initialized) {return 1;}
             while (!window.isClose())
             {
                 update();
@@ -26,7 +31,7 @@ namespace knot {
 
                 window.loop();
             }
-            return true;
+            return 0;
         }
 
         void Engine::update() {
