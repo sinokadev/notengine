@@ -2,9 +2,7 @@
 #include <knot/utility.h>
 #include <knot/resources.h>
 
-#define def auto
-
-def main() -> int {
+int main() {
     knot::Engine engine;
     engine.init(1920/2,1080/2, "Hello");
 
