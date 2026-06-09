@@ -47,9 +47,23 @@ namespace knot {
         glm::mat4 getWorldMatrix() const;
     };
 
+    class ShaderSource {
+    public:
+        std::string vertexPath;
+        std::string fragmentPath;
+        
+        std::string vertexSourceCode;
+        std::string fragmentSourceCode;
+
+        ShaderSource(std::string v, std::string f);
+
+    private:
+        std::string readFile(const std::string& path);
+    };
+
     class Shader {
     public:
-        Shader(std::string vertex_path, std::string fragment_path);
+        Shader(ShaderSource &ss);
         void use();
         void set(const std::string &name, bool value) const;
         void set(const std::string &name, int value) const;

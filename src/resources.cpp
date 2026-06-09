@@ -11,43 +11,39 @@
 
 namespace knot {
 
-    Shader::Shader(std::string vertex_path, std::string fragment_path) {
-        std::string vertex_code;
-        std::string fragment_code;
-        std::ifstream vertex_file;
-        std::ifstream fragment_file;
+    class ShaderSource {
+    public:
+        std::string vertexPath;
+        std::string fragmentPath;
+        
+        std::string vertexSourceCode;
+        std::string fragmentSourceCode;
 
-        vertex_file.open(vertex_path);
-
-        if (!vertex_file.is_open()) {
-            std::cerr << "Failed to open vertex shader file: " << vertex_path << std::endl;
-            return;
+        ShaderSource(std::string v, std::string f) : vertexPath(v), fragmentPath(f) {
+            vertexSourceCode = readFile(vertexPath);
+            fragmentSourceCode = readFile(fragmentPath);
         }
 
-        fragment_file.open(fragment_path);
-
-        if (!fragment_file.is_open()) {
-            std::cerr << "Failed to open fragment shader file: " << fragment_path << std::endl;
-            return;
+    private:
+        std::string readFile(const std::string& path) {
+            std::ifstream file(path);
+            if (!file.is_open()) {
+                std::cerr << "Failed to open shader file: " << path << std::endl;
+                return "";
+            }
+            std::stringstream buffer;
+            buffer << file.rdbuf();
+            return buffer.str();
         }
+    };
 
-        std::stringstream vertex_stream, fragment_stream;
-
-        vertex_stream << vertex_file.rdbuf();
-        fragment_stream << fragment_file.rdbuf();
-        
-        vertex_code = vertex_stream.str();
-        fragment_code = fragment_stream.str();
-        
-        vertex_file.close();
-        fragment_file.close();
-
-        const char *vertex_string = vertex_code.c_str();
-        const char *fragment_string = fragment_code.c_str();
+    Shader::Shader(ShaderSource &ss) {
+        const char* vCode = ss.vertexSourceCode.c_str();
+        const char* fCode = ss.fragmentSourceCode.c_str();
 
         // Compile vertex shader
         unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertex_shader, 1, &vertex_string, NULL);
+        glShaderSource(vertex_shader, 1, &vCode, NULL);
         glCompileShader(vertex_shader);
 
         int success;
@@ -60,7 +56,7 @@ namespace knot {
 
         // Compile fragment shader
         unsigned int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragment_shader, 1, &fragment_string, NULL);
+        glShaderSource(fragment_shader, 1, &fCode, NULL);
         glCompileShader(fragment_shader);
 
         glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success);
