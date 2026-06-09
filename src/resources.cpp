@@ -11,31 +11,23 @@
 
 namespace knot {
 
-    class ShaderSource {
-    public:
-        std::string vertexPath;
-        std::string fragmentPath;
-        
-        std::string vertexSourceCode;
-        std::string fragmentSourceCode;
+    ShaderSource::ShaderSource(std::string v, std::string f) : vertexPath(v), fragmentPath(f) {
+        vertexSourceCode = readFile(vertexPath);
+        fragmentSourceCode = readFile(fragmentPath);
+    }
 
-        ShaderSource(std::string v, std::string f) : vertexPath(v), fragmentPath(f) {
-            vertexSourceCode = readFile(vertexPath);
-            fragmentSourceCode = readFile(fragmentPath);
+    std::string ShaderSource::readFile(const std::string& path) {
+        std::ifstream file(path);
+        if (!file.is_open()) {
+            std::cerr << "Failed to open shader file: " << path << std::endl;
+            return "";
         }
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        return buffer.str();
+    }
 
-    private:
-        std::string readFile(const std::string& path) {
-            std::ifstream file(path);
-            if (!file.is_open()) {
-                std::cerr << "Failed to open shader file: " << path << std::endl;
-                return "";
-            }
-            std::stringstream buffer;
-            buffer << file.rdbuf();
-            return buffer.str();
-        }
-    };
+
 
     Shader::Shader(ShaderSource &ss) {
         const char* vCode = ss.vertexSourceCode.c_str();
