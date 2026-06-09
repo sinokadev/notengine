@@ -61,6 +61,7 @@ namespace knot {
         std::string readFile(const std::string& path);
     };
 
+
     class Shader {
     public:
         Shader(ShaderSource &ss);
@@ -84,4 +85,17 @@ namespace knot {
         unsigned int shader_program;
     };
 
+    class AlphaShader {
+    public:
+        // 엔진 내부 경로가 바뀔 때 여기서만 수정하면 됩니다.
+        static ShaderSource GetSource() {
+            return ShaderSource("assets/shaders/alpha.vert", "assets/shaders/alpha.frag");
+        }
+        
+        // 편의를 위해 Shader 객체 자체를 바로 반환하는 함수
+        static Shader Create() {
+            ShaderSource ss = GetSource();
+            return Shader(ss);
+        }
+    };
 }
