@@ -29,9 +29,9 @@ namespace knot {
 
 
 
-    Shader::Shader(ShaderSource &ss) {
-        const char* vCode = ss.vertexSourceCode.c_str();
-        const char* fCode = ss.fragmentSourceCode.c_str();
+    Shader::Shader(std::shared_ptr<ShaderSource> ss, unsigned int id) : id(id) {
+        const char* vCode = ss->vertexSourceCode.c_str();
+        const char* fCode = ss->fragmentSourceCode.c_str();
 
         // Compile vertex shader
         unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
@@ -127,7 +127,7 @@ namespace knot {
     }
 
     unsigned int Shader::get_id() const {
-        return shader_program;
+        return id;
     }
 
     void Shader::destroy() {

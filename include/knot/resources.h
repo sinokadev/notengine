@@ -34,21 +34,6 @@ namespace knot {
         void setup();
     };
 
-    struct Object {
-        std::shared_ptr<Material> material;
-
-        std::shared_ptr<Mesh> mesh;
-        const unsigned int id;
-
-        glm::vec3 position = glm::vec3(0.0f);
-        glm::vec3 scale = glm::vec3(1.0f);
-        glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-
-        Object(std::shared_ptr<Mesh> m, unsigned int _id) : mesh(m), id(_id) {}
-        
-        glm::mat4 getWorldMatrix() const;
-    };
-
     class ShaderSource {
     public:
         std::string vertexPath;
@@ -66,7 +51,7 @@ namespace knot {
 
     class Shader {
     public:
-        Shader(ShaderSource &ss);
+        Shader(std::shared_ptr<ShaderSource> ss, unsigned int id);
         void use();
         void set(const std::string &name, bool value) const;
         void set(const std::string &name, int value) const;
@@ -85,17 +70,14 @@ namespace knot {
 
     private:
         unsigned int shader_program;
+        unsigned int id;
+        
     };
 
     class AlphaShader {
     public:
         static ShaderSource GetSource() {
             return ShaderSource("assets/shaders/alpha.vert", "assets/shaders/alpha.frag");
-        }
-        
-        static Shader Create() {
-            ShaderSource ss = GetSource();
-            return Shader(ss);
         }
     };
 
@@ -126,4 +108,20 @@ namespace knot {
     private:
         glm::vec3 color;
     };
+
+    struct Object {
+        std::shared_ptr<Material> material;
+
+        std::shared_ptr<Mesh> mesh;
+        const unsigned int id;
+
+        glm::vec3 position = glm::vec3(0.0f);
+        glm::vec3 scale = glm::vec3(1.0f);
+        glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+
+        Object(std::shared_ptr<Mesh> m, std::shared_ptr<Material> mat, unsigned int _id) : mesh(m), material(mat), id(_id) {}
+        
+        glm::mat4 getWorldMatrix() const;
+    };
+
 }

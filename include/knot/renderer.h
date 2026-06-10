@@ -1,6 +1,7 @@
 #pragma once
 #include <glad/gl.h>
 #include <knot/resources.h>
+#include <knot/camera.hpp>
 
 namespace knot {
     class Renderer {

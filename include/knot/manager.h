@@ -10,7 +10,7 @@ namespace knot {
     class ObjectManager {
     public:
 
-        Object& createObject(std::shared_ptr<Mesh> mesh);
+        Object& createObject(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material);
 
         bool removeObject(unsigned int id);
 
@@ -29,18 +29,22 @@ namespace knot {
     public:
         ResourceManager();
 
-        Shader& createShader(std::shared_ptr<ShaderSource> ss);
+        void init();
+
+        std::shared_ptr<Shader> createShader(std::shared_ptr<ShaderSource> ss, const std::string& name);
 
         bool removeShader(unsigned int id);
 
-        Shader* getShader(unsigned int id);
+        std::shared_ptr<Shader> getShader(unsigned int id);
+        std::shared_ptr<Shader> getShader(const std::string& name);
 
-        std::list<Shader>& getShaderList();
+        std::list<std::shared_ptr<Shader>>& getShaderList();
 
     private:
-        std::list<Shader> shaders;
+        std::list<std::shared_ptr<Shader>> shaders;
         std::unordered_set<unsigned int> defaultShaderIds;
-        std::unordered_map<unsigned int, std::list<Shader>::iterator> idToIterator;
+        std::unordered_map<unsigned int, std::list<std::shared_ptr<Shader>>::iterator> idToIterator;
+        std::unordered_map<std::string, unsigned int> nameToId;
 
         AlphaShader alphashader;
 

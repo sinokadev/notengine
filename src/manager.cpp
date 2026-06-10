@@ -7,10 +7,10 @@
 namespace knot {
 
 
-    Object& ObjectManager::createObject(std::shared_ptr<Mesh> mesh) {
+    Object& ObjectManager::createObject(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material) {
         unsigned int newId = nextId++;
         
-        objects.emplace_back(mesh, newId);
+        objects.emplace_back(mesh, material, newId);
         
         auto it = --objects.end(); 
 
@@ -49,22 +49,23 @@ namespace knot {
     }
 
 
-    ResourceManager::ResourceManager() {
+    ResourceManager::ResourceManager() {}
+
+    void ResourceManager::init() {
         auto alphaSource = std::make_shared<ShaderSource>(AlphaShader::GetSource());
-        
-        Shader& defaultShader = createShader(alphaSource);
-        
-        defaultShaderIds.insert(defaultShader.get_id());
+        auto defaultShader = createShader(alphaSource, "my_alpha_shader");
+        defaultShaderIds.insert(defaultShader->get_id());
     }
 
-    Shader& ResourceManager::createShader(std::shared_ptr<ShaderSource> ss) {
+    std::shared_ptr<Shader> ResourceManager::createShader(std::shared_ptr<ShaderSource> ss, const std::string& name) {
         unsigned int newId = nextId++;
         
-        shaders.emplace_back(ss, newId);
+        shaders.emplace_back(std::make_shared<Shader>(ss, newId));
         
         auto it = --shaders.end(); 
 
         idToIterator[newId] = it;
+        nameToId[name] = newId;
         
         return *it;
     }
@@ -85,20 +86,35 @@ namespace knot {
 
         idToIterator.erase(it);
 
+        for (auto it = nameToId.begin(); it != nameToId.end(); ++it) {
+            if (it->second == id) {
+                nameToId.erase(it);
+                break;
+            }
+        }
+
         return true;
     }
 
-    Shader* ResourceManager::getShader(unsigned int id) {
+    std::shared_ptr<Shader> ResourceManager::getShader(unsigned int id) {
         auto it = idToIterator.find(id);
         
         if (it != idToIterator.end()) {
-            return &(*it->second);
+            return *it->second;
         }
         
         return nullptr;
     }
 
-    std::list<Shader>& ResourceManager::getShaderList() {
+    std::shared_ptr<Shader> ResourceManager::getShader(const std::string& name) {
+        auto it = nameToId.find(name);
+        if (it != nameToId.end()) {
+            return getShader(it->second);
+        }
+        return nullptr;
+    }
+
+    std::list<std::shared_ptr<Shader>>& ResourceManager::getShaderList() {
         return shaders;
     }
 
