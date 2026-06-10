@@ -35,6 +35,8 @@ namespace knot {
     };
 
     struct Object {
+        std::shared_ptr<Material> material;
+
         std::shared_ptr<Mesh> mesh;
         const unsigned int id;
 
@@ -95,5 +97,33 @@ namespace knot {
             ShaderSource ss = GetSource();
             return Shader(ss);
         }
+    };
+
+    class Material {
+    public:
+        Material(std::shared_ptr<Shader> shader) : shader(shader) {}
+
+        virtual void bind() {
+            shader->use(); 
+        }
+
+        std::shared_ptr<Shader> getShader() const {
+            return shader;
+        }
+
+    protected:
+        std::shared_ptr<Shader> shader;
+    };
+
+    class AlphaMaterial : public Material {
+    public:
+        AlphaMaterial(std::shared_ptr<Shader> s, glm::vec3 color) : Material(s), color(color) { shader = s; }
+        
+        void bind() override {
+            shader->use();
+            shader->set("material.color", color);
+        }
+    private:
+        glm::vec3 color;
     };
 }
