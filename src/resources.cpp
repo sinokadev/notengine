@@ -11,172 +11,232 @@
 
 namespace knot {
 
-    ShaderSource::ShaderSource(std::string v, std::string f) : vertexPath(v), fragmentPath(f) {
-        vertexSourceCode = readFile(vertexPath);
-        fragmentSourceCode = readFile(fragmentPath);
+namespace {
+
+std::string g_assetRoot;
+
+unsigned int compileShader(unsigned int type, const char* source, const char* label) {
+    unsigned int shader = glCreateShader(type);
+    glShaderSource(shader, 1, &source, nullptr);
+    glCompileShader(shader);
+
+    int success = 0;
+    char log[512];
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(shader, 512, nullptr, log);
+        std::cerr << "Failed to compile " << label << " shader\n" << log << std::endl;
+        glDeleteShader(shader);
+        return 0;
     }
 
-    std::string ShaderSource::readFile(const std::string& path) {
-        std::ifstream file(path);
-        if (!file.is_open()) {
-            std::cerr << "Failed to open shader file: " << path << std::endl;
-            return "";
-        }
-        std::stringstream buffer;
-        buffer << file.rdbuf();
-        return buffer.str();
+    return shader;
+}
+
+} // namespace
+
+void setAssetRoot(const std::string& root) {
+    g_assetRoot = root;
+    if (!g_assetRoot.empty() && g_assetRoot.back() != '/') {
+        g_assetRoot += '/';
+    }
+}
+
+const std::string& getAssetRoot() {
+    return g_assetRoot;
+}
+
+ShaderSource::ShaderSource(std::string v, std::string f)
+    : vertexPath(std::move(v)), fragmentPath(std::move(f)) {
+    vertexSourceCode = readFile(vertexPath);
+    fragmentSourceCode = readFile(fragmentPath);
+}
+
+bool ShaderSource::isValid() const {
+    return !vertexSourceCode.empty() && !fragmentSourceCode.empty();
+}
+
+std::string ShaderSource::readFile(const std::string& path) {
+    std::ifstream file(path);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open shader file: " << path << std::endl;
+        return "";
     }
 
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
 
-
-    Shader::Shader(std::shared_ptr<ShaderSource> ss, unsigned int id) : id(id) {
-        const char* vCode = ss->vertexSourceCode.c_str();
-        const char* fCode = ss->fragmentSourceCode.c_str();
-
-        // Compile vertex shader
-        unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertex_shader, 1, &vCode, NULL);
-        glCompileShader(vertex_shader);
-
-        int success;
-        char log[512];
-        glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(vertex_shader, 512, NULL, log);
-            std::cerr << "Failed to compile vertex shader\n" << log << std::endl;
-        }
-
-        // Compile fragment shader
-        unsigned int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragment_shader, 1, &fCode, NULL);
-        glCompileShader(fragment_shader);
-
-        glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(fragment_shader, 512, NULL, log);
-            std::cerr << "Failed to compile fragment shader\n" << log << std::endl;
-        }
-
-        // Link shader
-        shader_program = glCreateProgram();
-        glAttachShader(shader_program, vertex_shader);
-        glAttachShader(shader_program, fragment_shader);
-        glLinkProgram(shader_program);
-
-        glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
-        if (!success) {
-            glGetProgramInfoLog(shader_program, 512, NULL, log);
-            std::cerr << "Failed to link shaders\n" << log << std::endl;
-        }
-
-        glDeleteShader(vertex_shader);
-        glDeleteShader(fragment_shader);
+Shader::Shader(std::shared_ptr<ShaderSource> ss, unsigned int shaderId) : id(shaderId) {
+    if (!ss || !ss->isValid()) {
+        return;
     }
 
-    void Shader::use() { 
-        glUseProgram(shader_program); 
+    const char* vertexCode = ss->vertexSourceCode.c_str();
+    const char* fragmentCode = ss->fragmentSourceCode.c_str();
+
+    unsigned int vertexShader = compileShader(GL_VERTEX_SHADER, vertexCode, "vertex");
+    if (vertexShader == 0) {
+        return;
     }
 
-    void Shader::set(const std::string &name, bool value) const {
-        glUniform1i(glGetUniformLocation(shader_program, name.c_str()), (int)value);
+    unsigned int fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragmentCode, "fragment");
+    if (fragmentShader == 0) {
+        glDeleteShader(vertexShader);
+        return;
     }
 
-    void Shader::set(const std::string &name, int value) const {
-        glUniform1i(glGetUniformLocation(shader_program, name.c_str()), value);
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    int success = 0;
+    char log[512];
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(shaderProgram, 512, nullptr, log);
+        std::cerr << "Failed to link shaders\n" << log << std::endl;
+        glDeleteProgram(shaderProgram);
+        shaderProgram = 0;
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        return;
     }
 
-    void Shader::set(const std::string &name, float value) const {
-        glUniform1f(glGetUniformLocation(shader_program, name.c_str()), value);
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+    valid = true;
+}
+
+Shader::~Shader() {
+    if (shaderProgram != 0) {
+        glDeleteProgram(shaderProgram);
+    }
+}
+
+void Shader::use() {
+    if (valid) {
+        glUseProgram(shaderProgram);
+    }
+}
+
+int Shader::uniformLocation(const std::string& name) const {
+    auto cached = uniformLocations.find(name);
+    if (cached != uniformLocations.end()) {
+        return cached->second;
     }
 
-    void Shader::set(const std::string &name, const glm::vec2 &value) const {
-        glUniform2fv(glGetUniformLocation(shader_program, name.c_str()), 1, &value[0]);
+    const int location = glGetUniformLocation(shaderProgram, name.c_str());
+    uniformLocations.emplace(name, location);
+    return location;
+}
+
+void Shader::set(const std::string& name, bool value) const {
+    const int location = uniformLocation(name);
+    if (location >= 0) {
+        glUniform1i(location, static_cast<int>(value));
     }
+}
 
-
-    void Shader::set(const std::string &name, const glm::vec3 &value) const {
-        glUniform3fv(glGetUniformLocation(shader_program, name.c_str()), 1, &value[0]);
-    }
-
-    void Shader::set(const std::string &name, const glm::mat4 &value) const {
-        glUniformMatrix4fv(glGetUniformLocation(shader_program, name.c_str()), 1, GL_FALSE, &value[0][0]);
-    }
-
-    void Shader::set(int location, bool value) const {
+void Shader::set(const std::string& name, int value) const {
+    const int location = uniformLocation(name);
+    if (location >= 0) {
         glUniform1i(location, value);
     }
+}
 
-    void Shader::set(int location, int value) const {
-        glUniform1i(location, value);
-    }
-
-    void Shader::set(int location, float value) const {
+void Shader::set(const std::string& name, float value) const {
+    const int location = uniformLocation(name);
+    if (location >= 0) {
         glUniform1f(location, value);
     }
+}
 
-    void Shader::set(int location, const glm::vec2 &value) const {
+void Shader::set(const std::string& name, const glm::vec2& value) const {
+    const int location = uniformLocation(name);
+    if (location >= 0) {
         glUniform2fv(location, 1, &value[0]);
     }
+}
 
-    void Shader::set(int location, const glm::vec3 &value) const {
+void Shader::set(const std::string& name, const glm::vec3& value) const {
+    const int location = uniformLocation(name);
+    if (location >= 0) {
         glUniform3fv(location, 1, &value[0]);
     }
+}
 
-    void Shader::set(int location, const glm::mat4 &value) const {
+void Shader::set(const std::string& name, const glm::mat4& value) const {
+    const int location = uniformLocation(name);
+    if (location >= 0) {
         glUniformMatrix4fv(location, 1, GL_FALSE, &value[0][0]);
     }
+}
 
-    unsigned int Shader::get_id() const {
-        return id;
+unsigned int Shader::get_id() const {
+    return id;
+}
+
+ShaderSource AlphaShader::GetSource() {
+    return ShaderSource(
+        getAssetRoot() + "assets/shaders/alpha.vert",
+        getAssetRoot() + "assets/shaders/alpha.frag"
+    );
+}
+
+Mesh::~Mesh() {
+    if (vao != 0) {
+        glDeleteVertexArrays(1, &vao);
+    }
+    if (vbo != 0) {
+        glDeleteBuffers(1, &vbo);
+    }
+    if (ebo != 0) {
+        glDeleteBuffers(1, &ebo);
+    }
+}
+
+void Mesh::setup() {
+    if (vertices.empty() || indices.empty()) {
+        std::cerr << "Mesh::setup called with empty geometry" << std::endl;
+        return;
     }
 
-    void Shader::destroy() {
-        glDeleteProgram(shader_program);
-    }
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &vbo);
+    glGenBuffers(1, &ebo);
 
-    Mesh::~Mesh() {
-        if (vao != 0) glDeleteVertexArrays(1, &vao);
-        if (vbo != 0) glDeleteBuffers(1, &vbo);
-        if (ebo != 0) glDeleteBuffers(1, &ebo); 
-    }
+    glBindVertexArray(vao);
 
-    void Mesh::setup() {
-        glGenVertexArrays(1, &vao);
-        glGenBuffers(1, &vbo);
-        glGenBuffers(1, &ebo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
 
-        glBindVertexArray(vao);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, Position)));
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, TexCoords)));
 
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Position));
-        
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, Normal)));
 
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, Tangent)));
 
-        glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
+    glBindVertexArray(0);
+    indexCount = static_cast<unsigned int>(indices.size());
+}
 
-        glBindVertexArray(0);
-        indexCount = static_cast<unsigned int>(indices.size());
-    }
-
-    glm::mat4 Object::getWorldMatrix() const {
-        glm::mat4 trans = glm::translate(glm::mat4(1.0f), position);
-        
-        glm::mat4 rot = glm::mat4_cast(rotation);
-        
-        glm::mat4 sca = glm::scale(glm::mat4(1.0f), scale);
-
-        return trans * rot * sca;
-    }
+glm::mat4 Object::getWorldMatrix() const {
+    const glm::mat4 translation = glm::translate(glm::mat4(1.0f), position);
+    const glm::mat4 rotationMatrix = glm::mat4_cast(rotation);
+    const glm::mat4 scaling = glm::scale(glm::mat4(1.0f), scale);
+    return translation * rotationMatrix * scaling;
+}
 
 }

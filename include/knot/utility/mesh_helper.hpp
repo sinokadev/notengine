@@ -104,6 +104,10 @@ static std::shared_ptr<knot::Mesh> createSphere(int sectors, int stacks) {
 
 
         static std::shared_ptr<knot::Mesh> createRegularPolygon(int sectors, float radius) {
+            if (sectors < 3) {
+                return nullptr;
+            }
+
             auto mesh = std::make_shared<knot::Mesh>();
             const float PI = 3.14159265359f;
 
@@ -134,12 +138,17 @@ static std::shared_ptr<knot::Mesh> createSphere(int sectors, int stacks) {
         }
 
         static std::shared_ptr<knot::Mesh> createMeshFromVertices(const std::vector<glm::vec3>& positions) {
+            if (positions.size() < 3) {
+                return nullptr;
+            }
+
             auto mesh = std::make_shared<knot::Mesh>();
-            
-            // 중심점 계산 (모든 정점의 평균)
+
             glm::vec3 center(0.0f);
-            for (const auto& pos : positions) center += pos;
-            center /= (float)positions.size();
+            for (const auto& pos : positions) {
+                center += pos;
+            }
+            center /= static_cast<float>(positions.size());
 
             // 1. 정점 데이터 입력 (중심점 + 외곽 정점들)
             mesh->vertices.push_back({center, {0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}});
