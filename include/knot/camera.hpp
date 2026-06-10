@@ -26,7 +26,7 @@ public:
         float pitch = 0.0f) 
         : front(glm::vec3(0.0f, 0.0f, -1.0f)), fov(45.0f), position(position), world_up(world_up), yaw(yaw), pitch(pitch) { update_camera_vector(); }
 
-    glm::mat4 get_view_matrix() {
+    glm::mat4 get_view_matrix() const {
         return glm::lookAt(position, position + front, up);
     }
 

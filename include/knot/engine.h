@@ -3,6 +3,7 @@
 #include <knot/window.h>
 #include <knot/renderer.h>
 #include <knot/manager.h>
+#include <knot/camera.hpp>
 
 namespace knot {
     class Engine {
@@ -11,10 +12,13 @@ namespace knot {
         int run();
 
         ObjectManager& getObjectManager();
+        ResourceManager& getResourceManager();
     private:
         Window window;
         Renderer renderer;
+        Camera camera;
         ObjectManager objectManager;
+        ResourceManager resourceManager;
         int width, height;
         std::string title;
 
