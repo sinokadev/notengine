@@ -42,7 +42,7 @@ bool ResourceManager::init() {
         return false;
     }
 
-    auto defaultShader = createShader(alphaSource, "my_alpha_shader");
+    auto defaultShader = createShader(alphaSource, "alphaShader");
     if (!defaultShader) {
         std::cerr << "[Error] Failed to create default alpha shader" << std::endl;
         return false;

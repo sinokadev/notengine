@@ -1,37 +1,33 @@
 #include <knot/engine.h>
 #include <knot/utility.h>
 #include <knot/resources.h>
-
-#include <glm/gtc/quaternion.hpp>
-
+#include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
-#include <memory>
 
 int main() {
     knot::Engine engine;
-    if (!engine.init(1920 / 2, 1080 / 2, "NotEngine Demo")) {
-        std::cerr << "Failed to initialize engine" << std::endl;
+    if (!engine.init(1280, 720, "3D Cube Demo")) {
         return 1;
     }
 
-    auto mesh = knot::MeshGen::createRegularPolygon(3, 1.0f);
-    if (!mesh || !mesh->isReady()) {
-        std::cerr << "Failed to create mesh" << std::endl;
-        return 1;
-    }
+    auto mesh = knot::MeshGen::createCube();
+    auto shader = engine.getResourceManager().getShader("alphaShader");
+    auto material = std::make_shared<knot::AlphaMaterial>(shader, glm::vec3(0.2f, 0.6f, 1.0f));
+    
+    auto& cubeObject = engine.getObjectManager().createObject(mesh, material);
+    cubeObject.position = glm::vec3(0.0f, 0.0f, 0.0f);
 
-    auto shader = engine.getResourceManager().getShader("my_alpha_shader");
-    if (!shader) {
-        std::cerr << "Failed to load default shader" << std::endl;
-        return 1;
-    }
+    float totalTime = 0.0f;
 
-    auto material = std::make_shared<knot::AlphaMaterial>(shader, glm::vec3(0.95f, 0.35f, 0.25f));
-    auto& object = engine.getObjectManager().createObject(mesh, material);
+    engine.setUpdateCallback([&](knot::Engine&, float deltaTime) {
+        totalTime += deltaTime;
 
-    engine.setUpdateCallback([&object](knot::Engine&, float deltaTime) {
-        const glm::quat spin = glm::angleAxis(deltaTime * 0.8f, glm::vec3(0.0f, 0.0f, 1.0f));
-        object.rotation = spin * object.rotation;
+        float speed = 0.5f;
+        cubeObject.rotation = glm::quat(glm::vec3(
+            sin(totalTime * 0.5f) * 0.2f,
+            totalTime * speed,
+            0.0f
+        ));
     });
 
     return engine.run();
