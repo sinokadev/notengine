@@ -36,6 +36,14 @@ target_link_libraries(notengine PUBLIC
     ${CMAKE_DL_LIBS}
 )
 
+target_compile_definitions(notengine PUBLIC
+    NOTENGINE_ASSET_ROOT="${CMAKE_SOURCE_DIR}"
+)
+
 # Demo executable
 add_executable(demo demo/demo.cpp)
 target_link_libraries(demo PRIVATE notengine)
+
+set_target_properties(demo PROPERTIES
+    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+)

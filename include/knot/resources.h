@@ -1,10 +1,9 @@
 #pragma once
 
 #include <vector>
-#include <sstream>
-#include <iostream>
+#include <string>
 #include <memory>
-#include <fstream>
+#include <unordered_map>
 
 #include <glad/gl.h>
 
@@ -13,6 +12,10 @@
 #include <glm/gtc/quaternion.hpp>
 
 namespace knot {
+
+    void setAssetRoot(const std::string& root);
+    const std::string& getAssetRoot();
+
     struct Vertex {
         glm::vec3 Position;
         glm::vec2 TexCoords;
@@ -27,66 +30,68 @@ namespace knot {
         unsigned int vao = 0;
         unsigned int vbo = 0;
         unsigned int ebo = 0;
-        
         unsigned int indexCount = 0;
 
         ~Mesh();
         void setup();
+        bool isReady() const { return vao != 0 && indexCount > 0; }
     };
 
     class ShaderSource {
     public:
         std::string vertexPath;
         std::string fragmentPath;
-        
         std::string vertexSourceCode;
         std::string fragmentSourceCode;
 
         ShaderSource(std::string v, std::string f);
+        bool isValid() const;
 
     private:
         std::string readFile(const std::string& path);
     };
 
-
     class Shader {
     public:
         Shader(std::shared_ptr<ShaderSource> ss, unsigned int id);
+        ~Shader();
+
+        Shader(const Shader&) = delete;
+        Shader& operator=(const Shader&) = delete;
+
+        bool isValid() const { return valid; }
+
         void use();
-        void set(const std::string &name, bool value) const;
-        void set(const std::string &name, int value) const;
-        void set(const std::string &name, float value) const;
-        void set(const std::string &name, const glm::vec2 &value) const;
-        void set(const std::string &name, const glm::vec3 &value) const;
-        void set(const std::string &name, const glm::mat4 &value) const;
-        void set(int location, bool value) const;
-        void set(int location, int value) const;
-        void set(int location, float value) const;
-        void set(int location, const glm::vec2 &value) const;
-        void set(int location, const glm::vec3 &value) const;
-        void set(int location, const glm::mat4 &value) const;
+        void set(const std::string& name, bool value) const;
+        void set(const std::string& name, int value) const;
+        void set(const std::string& name, float value) const;
+        void set(const std::string& name, const glm::vec2& value) const;
+        void set(const std::string& name, const glm::vec3& value) const;
+        void set(const std::string& name, const glm::mat4& value) const;
         unsigned int get_id() const;
-        void destroy();
 
     private:
-        unsigned int shader_program;
-        unsigned int id;
-        
+        int uniformLocation(const std::string& name) const;
+
+        bool valid = false;
+        unsigned int shaderProgram = 0;
+        unsigned int id = 0;
+        mutable std::unordered_map<std::string, int> uniformLocations;
     };
 
     class AlphaShader {
     public:
-        static ShaderSource GetSource() {
-            return ShaderSource("assets/shaders/alpha.vert", "assets/shaders/alpha.frag");
-        }
+        static ShaderSource GetSource();
     };
 
     class Material {
     public:
-        Material(std::shared_ptr<Shader> shader) : shader(shader) {}
+        explicit Material(std::shared_ptr<Shader> shader) : shader(std::move(shader)) {}
 
         virtual void bind() {
-            shader->use(); 
+            if (shader) {
+                shader->use();
+            }
         }
 
         std::shared_ptr<Shader> getShader() const {
@@ -99,19 +104,24 @@ namespace knot {
 
     class AlphaMaterial : public Material {
     public:
-        AlphaMaterial(std::shared_ptr<Shader> s, glm::vec3 color) : Material(s), color(color) { shader = s; }
-        
+        AlphaMaterial(std::shared_ptr<Shader> s, glm::vec3 color)
+            : Material(s), color(color) {}
+
         void bind() override {
+            if (!shader) {
+                return;
+            }
+
             shader->use();
             shader->set("material.color", color);
         }
+
     private:
         glm::vec3 color;
     };
 
     struct Object {
         std::shared_ptr<Material> material;
-
         std::shared_ptr<Mesh> mesh;
         const unsigned int id;
 
@@ -119,8 +129,9 @@ namespace knot {
         glm::vec3 scale = glm::vec3(1.0f);
         glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 
-        Object(std::shared_ptr<Mesh> m, std::shared_ptr<Material> mat, unsigned int _id) : mesh(m), material(mat), id(_id) {}
-        
+        Object(std::shared_ptr<Mesh> m, std::shared_ptr<Material> mat, unsigned int objectId)
+            : mesh(std::move(m)), material(std::move(mat)), id(objectId) {}
+
         glm::mat4 getWorldMatrix() const;
     };
 

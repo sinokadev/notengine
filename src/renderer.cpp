@@ -1,55 +1,67 @@
-// Rendering the object
-#include <glad/gl.h>
-#include <knot/resources.h>
 #include <knot/renderer.h>
-#include <knot/camera.hpp>
+
+#include <glad/gl.h>
+
+#include <glm/gtc/matrix_transform.hpp>
+#include <iostream>
 
 namespace knot {
 
-    bool Renderer::renderObject(const Object &object, const Camera& camera, float aspectRatio) {
-        if (object.material == nullptr) {
-            std::cerr << "Error: Object ID: " << object.id << " - Material is missing." << std::endl;
-            return false;
-        }
-
-        object.material->bind();
-
-        // 2. 셰이더 객체를 가져와서 유니폼 세팅
-        auto shader = object.material->getShader(); 
-        
-        shader->set("view", camera.get_view_matrix());
-        
-        // 2. 프로젝션 행렬 (카메라의 FOV 및 화면 비율)
-        glm::mat4 projection = glm::perspective(glm::radians(camera.fov), aspectRatio, 0.1f, 100.0f);
-        shader->set("projection", projection);
-        
-        // 3. 모델 행렬
-        shader->set("model", object.getWorldMatrix());
-
-        if (object.mesh == nullptr) {
-            std::cerr << "Error: Object ID: " << object.id << " - Mesh has not been assigned." << std::endl;
-            return false;
-        }
-        
-        if (object.mesh->vao == 0) {
-            std::cerr << "Error: Object ID: " << object.id << " - This is an invalid VAO." << std::endl;
-            return false;
-        }
-                    
-        glBindVertexArray(object.mesh->vao);
-        glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(object.mesh->indices.size()), GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
-        
-        return true;
+bool Renderer::init(GLADloadfunc loadProc) {
+    if (!gladLoadGL(loadProc)) {
+        std::cerr << "[Error] Failed to load OpenGL functions" << std::endl;
+        return false;
     }
-    bool Renderer::init(GLADloadfunc loadProc) {
-        if (!gladLoadGL(loadProc)) {
-            return false;
-        }
 
-        glEnable(GL_MULTISAMPLE);
-        glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_MULTISAMPLE);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
 
-        return true;
+    initialized = true;
+    return true;
+}
+
+void Renderer::beginFrame(int framebufferWidth, int framebufferHeight) {
+    if (framebufferWidth <= 0 || framebufferHeight <= 0) {
+        return;
     }
+
+    glViewport(0, 0, framebufferWidth, framebufferHeight);
+}
+
+bool Renderer::renderObject(const Object& object, const Camera& camera, float aspectRatio) {
+    if (!initialized) {
+        return false;
+    }
+
+    if (!object.material) {
+        std::cerr << "Error: Object ID " << object.id << " has no material" << std::endl;
+        return false;
+    }
+
+    const auto shader = object.material->getShader();
+    if (!shader || !shader->isValid()) {
+        std::cerr << "Error: Object ID " << object.id << " has no valid shader" << std::endl;
+        return false;
+    }
+
+    object.material->bind();
+
+    shader->set("view", camera.get_view_matrix());
+    shader->set("projection", glm::perspective(glm::radians(camera.fov), aspectRatio, kNearPlane, kFarPlane));
+    shader->set("model", object.getWorldMatrix());
+
+    if (!object.mesh || !object.mesh->isReady()) {
+        std::cerr << "Error: Object ID " << object.id << " has no valid mesh" << std::endl;
+        return false;
+    }
+
+    glBindVertexArray(object.mesh->vao);
+    glDrawElements(GL_TRIANGLES, object.mesh->indexCount, GL_UNSIGNED_INT, nullptr);
+    glBindVertexArray(0);
+
+    return true;
+}
+
 }
