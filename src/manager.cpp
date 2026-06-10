@@ -49,5 +49,45 @@ namespace knot {
     }
 
 
+    Shader& ResourceManager::createShader(std::shared_ptr<Mesh> mesh) {
+        unsigned int newId = nextId++;
+        
+        objects.emplace_back(mesh, newId);
+        
+        auto it = --objects.end(); 
+
+        idToIterator[newId] = it;
+        
+        return *it;
+    }
+
+    bool ResourceManager::removeShader(unsigned int id) {
+        auto it = idToIterator.find(id);
+        if (it == idToIterator.end()) {
+            return false;
+        }
+
+        auto listIterator = it->second;
+
+        objects.erase(listIterator);
+
+        idToIterator.erase(it);
+
+        return true;
+    }
+
+    Shader* ResourceManager::getShader(unsigned int id) {
+        auto it = idToIterator.find(id);
+        
+        if (it != idToIterator.end()) {
+            return &(*it->second);
+        }
+        
+        return nullptr;
+    }
+
+    std::list<Shader>& ResourceManager::getShaderList() {
+        return objects;
+    }
 
 }
