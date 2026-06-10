@@ -19,6 +19,21 @@ namespace knot {
         return *it;
     }
 
+    bool ObjectManager::removeObject(unsigned int id) {
+        auto it = idToIterator.find(id);
+        if (it == idToIterator.end()) {
+            return false;
+        }
+
+        auto listIterator = it->second;
+
+        objects.erase(listIterator);
+
+        idToIterator.erase(it);
+
+        return true;
+    }
+
     Object* ObjectManager::getObject(unsigned int id) {
         auto it = idToIterator.find(id);
         
@@ -32,5 +47,7 @@ namespace knot {
     std::list<Object>& ObjectManager::getObjectList() {
         return objects;
     }
+
+
 
 }
