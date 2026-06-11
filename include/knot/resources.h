@@ -134,5 +134,4 @@ namespace knot {
 
         glm::mat4 getWorldMatrix() const;
     };
-
 }
