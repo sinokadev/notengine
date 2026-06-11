@@ -18,7 +18,7 @@ namespace knot {
 
         ObjectManager& getObjectManager();
         ResourceManager& getResourceManager();
-        Camera& getCamera();
+        MovingCamera& getCamera();
         Window& getWindow();
         float getDeltaTime() const { return deltaTime; }
         float getAspectRatio() const;
@@ -28,7 +28,7 @@ namespace knot {
     private:
         Window window;
         Renderer renderer;
-        Camera camera;
+        MovingCamera camera;
         ObjectManager objectManager;
         ResourceManager resourceManager;
 
