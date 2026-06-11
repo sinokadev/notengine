@@ -3,6 +3,8 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
+#include <knot/utility.h>
+
 #include <functional>
 #include <string>
 
@@ -10,6 +12,7 @@ namespace knot {
     class Window {
     public:
         using ResizeCallback = std::function<void(int width, int height)>;
+        using KeyInputCallback = std::function<void(ScanCode scancode, KeyState action)>;
 
         Window();
         ~Window();
@@ -29,14 +32,18 @@ namespace knot {
         int getFramebufferHeight() const { return framebufferHeight; }
 
         void setResizeCallback(ResizeCallback callback);
-
+        void setKeyInputCallback(KeyInputCallback callback);
     private:
         GLFWwindow* windowHandle = nullptr;
         bool initialized = false;
         int framebufferWidth = 0;
         int framebufferHeight = 0;
         ResizeCallback resizeCallback;
+        KeyInputCallback keyInputCallback;
 
         static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+        static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+
+        static ScanCode convert_glfw_to_knot_scancode(int glfw_key);
     };
 }

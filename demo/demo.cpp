@@ -19,6 +19,12 @@ int main() {
 
     float totalTime = 0.0f;
 
+    engine.getWindow().setKeyInputCallback([](knot::ScanCode code, knot::KeyState action) {
+        if (code == knot::ScanCode::A && action == knot::KeyState::PRESS) {
+            std::cout << "Press A" << std::endl;
+        }
+    });
+
     engine.setUpdateCallback([&](knot::Engine&, float deltaTime) {
         totalTime += deltaTime;
 

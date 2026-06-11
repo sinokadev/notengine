@@ -2,7 +2,7 @@
 // Original https://github.com/libsdl-org/SDL/blob/72771ac0b41812065acda4b5c782000293d77ef5/include/SDL3/SDL_scancode.h
 #pragma once
 
-namespace KNOT {
+namespace knot {
 
 enum class ScanCode : unsigned int {
     UNKNOWN = 0,

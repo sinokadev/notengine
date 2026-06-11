@@ -121,4 +121,8 @@ Camera& Engine::getCamera() {
     return camera;
 }
 
+Window& Engine::getWindow() {
+    return window;
+}
+
 }
