@@ -117,7 +117,7 @@ ResourceManager& Engine::getResourceManager() {
     return resourceManager;
 }
 
-Camera& Engine::getCamera() {
+MovingCamera& Engine::getCamera() {
     return camera;
 }
 
