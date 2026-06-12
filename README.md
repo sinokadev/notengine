@@ -1,6 +1,6 @@
 # Not Engine Alpha 1.0
 
-Not Engine은 C++과 OpenGL(GLFW/GLAD) 기반의 경량 3D 게임 엔진 프로젝트입니다.
+Everything as a code!
 
 ---
 
