@@ -126,7 +126,7 @@ std::shared_ptr<Mesh> createSphere(int sectors, int stacks) {
     const float PI = 3.14159265359f;
 
     for (int i = 0; i <= stacks; ++i) {
-        float stackAngle = PI / 2 - i * (PI / stacks); // 위에서 아래로
+        float stackAngle = PI / 2 - i * (PI / stacks);
         float xy = cosf(stackAngle);
         float z = sinf(stackAngle);
 
@@ -186,13 +186,11 @@ std::shared_ptr<Mesh> createRegularPolygon(int sectors, float radius) {
     auto mesh = std::make_shared<Mesh>();
     const float PI = 3.14159265359f;
 
-    // 1. 중심점 추가 (Fan 구조를 위해 필요)
     mesh->vertices.push_back({{0.0f, 0.0f, 0.0f},
                               {0.5f, 0.5f},
                               {0.0f, 0.0f, 1.0f},
                               {1.0f, 0.0f, 0.0f}});
 
-    // 2. 외곽 정점들 추가
     for (int i = 0; i < sectors; ++i) {
         float angle = i * (2.0f * PI / sectors);
         float x = cosf(angle) * radius;
@@ -205,7 +203,6 @@ std::shared_ptr<Mesh> createRegularPolygon(int sectors, float radius) {
              {1.0f, 0.0f, 0.0f}});
     }
 
-    // 3. 인덱스 생성 (중심점 0번과 연결하는 삼각형들)
     for (int i = 1; i <= sectors; ++i) {
         mesh->indices.push_back(0);
         mesh->indices.push_back(i);
@@ -230,7 +227,6 @@ createMeshFromVertices(const std::vector<glm::vec3> &positions) {
     }
     center /= static_cast<float>(positions.size());
 
-    // 1. 정점 데이터 입력 (중심점 + 외곽 정점들)
     mesh->vertices.push_back(
         {center, {0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}});
     for (const auto &pos : positions) {
@@ -238,13 +234,12 @@ createMeshFromVertices(const std::vector<glm::vec3> &positions) {
             {pos, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}});
     }
 
-    // 2. 인덱스 자동 생성 (Triangle Fan)
     int count = (int)positions.size();
     for (int i = 1; i <= count; ++i) {
-        mesh->indices.push_back(0); // 중심점
+        mesh->indices.push_back(0);
         mesh->indices.push_back(i);
         mesh->indices.push_back(
-            (i == count) ? 1 : i + 1); // 마지막이면 다시 1번으로
+            (i == count) ? 1 : i + 1);
     }
 
     mesh->setup();

@@ -37,14 +37,14 @@ bool Renderer::renderObject(const Object &object, const Camera &camera,
     }
 
     if (!object.material) {
-        std::cerr << "Error: Object ID " << object.id << " has no material"
+        std::cerr << "[Error] Object ID " << object.id << " has no material"
                   << std::endl;
         return false;
     }
 
     const auto shader = object.material->getShader();
     if (!shader || !shader->isValid()) {
-        std::cerr << "Error: Object ID " << object.id << " has no valid shader"
+        std::cerr << "[Error] Object ID " << object.id << " has no valid shader"
                   << std::endl;
         return false;
     }
@@ -58,7 +58,7 @@ bool Renderer::renderObject(const Object &object, const Camera &camera,
     shader->set("model", object.getWorldMatrix());
 
     if (!object.mesh || !object.mesh->isReady()) {
-        std::cerr << "Error: Object ID " << object.id << " has no valid mesh"
+        std::cerr << "[Error] Object ID " << object.id << " has no valid mesh"
                   << std::endl;
         return false;
     }

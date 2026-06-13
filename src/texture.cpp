@@ -44,7 +44,7 @@ unsigned int loadTextureFromFile(const std::string &path) {
         stbi_load(path.c_str(), &width, &height, &nrComponents, 0);
 
     if (!data) {
-        std::cout << "Texture failed to load at path: " << path << std::endl;
+        std::cout << "[Error] Texture failed to load at path: " << path << std::endl;
         return createSolidColorTexture(glm::vec3(1.0f, 0.0f, 1.0f));
     }
 

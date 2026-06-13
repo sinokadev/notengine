@@ -26,7 +26,7 @@ unsigned int compileShader(unsigned int type, const char *source,
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success) {
         glGetShaderInfoLog(shader, 512, nullptr, log);
-        std::cerr << "Failed to compile " << label << " shader\n"
+        std::cerr << "[Error] Failed to compile " << label << " shader\n"
                   << log << std::endl;
         glDeleteShader(shader);
         return 0;
@@ -59,7 +59,7 @@ bool ShaderSource::isValid() const {
 std::string ShaderSource::readFile(const std::string &path) {
     std::ifstream file(path);
     if (!file.is_open()) {
-        std::cerr << "Failed to open shader file: " << path << std::endl;
+        std::cerr << "[Error] Failed to open shader file: " << path << std::endl;
         return "";
     }
 
@@ -100,7 +100,7 @@ Shader::Shader(std::shared_ptr<ShaderSource> ss, unsigned int shaderId)
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
     if (!success) {
         glGetProgramInfoLog(shaderProgram, 512, nullptr, log);
-        std::cerr << "Failed to link shaders\n" << log << std::endl;
+        std::cerr << "[Error] Failed to link shaders\n" << log << std::endl;
         glDeleteProgram(shaderProgram);
         shaderProgram = 0;
         glDeleteShader(vertexShader);
@@ -199,7 +199,7 @@ Mesh::~Mesh() {
 
 void Mesh::setup() {
     if (vertices.empty() || indices.empty()) {
-        std::cerr << "Mesh::setup called with empty geometry" << std::endl;
+        std::cerr << "[Error] Mesh::setup called with empty geometry" << std::endl;
         return;
     }
 
