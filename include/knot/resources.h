@@ -11,6 +11,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+#include <knot/utility.h>
+
 namespace knot {
 
     void setAssetRoot(const std::string& root);
@@ -102,18 +104,30 @@ namespace knot {
         std::shared_ptr<Shader> shader;
     };
 
-    class AlphaMaterial : public Material {
+    class TextureMaterial : public Material {
     public:
-        AlphaMaterial(std::shared_ptr<Shader> s, glm::vec3 color)
-            : Material(s), color(color) {}
+        TextureMaterial(std::shared_ptr<Shader> s, unsigned int textureId)
+            : Material(s), textureId(textureId) {}
 
         void bind() override {
-            if (!shader) {
-                return;
-            }
+            if (!shader) return;
 
             shader->use();
-            shader->set("material.color", color);
+            
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textureId);
+            
+            shader->set("material.diffuse", 0); 
+        }
+
+    private:
+        unsigned int textureId;
+    };
+
+    class AlphaMaterial : public TextureMaterial {
+    public:
+        AlphaMaterial(std::shared_ptr<Shader> s, glm::vec3 color)
+            : TextureMaterial(s, createSolidColorTexture(color)), color(color) {
         }
 
     private:

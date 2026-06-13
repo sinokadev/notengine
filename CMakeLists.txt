@@ -12,14 +12,11 @@ find_package(glm CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
 
 # Create the Engine library
-add_library(notengine STATIC
-    src/engine.cpp
-    src/manager.cpp
-    src/renderer.cpp
-    src/resources.cpp
-    src/window.cpp
-    library/gl.c
-)
+file(GLOB_RECURSE SOURCES "src/*.cpp")
+
+list(APPEND SOURCES "library/gl.c")
+
+add_library(notengine STATIC ${SOURCES})
 
 # Set include directories
 target_include_directories(notengine PUBLIC 

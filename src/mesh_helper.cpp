@@ -1,14 +1,11 @@
-#pragma once
 #include <glad/gl.h>
 #include <knot/resources.h>
-
+#include <knot/utility/mesh_helper.h>
 
 namespace knot {
 
-    class MeshGen {
-    public:
-static std::shared_ptr<knot::Mesh> createCube() {
-            auto mesh = std::make_shared<knot::Mesh>();
+std::shared_ptr<Mesh> createCube() {
+            auto mesh = std::make_shared<Mesh>();
             mesh->vertices = {
                 // Front (+Z)
                 {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
@@ -54,8 +51,8 @@ static std::shared_ptr<knot::Mesh> createCube() {
             mesh->setup();
             return mesh;
         }
-static std::shared_ptr<knot::Mesh> createSphere(int sectors, int stacks) {
-            auto mesh = std::make_shared<knot::Mesh>();
+std::shared_ptr<Mesh> createSphere(int sectors, int stacks) {
+            auto mesh = std::make_shared<Mesh>();
             const float PI = 3.14159265359f;
             
             for (int i = 0; i <= stacks; ++i) {
@@ -88,8 +85,8 @@ static std::shared_ptr<knot::Mesh> createSphere(int sectors, int stacks) {
             return mesh;
         }
 
-        static std::shared_ptr<knot::Mesh> createPlane(float width, float height) {
-            auto mesh = std::make_shared<knot::Mesh>();
+        std::shared_ptr<Mesh> createPlane(float width, float height) {
+            auto mesh = std::make_shared<Mesh>();
             float hw = width * 0.5f, hh = height * 0.5f;
             mesh->vertices = {
                 {{-hw, -hh, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
@@ -103,12 +100,12 @@ static std::shared_ptr<knot::Mesh> createSphere(int sectors, int stacks) {
         }
 
 
-        static std::shared_ptr<knot::Mesh> createRegularPolygon(int sectors, float radius) {
+        std::shared_ptr<Mesh> createRegularPolygon(int sectors, float radius) {
             if (sectors < 3) {
                 return nullptr;
             }
 
-            auto mesh = std::make_shared<knot::Mesh>();
+            auto mesh = std::make_shared<Mesh>();
             const float PI = 3.14159265359f;
 
             // 1. 중심점 추가 (Fan 구조를 위해 필요)
@@ -137,12 +134,12 @@ static std::shared_ptr<knot::Mesh> createSphere(int sectors, int stacks) {
             return mesh;
         }
 
-        static std::shared_ptr<knot::Mesh> createMeshFromVertices(const std::vector<glm::vec3>& positions) {
+        std::shared_ptr<Mesh> createMeshFromVertices(const std::vector<glm::vec3>& positions) {
             if (positions.size() < 3) {
                 return nullptr;
             }
 
-            auto mesh = std::make_shared<knot::Mesh>();
+            auto mesh = std::make_shared<Mesh>();
 
             glm::vec3 center(0.0f);
             for (const auto& pos : positions) {
@@ -167,5 +164,4 @@ static std::shared_ptr<knot::Mesh> createSphere(int sectors, int stacks) {
             mesh->setup();
             return mesh;
         }
-    };
 }
