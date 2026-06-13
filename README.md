@@ -2,8 +2,6 @@
 
 Everything as a code!
 
----
-
 ## Todo
 
 - [ ] 수학 라이브러리 작성(math.h)
