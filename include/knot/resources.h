@@ -72,7 +72,7 @@ class Shader {
     void set(const std::string &name, const glm::vec2 &value) const;
     void set(const std::string &name, const glm::vec3 &value) const;
     void set(const std::string &name, const glm::mat4 &value) const;
-    unsigned int get_id() const;
+    unsigned int getId() const;
 
   private:
     int uniformLocation(const std::string &name) const;

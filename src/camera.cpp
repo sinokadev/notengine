@@ -3,38 +3,38 @@
 #include <knot/camera.h>
 
 namespace knot {
-Camera::Camera(glm::vec3 position, glm::vec3 world_up, float yaw, float pitch)
-    : position(position), world_up(world_up), yaw(yaw), pitch(pitch),
+Camera::Camera(glm::vec3 position, glm::vec3 worldUp, float yaw, float pitch)
+    : position(position), worldUp(worldUp), yaw(yaw), pitch(pitch),
       front(glm::vec3(0.0f, 0.0f, -1.0f)), fov(45.0f) {
-    update_camera_vector();
+    updateCameraVector();
 }
 
-glm::mat4 Camera::get_view_matrix() const {
+glm::mat4 Camera::getViewMatrix() const {
     return glm::lookAt(position, position + front, up);
 }
 
-void Camera::update_camera_vector() {
-    glm::vec3 new_front;
-    new_front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    new_front.y = sin(glm::radians(pitch));
-    new_front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+void Camera::updateCameraVector() {
+    glm::vec3 newFront;
+    newFront.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    newFront.y = sin(glm::radians(pitch));
+    newFront.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 
-    front = glm::normalize(new_front);
-    right = glm::normalize(glm::cross(front, world_up));
+    front = glm::normalize(newFront);
+    right = glm::normalize(glm::cross(front, worldUp));
     up = glm::normalize(glm::cross(right, front));
 }
 
-void Camera::look_at_target(glm::vec3 target_pos) {
-    const glm::vec3 direction = glm::normalize(target_pos - position);
+void Camera::lookAtTarget(glm::vec3 targetPos) {
+    const glm::vec3 direction = glm::normalize(targetPos - position);
 
     pitch = glm::degrees(asin(direction.y));
     yaw = glm::degrees(atan2(direction.z, direction.x));
 
-    update_camera_vector();
+    updateCameraVector();
 }
 
-MovingCamera::MovingCamera(glm::vec3 start_pos)
-    : Camera(start_pos), speed(2.5f), sensitivity(0.1f) {}
+MovingCamera::MovingCamera(glm::vec3 startPos)
+    : Camera(startPos), speed(2.5f), sensitivity(0.1f) {}
 
 void MovingCamera::move(glm::vec3 direction, float deltaTime) {
     position += direction * (speed * deltaTime);
@@ -48,6 +48,6 @@ void MovingCamera::rotate(float xOffset, float yOffset, bool constrainPitch) {
         pitch = glm::clamp(pitch, -89.0f, 89.0f);
     }
 
-    update_camera_vector();
+    updateCameraVector();
 }
 } // namespace knot

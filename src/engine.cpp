@@ -95,7 +95,7 @@ void Engine::render() {
 
 void Engine::setupCamera() {
     camera.position = glm::vec3(0.0f, 0.0f, 3.0f);
-    camera.look_at_target(glm::vec3(0.0f, 0.0f, 0.0f));
+    camera.lookAtTarget(glm::vec3(0.0f, 0.0f, 0.0f));
 }
 
 float Engine::getAspectRatio() const {

@@ -51,7 +51,7 @@ bool ResourceManager::init() {
         return false;
     }
 
-    defaultShaderIds.insert(defaultShader->get_id());
+    defaultShaderIds.insert(defaultShader->getId());
     return true;
 }
 

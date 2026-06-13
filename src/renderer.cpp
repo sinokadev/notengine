@@ -51,7 +51,7 @@ bool Renderer::renderObject(const Object &object, const Camera &camera,
 
     object.material->bind();
 
-    shader->set("view", camera.get_view_matrix());
+    shader->set("view", camera.getViewMatrix());
     shader->set("projection",
                 glm::perspective(glm::radians(camera.fov), aspectRatio,
                                  kNearPlane, kFarPlane));
