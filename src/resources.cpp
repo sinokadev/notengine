@@ -15,7 +15,7 @@ unsigned int createSolidColorTexture(glm::vec3 color);
 
 namespace {
 
-std::string g_assetRoot;
+std::string assetRoot;
 
 unsigned int compileShader(unsigned int type, const char *source,
                            const char *label) {
@@ -40,13 +40,13 @@ unsigned int compileShader(unsigned int type, const char *source,
 } // namespace
 
 void setAssetRoot(const std::string &root) {
-    g_assetRoot = root;
-    if (!g_assetRoot.empty() && g_assetRoot.back() != '/') {
-        g_assetRoot += '/';
+    assetRoot = root;
+    if (!assetRoot.empty() && assetRoot.back() != '/') {
+        assetRoot += '/';
     }
 }
 
-const std::string &getAssetRoot() { return g_assetRoot; }
+const std::string &getAssetRoot() { return assetRoot; }
 
 ShaderSource::ShaderSource(std::string v, std::string f)
     : vertexPath(std::move(v)), fragmentPath(std::move(f)) {
@@ -181,7 +181,7 @@ void Shader::set(const std::string &name, const glm::mat4 &value) const {
     }
 }
 
-unsigned int Shader::get_id() const { return id; }
+unsigned int Shader::getId() const { return id; }
 
 ShaderSource AlphaShader::GetSource() {
     return ShaderSource(getAssetRoot() + "assets/shaders/alpha.vert",

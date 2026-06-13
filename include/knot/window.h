@@ -45,9 +45,9 @@ class Window {
 
     static void framebufferSizeCallback(GLFWwindow *window, int width,
                                         int height);
-    static void key_callback(GLFWwindow *window, int key, int scancode,
+    static void keyCallback(GLFWwindow *window, int key, int scancode,
                              int action, int mods);
 
-    static ScanCode convert_glfw_to_knot_scancode(int glfw_key);
+    static ScanCode convertGlfwToKnotScancode(int glfwKey);
 };
 } // namespace knot

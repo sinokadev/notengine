@@ -4,8 +4,8 @@
 
 namespace knot {
 
-ScanCode Window::convert_glfw_to_knot_scancode(int glfw_key) {
-    switch (glfw_key) {
+ScanCode Window::convertGlfwToKnotScancode(int glfwKey) {
+    switch (glfwKey) {
     // --- 알파벳 ---
     case GLFW_KEY_A:
         return ScanCode::A;
@@ -262,7 +262,7 @@ bool Window::init(int width, int height, const std::string &title) {
 
     glfwSetWindowUserPointer(windowHandle, this);
     glfwSetFramebufferSizeCallback(windowHandle, framebufferSizeCallback);
-    glfwSetKeyCallback(windowHandle, key_callback);
+    glfwSetKeyCallback(windowHandle, keyCallback);
 
     framebufferWidth = width;
     framebufferHeight = height;
@@ -330,15 +330,15 @@ void Window::framebufferSizeCallback(GLFWwindow *window, int width,
     }
 }
 
-void Window::key_callback(GLFWwindow *window, int key, int scancode, int action,
+void Window::keyCallback(GLFWwindow *window, int key, int scancode, int action,
                           int mods) {
     auto *self = static_cast<Window *>(glfwGetWindowUserPointer(window));
     if (!self || !self->keyInputCallback) {
         return;
     }
 
-    ScanCode knot_scancode = convert_glfw_to_knot_scancode(key);
+    ScanCode knotScancode = convertGlfwToKnotScancode(key);
 
-    self->keyInputCallback(knot_scancode, (KeyState)action);
+    self->keyInputCallback(knotScancode, (KeyState)action);
 }
 } // namespace knot
