@@ -1,4 +1,4 @@
-# Not Engine Alpha 1.0
+# Not Engine Alpha 1.1
 
 Everything as a code!
 
@@ -21,3 +21,7 @@ Everything as a code!
 - [ ] OBJ 임포트
 
 - [ ] camera.hpp를 구현과 헤더로 나누기
+
+- [ ] 퐁 셰이더 만들기
+- [ ] PBR 셰이더 만들기
+- [ ] 큐브매핑 구현하기
