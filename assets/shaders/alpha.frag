@@ -7,10 +7,10 @@ in vec2 TexCoords;
 in mat3 TBN;
 
 struct Material {
-    vec3 color;
+    sampler2D diffuse;
 };
 uniform Material material;
 
 void main() {
-    FragColor = vec4(material.color, 1.0);
+    FragColor = texture(material.diffuse, TexCoords);
 }

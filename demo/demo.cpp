@@ -11,7 +11,7 @@ int main() {
         return 1;
     }
 
-    auto mesh = knot::MeshGen::createCube();
+    auto mesh = knot::createCube();
     auto shader = engine.getResourceManager().getShader("alphaShader");
     auto material = std::make_shared<knot::AlphaMaterial>(shader, glm::vec3(0.2f, 0.6f, 1.0f));
     
