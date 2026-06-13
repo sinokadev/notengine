@@ -1,6 +1,6 @@
 #pragma once
 
-#include <knot/camera.hpp>
+#include <knot/camera.h>
 #include <knot/resources.h>
 
 namespace knot {

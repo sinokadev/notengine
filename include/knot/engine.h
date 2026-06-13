@@ -3,7 +3,7 @@
 #include <functional>
 #include <string>
 
-#include <knot/camera.hpp>
+#include <knot/camera.h>
 #include <knot/manager.h>
 #include <knot/renderer.h>
 #include <knot/window.h>

@@ -21,7 +21,7 @@ class Camera {
            glm::vec3 world_up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = -90.0f,
            float pitch = 0.0f);
 
-    glm::mat4 get_view_matrix();
+    glm::mat4 get_view_matrix() const;
 
     void update_camera_vector();
 
