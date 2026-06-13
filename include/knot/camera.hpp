@@ -6,7 +6,7 @@
 namespace knot {
 
 class Camera {
-public:
+  public:
     glm::vec3 position;
     glm::vec3 front;
     glm::vec3 up;
@@ -18,15 +18,10 @@ public:
     float fov;
 
     Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 3.0f),
-           glm::vec3 world_up = glm::vec3(0.0f, 1.0f, 0.0f),
-           float yaw = -90.0f,
+           glm::vec3 world_up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = -90.0f,
            float pitch = 0.0f)
-        : position(position),
-          world_up(world_up),
-          yaw(yaw),
-          pitch(pitch),
-          front(glm::vec3(0.0f, 0.0f, -1.0f)),
-          fov(45.0f) {
+        : position(position), world_up(world_up), yaw(yaw), pitch(pitch),
+          front(glm::vec3(0.0f, 0.0f, -1.0f)), fov(45.0f) {
         update_camera_vector();
     }
 
@@ -56,7 +51,7 @@ public:
 };
 
 class MovingCamera : public Camera {
-public:
+  public:
     float speed;
     float sensitivity;
 
@@ -79,4 +74,4 @@ public:
     }
 };
 
-}
+} // namespace knot

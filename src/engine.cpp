@@ -1,13 +1,14 @@
 #include <knot/engine.h>
 
-#include <glad/gl.h>
 #include <GLFW/glfw3.h>
+#include <glad/gl.h>
 
 #include <iostream>
 
 namespace knot {
 
-bool Engine::init(int width, int height, const std::string& title, const std::string& assetRoot) {
+bool Engine::init(int width, int height, const std::string &title,
+                  const std::string &assetRoot) {
     this->width = width;
     this->height = height;
     this->title = title;
@@ -39,13 +40,15 @@ bool Engine::init(int width, int height, const std::string& title, const std::st
         return false;
     }
 
-    window.setResizeCallback([this](int framebufferWidth, int framebufferHeight) {
-        this->width = framebufferWidth;
-        this->height = framebufferHeight;
-    });
+    window.setResizeCallback(
+        [this](int framebufferWidth, int framebufferHeight) {
+            this->width = framebufferWidth;
+            this->height = framebufferHeight;
+        });
 
     setupCamera();
-    renderer.beginFrame(window.getFramebufferWidth(), window.getFramebufferHeight());
+    renderer.beginFrame(window.getFramebufferWidth(),
+                        window.getFramebufferHeight());
 
     window.enableVsync();
     initialized = true;
@@ -85,7 +88,7 @@ void Engine::render() {
     renderer.beginFrame(framebufferWidth, framebufferHeight);
 
     const float aspectRatio = getAspectRatio();
-    for (const auto& object : objectManager.getObjects()) {
+    for (const auto &object : objectManager.getObjects()) {
         renderer.renderObject(object, camera, aspectRatio);
     }
 }
@@ -102,27 +105,20 @@ float Engine::getAspectRatio() const {
         return 1.0f;
     }
 
-    return static_cast<float>(framebufferWidth) / static_cast<float>(framebufferHeight);
+    return static_cast<float>(framebufferWidth) /
+           static_cast<float>(framebufferHeight);
 }
 
 void Engine::setUpdateCallback(UpdateCallback callback) {
     updateCallback = std::move(callback);
 }
 
-ObjectManager& Engine::getObjectManager() {
-    return objectManager;
-}
+ObjectManager &Engine::getObjectManager() { return objectManager; }
 
-ResourceManager& Engine::getResourceManager() {
-    return resourceManager;
-}
+ResourceManager &Engine::getResourceManager() { return resourceManager; }
 
-MovingCamera& Engine::getCamera() {
-    return camera;
-}
+MovingCamera &Engine::getCamera() { return camera; }
 
-Window& Engine::getWindow() {
-    return window;
-}
+Window &Engine::getWindow() { return window; }
 
-}
+} // namespace knot
