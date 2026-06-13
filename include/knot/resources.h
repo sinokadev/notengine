@@ -15,6 +15,8 @@
 
 namespace knot {
 
+unsigned int createSolidColorTexture(glm::vec3 color);
+
 void setAssetRoot(const std::string &root);
 const std::string &getAssetRoot();
 
