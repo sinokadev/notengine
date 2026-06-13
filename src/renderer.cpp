@@ -30,38 +30,45 @@ void Renderer::beginFrame(int framebufferWidth, int framebufferHeight) {
     glViewport(0, 0, framebufferWidth, framebufferHeight);
 }
 
-bool Renderer::renderObject(const Object& object, const Camera& camera, float aspectRatio) {
+bool Renderer::renderObject(const Object &object, const Camera &camera,
+                            float aspectRatio) {
     if (!initialized) {
         return false;
     }
 
     if (!object.material) {
-        std::cerr << "Error: Object ID " << object.id << " has no material" << std::endl;
+        std::cerr << "Error: Object ID " << object.id << " has no material"
+                  << std::endl;
         return false;
     }
 
     const auto shader = object.material->getShader();
     if (!shader || !shader->isValid()) {
-        std::cerr << "Error: Object ID " << object.id << " has no valid shader" << std::endl;
+        std::cerr << "Error: Object ID " << object.id << " has no valid shader"
+                  << std::endl;
         return false;
     }
 
     object.material->bind();
 
     shader->set("view", camera.get_view_matrix());
-    shader->set("projection", glm::perspective(glm::radians(camera.fov), aspectRatio, kNearPlane, kFarPlane));
+    shader->set("projection",
+                glm::perspective(glm::radians(camera.fov), aspectRatio,
+                                 kNearPlane, kFarPlane));
     shader->set("model", object.getWorldMatrix());
 
     if (!object.mesh || !object.mesh->isReady()) {
-        std::cerr << "Error: Object ID " << object.id << " has no valid mesh" << std::endl;
+        std::cerr << "Error: Object ID " << object.id << " has no valid mesh"
+                  << std::endl;
         return false;
     }
 
     glBindVertexArray(object.mesh->vao);
-    glDrawElements(GL_TRIANGLES, object.mesh->indexCount, GL_UNSIGNED_INT, nullptr);
+    glDrawElements(GL_TRIANGLES, object.mesh->indexCount, GL_UNSIGNED_INT,
+                   nullptr);
     glBindVertexArray(0);
 
     return true;
 }
 
-}
+} // namespace knot
