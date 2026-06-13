@@ -11,6 +11,8 @@
 
 namespace knot {
 
+unsigned int createSolidColorTexture(glm::vec3 color);
+
 namespace {
 
 std::string g_assetRoot;
@@ -59,7 +61,8 @@ bool ShaderSource::isValid() const {
 std::string ShaderSource::readFile(const std::string &path) {
     std::ifstream file(path);
     if (!file.is_open()) {
-        std::cerr << "[Error] Failed to open shader file: " << path << std::endl;
+        std::cerr << "[Error] Failed to open shader file: " << path
+                  << std::endl;
         return "";
     }
 
@@ -199,7 +202,8 @@ Mesh::~Mesh() {
 
 void Mesh::setup() {
     if (vertices.empty() || indices.empty()) {
-        std::cerr << "[Error] Mesh::setup called with empty geometry" << std::endl;
+        std::cerr << "[Error] Mesh::setup called with empty geometry"
+                  << std::endl;
         return;
     }
 

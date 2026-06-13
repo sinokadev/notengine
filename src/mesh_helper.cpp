@@ -238,8 +238,7 @@ createMeshFromVertices(const std::vector<glm::vec3> &positions) {
     for (int i = 1; i <= count; ++i) {
         mesh->indices.push_back(0);
         mesh->indices.push_back(i);
-        mesh->indices.push_back(
-            (i == count) ? 1 : i + 1);
+        mesh->indices.push_back((i == count) ? 1 : i + 1);
     }
 
     mesh->setup();
