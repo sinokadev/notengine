@@ -10,7 +10,7 @@
 
 namespace knot {
 class Engine {
-  public:
+public:
     using UpdateCallback = std::function<void(Engine &, float)>;
 
     bool init(int width, int height, const std::string &title,
@@ -26,7 +26,7 @@ class Engine {
 
     void setUpdateCallback(UpdateCallback callback);
 
-  private:
+private:
     Window window;
     Renderer renderer;
     MovingCamera camera;

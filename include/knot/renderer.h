@@ -5,7 +5,7 @@
 
 namespace knot {
 class Renderer {
-  public:
+public:
     static constexpr float kNearPlane = 0.1f;
     static constexpr float kFarPlane = 100.0f;
 
@@ -14,7 +14,7 @@ class Renderer {
     bool renderObject(const Object &object, const Camera &camera,
                       float aspectRatio);
 
-  private:
+private:
     bool initialized = false;
 };
 } // namespace knot
