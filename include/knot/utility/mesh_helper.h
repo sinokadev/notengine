@@ -10,6 +10,5 @@ std::shared_ptr<Mesh> createCube();
 std::shared_ptr<Mesh> createSphere(int sectors, int stacks);
 std::shared_ptr<Mesh> createPlane(float width, float height);
 std::shared_ptr<Mesh> createRegularPolygon(int sectors, float radius);
-std::shared_ptr<Mesh>
-createMeshFromVertices(const std::vector<glm::vec3> &positions);
+std::shared_ptr<Mesh> createMeshFromVertices(const std::vector<glm::vec3> &positions);
 } // namespace knot

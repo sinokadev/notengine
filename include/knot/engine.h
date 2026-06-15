@@ -13,15 +13,16 @@ class Engine {
 public:
     using UpdateCallback = std::function<void(Engine &, float)>;
 
-    bool init(int width, int height, const std::string &title,
-              const std::string &assetRoot = "");
+    bool init(int width, int height, const std::string &title, const std::string &assetRoot = "");
     int run();
 
     ObjectManager &getObjectManager();
     ResourceManager &getResourceManager();
     MovingCamera &getCamera();
     Window &getWindow();
-    float getDeltaTime() const { return deltaTime; }
+    float getDeltaTime() const {
+        return deltaTime;
+    }
     float getAspectRatio() const;
 
     void setUpdateCallback(UpdateCallback callback);

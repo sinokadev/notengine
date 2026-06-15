@@ -7,107 +7,35 @@ namespace knot {
 std::shared_ptr<Mesh> createCube() {
     auto mesh = std::make_shared<Mesh>();
     mesh->vertices = {// Front (+Z)
-                      {{-0.5f, -0.5f, 0.5f},
-                       {0.0f, 0.0f},
-                       {0.0f, 0.0f, 1.0f},
-                       {1.0f, 0.0f, 0.0f}},
-                      {{0.5f, -0.5f, 0.5f},
-                       {1.0f, 0.0f},
-                       {0.0f, 0.0f, 1.0f},
-                       {1.0f, 0.0f, 0.0f}},
-                      {{0.5f, 0.5f, 0.5f},
-                       {1.0f, 1.0f},
-                       {0.0f, 0.0f, 1.0f},
-                       {1.0f, 0.0f, 0.0f}},
-                      {{-0.5f, 0.5f, 0.5f},
-                       {0.0f, 1.0f},
-                       {0.0f, 0.0f, 1.0f},
-                       {1.0f, 0.0f, 0.0f}},
+                      {{-0.5f, -0.5f, 0.5f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
+                      {{0.5f, -0.5f, 0.5f}, {1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
+                      {{0.5f, 0.5f, 0.5f}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
+                      {{-0.5f, 0.5f, 0.5f}, {0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
                       // Back (-Z)
-                      {{0.5f, -0.5f, -0.5f},
-                       {0.0f, 0.0f},
-                       {0.0f, 0.0f, -1.0f},
-                       {-1.0f, 0.0f, 0.0f}},
-                      {{-0.5f, -0.5f, -0.5f},
-                       {1.0f, 0.0f},
-                       {0.0f, 0.0f, -1.0f},
-                       {-1.0f, 0.0f, 0.0f}},
-                      {{-0.5f, 0.5f, -0.5f},
-                       {1.0f, 1.0f},
-                       {0.0f, 0.0f, -1.0f},
-                       {-1.0f, 0.0f, 0.0f}},
-                      {{0.5f, 0.5f, -0.5f},
-                       {0.0f, 1.0f},
-                       {0.0f, 0.0f, -1.0f},
-                       {-1.0f, 0.0f, 0.0f}},
+                      {{0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, {-1.0f, 0.0f, 0.0f}},
+                      {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, {-1.0f, 0.0f, 0.0f}},
+                      {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}, {-1.0f, 0.0f, 0.0f}},
+                      {{0.5f, 0.5f, -0.5f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}, {-1.0f, 0.0f, 0.0f}},
                       // Top (+Y)
-                      {{-0.5f, 0.5f, 0.5f},
-                       {0.0f, 0.0f},
-                       {0.0f, 1.0f, 0.0f},
-                       {1.0f, 0.0f, 0.0f}},
-                      {{0.5f, 0.5f, 0.5f},
-                       {1.0f, 0.0f},
-                       {0.0f, 1.0f, 0.0f},
-                       {1.0f, 0.0f, 0.0f}},
-                      {{0.5f, 0.5f, -0.5f},
-                       {1.0f, 1.0f},
-                       {0.0f, 1.0f, 0.0f},
-                       {1.0f, 0.0f, 0.0f}},
-                      {{-0.5f, 0.5f, -0.5f},
-                       {0.0f, 1.0f},
-                       {0.0f, 1.0f, 0.0f},
-                       {1.0f, 0.0f, 0.0f}},
+                      {{-0.5f, 0.5f, 0.5f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+                      {{0.5f, 0.5f, 0.5f}, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+                      {{0.5f, 0.5f, -0.5f}, {1.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+                      {{-0.5f, 0.5f, -0.5f}, {0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
                       // Bottom (-Y)
-                      {{-0.5f, -0.5f, -0.5f},
-                       {0.0f, 0.0f},
-                       {0.0f, -1.0f, 0.0f},
-                       {1.0f, 0.0f, 0.0f}},
-                      {{0.5f, -0.5f, -0.5f},
-                       {1.0f, 0.0f},
-                       {0.0f, -1.0f, 0.0f},
-                       {1.0f, 0.0f, 0.0f}},
-                      {{0.5f, -0.5f, 0.5f},
-                       {1.0f, 1.0f},
-                       {0.0f, -1.0f, 0.0f},
-                       {1.0f, 0.0f, 0.0f}},
-                      {{-0.5f, -0.5f, 0.5f},
-                       {0.0f, 1.0f},
-                       {0.0f, -1.0f, 0.0f},
-                       {1.0f, 0.0f, 0.0f}},
+                      {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+                      {{0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+                      {{0.5f, -0.5f, 0.5f}, {1.0f, 1.0f}, {0.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+                      {{-0.5f, -0.5f, 0.5f}, {0.0f, 1.0f}, {0.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
                       // Left (-X)
-                      {{-0.5f, -0.5f, -0.5f},
-                       {0.0f, 0.0f},
-                       {-1.0f, 0.0f, 0.0f},
-                       {0.0f, 0.0f, 1.0f}},
-                      {{-0.5f, -0.5f, 0.5f},
-                       {1.0f, 0.0f},
-                       {-1.0f, 0.0f, 0.0f},
-                       {0.0f, 0.0f, 1.0f}},
-                      {{-0.5f, 0.5f, 0.5f},
-                       {1.0f, 1.0f},
-                       {-1.0f, 0.0f, 0.0f},
-                       {0.0f, 0.0f, 1.0f}},
-                      {{-0.5f, 0.5f, -0.5f},
-                       {0.0f, 1.0f},
-                       {-1.0f, 0.0f, 0.0f},
-                       {0.0f, 0.0f, 1.0f}},
+                      {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+                      {{-0.5f, -0.5f, 0.5f}, {1.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+                      {{-0.5f, 0.5f, 0.5f}, {1.0f, 1.0f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+                      {{-0.5f, 0.5f, -0.5f}, {0.0f, 1.0f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
                       // Right (+X)
-                      {{0.5f, -0.5f, 0.5f},
-                       {0.0f, 0.0f},
-                       {1.0f, 0.0f, 0.0f},
-                       {0.0f, 0.0f, -1.0f}},
-                      {{0.5f, -0.5f, -0.5f},
-                       {1.0f, 0.0f},
-                       {1.0f, 0.0f, 0.0f},
-                       {0.0f, 0.0f, -1.0f}},
-                      {{0.5f, 0.5f, -0.5f},
-                       {1.0f, 1.0f},
-                       {1.0f, 0.0f, 0.0f},
-                       {0.0f, 0.0f, -1.0f}},
-                      {{0.5f, 0.5f, 0.5f},
-                       {0.0f, 1.0f},
-                       {1.0f, 0.0f, 0.0f},
-                       {0.0f, 0.0f, -1.0f}}};
+                      {{0.5f, -0.5f, 0.5f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}},
+                      {{0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}},
+                      {{0.5f, 0.5f, -0.5f}, {1.0f, 1.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}},
+                      {{0.5f, 0.5f, 0.5f}, {0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}}};
 
     mesh->indices = {
         0,  1,  2,  2,  3,  0,  // Front
@@ -162,17 +90,10 @@ std::shared_ptr<Mesh> createSphere(int sectors, int stacks) {
 std::shared_ptr<Mesh> createPlane(float width, float height) {
     auto mesh = std::make_shared<Mesh>();
     float hw = width * 0.5f, hh = height * 0.5f;
-    mesh->vertices = {
-        {{-hw, -hh, 0.0f},
-         {0.0f, 0.0f},
-         {0.0f, 0.0f, 1.0f},
-         {1.0f, 0.0f, 0.0f}},
-        {{hw, -hh, 0.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
-        {{hw, hh, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
-        {{-hw, hh, 0.0f},
-         {0.0f, 1.0f},
-         {0.0f, 0.0f, 1.0f},
-         {1.0f, 0.0f, 0.0f}}};
+    mesh->vertices = {{{-hw, -hh, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
+                      {{hw, -hh, 0.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
+                      {{hw, hh, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
+                      {{-hw, hh, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}}};
     mesh->indices = {0, 1, 2, 2, 3, 0};
     mesh->setup();
     return mesh;
@@ -186,21 +107,14 @@ std::shared_ptr<Mesh> createRegularPolygon(int sectors, float radius) {
     auto mesh = std::make_shared<Mesh>();
     const float PI = 3.14159265359f;
 
-    mesh->vertices.push_back({{0.0f, 0.0f, 0.0f},
-                              {0.5f, 0.5f},
-                              {0.0f, 0.0f, 1.0f},
-                              {1.0f, 0.0f, 0.0f}});
+    mesh->vertices.push_back({{0.0f, 0.0f, 0.0f}, {0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}});
 
     for (int i = 0; i < sectors; ++i) {
         float angle = i * (2.0f * PI / sectors);
         float x = cosf(angle) * radius;
         float y = sinf(angle) * radius;
 
-        mesh->vertices.push_back(
-            {{x, y, 0.0f},
-             {0.5f + 0.5f * cosf(angle), 0.5f + 0.5f * sinf(angle)},
-             {0.0f, 0.0f, 1.0f},
-             {1.0f, 0.0f, 0.0f}});
+        mesh->vertices.push_back({{x, y, 0.0f}, {0.5f + 0.5f * cosf(angle), 0.5f + 0.5f * sinf(angle)}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}});
     }
 
     for (int i = 1; i <= sectors; ++i) {
@@ -213,8 +127,7 @@ std::shared_ptr<Mesh> createRegularPolygon(int sectors, float radius) {
     return mesh;
 }
 
-std::shared_ptr<Mesh>
-createMeshFromVertices(const std::vector<glm::vec3> &positions) {
+std::shared_ptr<Mesh> createMeshFromVertices(const std::vector<glm::vec3> &positions) {
     if (positions.size() < 3) {
         return nullptr;
     }
@@ -227,11 +140,9 @@ createMeshFromVertices(const std::vector<glm::vec3> &positions) {
     }
     center /= static_cast<float>(positions.size());
 
-    mesh->vertices.push_back(
-        {center, {0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}});
+    mesh->vertices.push_back({center, {0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}});
     for (const auto &pos : positions) {
-        mesh->vertices.push_back(
-            {pos, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}});
+        mesh->vertices.push_back({pos, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}});
     }
 
     int count = (int)positions.size();

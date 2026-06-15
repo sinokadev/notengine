@@ -17,8 +17,7 @@ namespace {
 
 std::string assetRoot;
 
-unsigned int compileShader(unsigned int type, const char *source,
-                           const char *label) {
+unsigned int compileShader(unsigned int type, const char *source, const char *label) {
     unsigned int shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, nullptr);
     glCompileShader(shader);
@@ -28,8 +27,7 @@ unsigned int compileShader(unsigned int type, const char *source,
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success) {
         glGetShaderInfoLog(shader, 512, nullptr, log);
-        std::cerr << "[Error] Failed to compile " << label << " shader\n"
-                  << log << std::endl;
+        std::cerr << "[Error] Failed to compile " << label << " shader\n" << log << std::endl;
         glDeleteShader(shader);
         return 0;
     }
@@ -46,10 +44,11 @@ void setAssetRoot(const std::string &root) {
     }
 }
 
-const std::string &getAssetRoot() { return assetRoot; }
+const std::string &getAssetRoot() {
+    return assetRoot;
+}
 
-ShaderSource::ShaderSource(std::string v, std::string f)
-    : vertexPath(std::move(v)), fragmentPath(std::move(f)) {
+ShaderSource::ShaderSource(std::string v, std::string f) : vertexPath(std::move(v)), fragmentPath(std::move(f)) {
     vertexSourceCode = readFile(vertexPath);
     fragmentSourceCode = readFile(fragmentPath);
 }
@@ -61,8 +60,7 @@ bool ShaderSource::isValid() const {
 std::string ShaderSource::readFile(const std::string &path) {
     std::ifstream file(path);
     if (!file.is_open()) {
-        std::cerr << "[Error] Failed to open shader file: " << path
-                  << std::endl;
+        std::cerr << "[Error] Failed to open shader file: " << path << std::endl;
         return "";
     }
 
@@ -71,8 +69,7 @@ std::string ShaderSource::readFile(const std::string &path) {
     return buffer.str();
 }
 
-Shader::Shader(std::shared_ptr<ShaderSource> ss, unsigned int shaderId)
-    : id(shaderId) {
+Shader::Shader(std::shared_ptr<ShaderSource> ss, unsigned int shaderId) : id(shaderId) {
     if (!ss || !ss->isValid()) {
         return;
     }
@@ -80,14 +77,12 @@ Shader::Shader(std::shared_ptr<ShaderSource> ss, unsigned int shaderId)
     const char *vertexCode = ss->vertexSourceCode.c_str();
     const char *fragmentCode = ss->fragmentSourceCode.c_str();
 
-    unsigned int vertexShader =
-        compileShader(GL_VERTEX_SHADER, vertexCode, "vertex");
+    unsigned int vertexShader = compileShader(GL_VERTEX_SHADER, vertexCode, "vertex");
     if (vertexShader == 0) {
         return;
     }
 
-    unsigned int fragmentShader =
-        compileShader(GL_FRAGMENT_SHADER, fragmentCode, "fragment");
+    unsigned int fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragmentCode, "fragment");
     if (fragmentShader == 0) {
         glDeleteShader(vertexShader);
         return;
@@ -181,11 +176,12 @@ void Shader::set(const std::string &name, const glm::mat4 &value) const {
     }
 }
 
-unsigned int Shader::getId() const { return id; }
+unsigned int Shader::getId() const {
+    return id;
+}
 
 ShaderSource AlphaShader::GetSource() {
-    return ShaderSource(getAssetRoot() + "assets/shaders/alpha.vert",
-                        getAssetRoot() + "assets/shaders/alpha.frag");
+    return ShaderSource(getAssetRoot() + "assets/shaders/alpha.vert", getAssetRoot() + "assets/shaders/alpha.frag");
 }
 
 Mesh::~Mesh() {
@@ -202,8 +198,7 @@ Mesh::~Mesh() {
 
 void Mesh::setup() {
     if (vertices.empty() || indices.empty()) {
-        std::cerr << "[Error] Mesh::setup called with empty geometry"
-                  << std::endl;
+        std::cerr << "[Error] Mesh::setup called with empty geometry" << std::endl;
         return;
     }
 
@@ -214,29 +209,22 @@ void Mesh::setup() {
     glBindVertexArray(vao);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex),
-                 vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int),
-                 indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                          reinterpret_cast<void *>(offsetof(Vertex, Position)));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, Position)));
 
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(
-        1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-        reinterpret_cast<void *>(offsetof(Vertex, TexCoords)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, TexCoords)));
 
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                          reinterpret_cast<void *>(offsetof(Vertex, Normal)));
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, Normal)));
 
     glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                          reinterpret_cast<void *>(offsetof(Vertex, Tangent)));
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, Tangent)));
 
     glBindVertexArray(0);
     indexCount = static_cast<unsigned int>(indices.size());

@@ -12,8 +12,7 @@ namespace knot {
 class Window {
 public:
     using ResizeCallback = std::function<void(int width, int height)>;
-    using KeyInputCallback =
-        std::function<void(ScanCode scancode, KeyState action)>;
+    using KeyInputCallback = std::function<void(ScanCode scancode, KeyState action)>;
 
     Window();
     ~Window();
@@ -29,8 +28,12 @@ public:
 
     GLADloadfunc getProcAddress() const;
 
-    int getFramebufferWidth() const { return framebufferWidth; }
-    int getFramebufferHeight() const { return framebufferHeight; }
+    int getFramebufferWidth() const {
+        return framebufferWidth;
+    }
+    int getFramebufferHeight() const {
+        return framebufferHeight;
+    }
 
     void setResizeCallback(ResizeCallback callback);
     void setKeyInputCallback(KeyInputCallback callback);
@@ -43,10 +46,8 @@ private:
     ResizeCallback resizeCallback;
     KeyInputCallback keyInputCallback;
 
-    static void framebufferSizeCallback(GLFWwindow *window, int width,
-                                        int height);
-    static void keyCallback(GLFWwindow *window, int key, int scancode,
-                            int action, int mods);
+    static void framebufferSizeCallback(GLFWwindow *window, int width, int height);
+    static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
     static ScanCode convertGlfwToKnotScancode(int glfwKey);
 };
