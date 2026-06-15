@@ -11,7 +11,7 @@ public:
 
     bool init(GLADloadfunc loadProc);
     void beginFrame(int framebufferWidth, int framebufferHeight);
-    bool renderObject(const Object &object, const Camera &camera, float aspectRatio);
+    bool renderObject(const Object& object, const Camera& camera, float aspectRatio);
 
 private:
     bool initialized = false;

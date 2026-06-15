@@ -19,7 +19,7 @@ unsigned int createSolidColorTexture(glm::vec3 color) {
     return createTexture(pixelData, 1, 1, GL_RGB);
 }
 
-unsigned int createTexture(unsigned char *data, int width, int height, GLenum format) {
+unsigned int createTexture(unsigned char* data, int width, int height, GLenum format) {
     unsigned int textureID;
     glGenTextures(1, &textureID);
 
@@ -35,9 +35,9 @@ unsigned int createTexture(unsigned char *data, int width, int height, GLenum fo
     return textureID;
 }
 
-unsigned int loadTextureFromFile(const std::string &path) {
+unsigned int loadTextureFromFile(const std::string& path) {
     int width, height, nrComponents;
-    unsigned char *data = stbi_load(path.c_str(), &width, &height, &nrComponents, 0);
+    unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrComponents, 0);
 
     if (!data) {
         std::cout << "[Error] Texture failed to load at path: " << path << std::endl;

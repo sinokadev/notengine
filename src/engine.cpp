@@ -7,7 +7,7 @@
 
 namespace knot {
 
-bool Engine::init(int width, int height, const std::string &title, const std::string &assetRoot) {
+bool Engine::init(int width, int height, const std::string& title, const std::string& assetRoot) {
     this->width = width;
     this->height = height;
     this->title = title;
@@ -85,7 +85,7 @@ void Engine::render() {
     renderer.beginFrame(framebufferWidth, framebufferHeight);
 
     const float aspectRatio = getAspectRatio();
-    for (const auto &object : objectManager.getObjects()) {
+    for (const auto& object : objectManager.getObjects()) {
         renderer.renderObject(object, camera, aspectRatio);
     }
 }
@@ -109,19 +109,19 @@ void Engine::setUpdateCallback(UpdateCallback callback) {
     updateCallback = std::move(callback);
 }
 
-ObjectManager &Engine::getObjectManager() {
+ObjectManager& Engine::getObjectManager() {
     return objectManager;
 }
 
-ResourceManager &Engine::getResourceManager() {
+ResourceManager& Engine::getResourceManager() {
     return resourceManager;
 }
 
-MovingCamera &Engine::getCamera() {
+MovingCamera& Engine::getCamera() {
     return camera;
 }
 
-Window &Engine::getWindow() {
+Window& Engine::getWindow() {
     return window;
 }
 

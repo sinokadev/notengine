@@ -11,15 +11,15 @@
 namespace knot {
 class Engine {
 public:
-    using UpdateCallback = std::function<void(Engine &, float)>;
+    using UpdateCallback = std::function<void(Engine&, float)>;
 
-    bool init(int width, int height, const std::string &title, const std::string &assetRoot = "");
+    bool init(int width, int height, const std::string& title, const std::string& assetRoot = "");
     int run();
 
-    ObjectManager &getObjectManager();
-    ResourceManager &getResourceManager();
-    MovingCamera &getCamera();
-    Window &getWindow();
+    ObjectManager& getObjectManager();
+    ResourceManager& getResourceManager();
+    MovingCamera& getCamera();
+    Window& getWindow();
     float getDeltaTime() const {
         return deltaTime;
     }

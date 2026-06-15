@@ -127,7 +127,7 @@ std::shared_ptr<Mesh> createRegularPolygon(int sectors, float radius) {
     return mesh;
 }
 
-std::shared_ptr<Mesh> createMeshFromVertices(const std::vector<glm::vec3> &positions) {
+std::shared_ptr<Mesh> createMeshFromVertices(const std::vector<glm::vec3>& positions) {
     if (positions.size() < 3) {
         return nullptr;
     }
@@ -135,13 +135,13 @@ std::shared_ptr<Mesh> createMeshFromVertices(const std::vector<glm::vec3> &posit
     auto mesh = std::make_shared<Mesh>();
 
     glm::vec3 center(0.0f);
-    for (const auto &pos : positions) {
+    for (const auto& pos : positions) {
         center += pos;
     }
     center /= static_cast<float>(positions.size());
 
     mesh->vertices.push_back({center, {0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}});
-    for (const auto &pos : positions) {
+    for (const auto& pos : positions) {
         mesh->vertices.push_back({pos, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}});
     }
 

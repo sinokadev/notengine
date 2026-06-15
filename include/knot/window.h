@@ -17,7 +17,7 @@ public:
     Window();
     ~Window();
 
-    bool init(int width, int height, const std::string &title);
+    bool init(int width, int height, const std::string& title);
     void shutdown();
 
     bool active();
@@ -39,15 +39,15 @@ public:
     void setKeyInputCallback(KeyInputCallback callback);
 
 private:
-    GLFWwindow *windowHandle = nullptr;
+    GLFWwindow* windowHandle = nullptr;
     bool initialized = false;
     int framebufferWidth = 0;
     int framebufferHeight = 0;
     ResizeCallback resizeCallback;
     KeyInputCallback keyInputCallback;
 
-    static void framebufferSizeCallback(GLFWwindow *window, int width, int height);
-    static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
+    static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+    static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
     static ScanCode convertGlfwToKnotScancode(int glfwKey);
 };

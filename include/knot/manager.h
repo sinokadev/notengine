@@ -10,13 +10,13 @@
 namespace knot {
 class ObjectManager {
 public:
-    Object &createObject(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material);
+    Object& createObject(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material);
 
     bool removeObject(unsigned int id);
 
-    Object *getObject(unsigned int id);
+    Object* getObject(unsigned int id);
 
-    const std::list<Object> &getObjects() const {
+    const std::list<Object>& getObjects() const {
         return objects;
     }
 
@@ -33,14 +33,14 @@ public:
 
     bool init();
 
-    std::shared_ptr<Shader> createShader(std::shared_ptr<ShaderSource> ss, const std::string &name);
+    std::shared_ptr<Shader> createShader(std::shared_ptr<ShaderSource> ss, const std::string& name);
 
     bool removeShader(unsigned int id);
 
     std::shared_ptr<Shader> getShader(unsigned int id);
-    std::shared_ptr<Shader> getShader(const std::string &name);
+    std::shared_ptr<Shader> getShader(const std::string& name);
 
-    const std::list<std::shared_ptr<Shader>> &getShaders() const {
+    const std::list<std::shared_ptr<Shader>>& getShaders() const {
         return shaders;
     }
 
