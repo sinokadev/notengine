@@ -331,7 +331,7 @@ void Window::framebufferSizeCallback(GLFWwindow *window, int width,
 }
 
 void Window::keyCallback(GLFWwindow *window, int key, int scancode, int action,
-                          int mods) {
+                         int mods) {
     auto *self = static_cast<Window *>(glfwGetWindowUserPointer(window));
     if (!self || !self->keyInputCallback) {
         return;

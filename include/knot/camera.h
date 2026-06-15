@@ -6,7 +6,7 @@
 namespace knot {
 
 class Camera {
-  public:
+public:
     glm::vec3 position;
     glm::vec3 front;
     glm::vec3 up;
@@ -29,7 +29,7 @@ class Camera {
 };
 
 class MovingCamera : public Camera {
-  public:
+public:
     float speed;
     float sensitivity;
 

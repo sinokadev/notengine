@@ -9,7 +9,7 @@
 
 namespace knot {
 class ObjectManager {
-  public:
+public:
     Object &createObject(std::shared_ptr<Mesh> mesh,
                          std::shared_ptr<Material> material);
 
@@ -19,7 +19,7 @@ class ObjectManager {
 
     const std::list<Object> &getObjects() const { return objects; }
 
-  private:
+private:
     std::list<Object> objects;
     std::unordered_map<unsigned int, std::list<Object>::iterator> idToIterator;
 
@@ -27,7 +27,7 @@ class ObjectManager {
 };
 
 class ResourceManager {
-  public:
+public:
     ResourceManager() = default;
 
     bool init();
@@ -44,7 +44,7 @@ class ResourceManager {
         return shaders;
     }
 
-  private:
+private:
     std::list<std::shared_ptr<Shader>> shaders;
     std::unordered_set<unsigned int> defaultShaderIds;
     std::unordered_map<unsigned int,

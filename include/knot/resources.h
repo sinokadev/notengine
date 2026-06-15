@@ -42,7 +42,7 @@ struct Mesh {
 };
 
 class ShaderSource {
-  public:
+public:
     std::string vertexPath;
     std::string fragmentPath;
     std::string vertexSourceCode;
@@ -51,12 +51,12 @@ class ShaderSource {
     ShaderSource(std::string v, std::string f);
     bool isValid() const;
 
-  private:
+private:
     std::string readFile(const std::string &path);
 };
 
 class Shader {
-  public:
+public:
     Shader(std::shared_ptr<ShaderSource> ss, unsigned int id);
     ~Shader();
 
@@ -74,7 +74,7 @@ class Shader {
     void set(const std::string &name, const glm::mat4 &value) const;
     unsigned int getId() const;
 
-  private:
+private:
     int uniformLocation(const std::string &name) const;
 
     bool valid = false;
@@ -84,12 +84,12 @@ class Shader {
 };
 
 class AlphaShader {
-  public:
+public:
     static ShaderSource GetSource();
 };
 
 class Material {
-  public:
+public:
     explicit Material(std::shared_ptr<Shader> shader)
         : shader(std::move(shader)) {}
 
@@ -101,12 +101,12 @@ class Material {
 
     std::shared_ptr<Shader> getShader() const { return shader; }
 
-  protected:
+protected:
     std::shared_ptr<Shader> shader;
 };
 
 class TextureMaterial : public Material {
-  public:
+public:
     TextureMaterial(std::shared_ptr<Shader> s, unsigned int textureId)
         : Material(s), textureId(textureId) {}
 
@@ -122,16 +122,16 @@ class TextureMaterial : public Material {
         shader->set("material.diffuse", 0);
     }
 
-  private:
+private:
     unsigned int textureId;
 };
 
 class AlphaMaterial : public TextureMaterial {
-  public:
+public:
     AlphaMaterial(std::shared_ptr<Shader> s, glm::vec3 color)
         : TextureMaterial(s, createSolidColorTexture(color)), color(color) {}
 
-  private:
+private:
     glm::vec3 color;
 };
 

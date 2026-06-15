@@ -10,7 +10,7 @@
 
 namespace knot {
 class Window {
-  public:
+public:
     using ResizeCallback = std::function<void(int width, int height)>;
     using KeyInputCallback =
         std::function<void(ScanCode scancode, KeyState action)>;
@@ -35,7 +35,7 @@ class Window {
     void setResizeCallback(ResizeCallback callback);
     void setKeyInputCallback(KeyInputCallback callback);
 
-  private:
+private:
     GLFWwindow *windowHandle = nullptr;
     bool initialized = false;
     int framebufferWidth = 0;
@@ -46,7 +46,7 @@ class Window {
     static void framebufferSizeCallback(GLFWwindow *window, int width,
                                         int height);
     static void keyCallback(GLFWwindow *window, int key, int scancode,
-                             int action, int mods);
+                            int action, int mods);
 
     static ScanCode convertGlfwToKnotScancode(int glfwKey);
 };
