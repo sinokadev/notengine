@@ -7,7 +7,7 @@
 
 int main() {
     knot::Engine engine;
-    if (!engine.init(1280, 720, "3D Cube Demo")) {
+    if (!engine.init(1280, 720, "Knot Demo")) {
         return 1;
     }
 
