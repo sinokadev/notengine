@@ -243,7 +243,7 @@ Window::~Window() {
     shutdown();
 }
 
-bool Window::init(int width, int height, const std::string &title) {
+bool Window::init(int width, int height, const std::string& title) {
     if (!glfwInit()) {
         std::cerr << "[Error] Failed to initialize GLFW" << std::endl;
         return false;
@@ -318,8 +318,8 @@ void Window::setKeyInputCallback(KeyInputCallback callback) {
     keyInputCallback = std::move(callback);
 }
 
-void Window::framebufferSizeCallback(GLFWwindow *window, int width, int height) {
-    auto *self = static_cast<Window *>(glfwGetWindowUserPointer(window));
+void Window::framebufferSizeCallback(GLFWwindow* window, int width, int height) {
+    auto* self = static_cast<Window*>(glfwGetWindowUserPointer(window));
     if (!self) {
         return;
     }
@@ -332,8 +332,8 @@ void Window::framebufferSizeCallback(GLFWwindow *window, int width, int height) 
     }
 }
 
-void Window::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-    auto *self = static_cast<Window *>(glfwGetWindowUserPointer(window));
+void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    auto* self = static_cast<Window*>(glfwGetWindowUserPointer(window));
     if (!self || !self->keyInputCallback) {
         return;
     }

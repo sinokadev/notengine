@@ -17,7 +17,7 @@ namespace {
 
 std::string assetRoot;
 
-unsigned int compileShader(unsigned int type, const char *source, const char *label) {
+unsigned int compileShader(unsigned int type, const char* source, const char* label) {
     unsigned int shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, nullptr);
     glCompileShader(shader);
@@ -37,14 +37,14 @@ unsigned int compileShader(unsigned int type, const char *source, const char *la
 
 } // namespace
 
-void setAssetRoot(const std::string &root) {
+void setAssetRoot(const std::string& root) {
     assetRoot = root;
     if (!assetRoot.empty() && assetRoot.back() != '/') {
         assetRoot += '/';
     }
 }
 
-const std::string &getAssetRoot() {
+const std::string& getAssetRoot() {
     return assetRoot;
 }
 
@@ -57,7 +57,7 @@ bool ShaderSource::isValid() const {
     return !vertexSourceCode.empty() && !fragmentSourceCode.empty();
 }
 
-std::string ShaderSource::readFile(const std::string &path) {
+std::string ShaderSource::readFile(const std::string& path) {
     std::ifstream file(path);
     if (!file.is_open()) {
         std::cerr << "[Error] Failed to open shader file: " << path << std::endl;
@@ -74,8 +74,8 @@ Shader::Shader(std::shared_ptr<ShaderSource> ss, unsigned int shaderId) : id(sha
         return;
     }
 
-    const char *vertexCode = ss->vertexSourceCode.c_str();
-    const char *fragmentCode = ss->fragmentSourceCode.c_str();
+    const char* vertexCode = ss->vertexSourceCode.c_str();
+    const char* fragmentCode = ss->fragmentSourceCode.c_str();
 
     unsigned int vertexShader = compileShader(GL_VERTEX_SHADER, vertexCode, "vertex");
     if (vertexShader == 0) {
@@ -123,7 +123,7 @@ void Shader::use() {
     }
 }
 
-int Shader::uniformLocation(const std::string &name) const {
+int Shader::uniformLocation(const std::string& name) const {
     auto cached = uniformLocations.find(name);
     if (cached != uniformLocations.end()) {
         return cached->second;
@@ -134,42 +134,42 @@ int Shader::uniformLocation(const std::string &name) const {
     return location;
 }
 
-void Shader::set(const std::string &name, bool value) const {
+void Shader::set(const std::string& name, bool value) const {
     const int location = uniformLocation(name);
     if (location >= 0) {
         glUniform1i(location, static_cast<int>(value));
     }
 }
 
-void Shader::set(const std::string &name, int value) const {
+void Shader::set(const std::string& name, int value) const {
     const int location = uniformLocation(name);
     if (location >= 0) {
         glUniform1i(location, value);
     }
 }
 
-void Shader::set(const std::string &name, float value) const {
+void Shader::set(const std::string& name, float value) const {
     const int location = uniformLocation(name);
     if (location >= 0) {
         glUniform1f(location, value);
     }
 }
 
-void Shader::set(const std::string &name, const glm::vec2 &value) const {
+void Shader::set(const std::string& name, const glm::vec2& value) const {
     const int location = uniformLocation(name);
     if (location >= 0) {
         glUniform2fv(location, 1, &value[0]);
     }
 }
 
-void Shader::set(const std::string &name, const glm::vec3 &value) const {
+void Shader::set(const std::string& name, const glm::vec3& value) const {
     const int location = uniformLocation(name);
     if (location >= 0) {
         glUniform3fv(location, 1, &value[0]);
     }
 }
 
-void Shader::set(const std::string &name, const glm::mat4 &value) const {
+void Shader::set(const std::string& name, const glm::mat4& value) const {
     const int location = uniformLocation(name);
     if (location >= 0) {
         glUniformMatrix4fv(location, 1, GL_FALSE, &value[0][0]);
@@ -215,16 +215,16 @@ void Mesh::setup() {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, Position)));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, Position)));
 
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, TexCoords)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, TexCoords)));
 
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, Normal)));
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, Normal)));
 
     glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, Tangent)));
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, Tangent)));
 
     glBindVertexArray(0);
     indexCount = static_cast<unsigned int>(indices.size());

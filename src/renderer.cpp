@@ -30,7 +30,7 @@ void Renderer::beginFrame(int framebufferWidth, int framebufferHeight) {
     glViewport(0, 0, framebufferWidth, framebufferHeight);
 }
 
-bool Renderer::renderObject(const Object &object, const Camera &camera, float aspectRatio) {
+bool Renderer::renderObject(const Object& object, const Camera& camera, float aspectRatio) {
     if (!initialized) {
         return false;
     }

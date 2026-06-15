@@ -17,8 +17,8 @@ namespace knot {
 
 unsigned int createSolidColorTexture(glm::vec3 color);
 
-void setAssetRoot(const std::string &root);
-const std::string &getAssetRoot();
+void setAssetRoot(const std::string& root);
+const std::string& getAssetRoot();
 
 struct Vertex {
     glm::vec3 Position;
@@ -54,7 +54,7 @@ public:
     bool isValid() const;
 
 private:
-    std::string readFile(const std::string &path);
+    std::string readFile(const std::string& path);
 };
 
 class Shader {
@@ -62,24 +62,24 @@ public:
     Shader(std::shared_ptr<ShaderSource> ss, unsigned int id);
     ~Shader();
 
-    Shader(const Shader &) = delete;
-    Shader &operator=(const Shader &) = delete;
+    Shader(const Shader&) = delete;
+    Shader& operator=(const Shader&) = delete;
 
     bool isValid() const {
         return valid;
     }
 
     void use();
-    void set(const std::string &name, bool value) const;
-    void set(const std::string &name, int value) const;
-    void set(const std::string &name, float value) const;
-    void set(const std::string &name, const glm::vec2 &value) const;
-    void set(const std::string &name, const glm::vec3 &value) const;
-    void set(const std::string &name, const glm::mat4 &value) const;
+    void set(const std::string& name, bool value) const;
+    void set(const std::string& name, int value) const;
+    void set(const std::string& name, float value) const;
+    void set(const std::string& name, const glm::vec2& value) const;
+    void set(const std::string& name, const glm::vec3& value) const;
+    void set(const std::string& name, const glm::mat4& value) const;
     unsigned int getId() const;
 
 private:
-    int uniformLocation(const std::string &name) const;
+    int uniformLocation(const std::string& name) const;
 
     bool valid = false;
     unsigned int shaderProgram = 0;

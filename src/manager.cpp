@@ -4,7 +4,7 @@
 
 namespace knot {
 
-Object &ObjectManager::createObject(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material) {
+Object& ObjectManager::createObject(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material) {
     const unsigned int newId = nextId++;
 
     objects.emplace_back(std::move(mesh), std::move(material), newId);
@@ -26,7 +26,7 @@ bool ObjectManager::removeObject(unsigned int id) {
     return true;
 }
 
-Object *ObjectManager::getObject(unsigned int id) {
+Object* ObjectManager::getObject(unsigned int id) {
     auto it = idToIterator.find(id);
     if (it != idToIterator.end()) {
         return &(*it->second);
@@ -52,7 +52,7 @@ bool ResourceManager::init() {
     return true;
 }
 
-std::shared_ptr<Shader> ResourceManager::createShader(std::shared_ptr<ShaderSource> ss, const std::string &name) {
+std::shared_ptr<Shader> ResourceManager::createShader(std::shared_ptr<ShaderSource> ss, const std::string& name) {
     if (!ss || !ss->isValid()) {
         std::cerr << "[Error] Invalid shader source for '" << name << "'" << std::endl;
         return nullptr;
@@ -107,7 +107,7 @@ std::shared_ptr<Shader> ResourceManager::getShader(unsigned int id) {
     return nullptr;
 }
 
-std::shared_ptr<Shader> ResourceManager::getShader(const std::string &name) {
+std::shared_ptr<Shader> ResourceManager::getShader(const std::string& name) {
     auto it = nameToId.find(name);
     if (it != nameToId.end()) {
         return getShader(it->second);
