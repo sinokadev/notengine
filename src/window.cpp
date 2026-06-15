@@ -239,7 +239,9 @@ ScanCode Window::convertGlfwToKnotScancode(int glfwKey) {
 
 Window::Window() = default;
 
-Window::~Window() { shutdown(); }
+Window::~Window() {
+    shutdown();
+}
 
 bool Window::init(int width, int height, const std::string &title) {
     if (!glfwInit()) {
@@ -252,8 +254,7 @@ bool Window::init(int width, int height, const std::string &title) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_SAMPLES, 4);
 
-    windowHandle =
-        glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
+    windowHandle = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
     if (!windowHandle) {
         std::cerr << "[Error] Failed to create window" << std::endl;
         glfwTerminate();
@@ -301,7 +302,9 @@ bool Window::isClose() const {
     return windowHandle ? glfwWindowShouldClose(windowHandle) : true;
 }
 
-void Window::enableVsync() { glfwSwapInterval(1); }
+void Window::enableVsync() {
+    glfwSwapInterval(1);
+}
 
 GLADloadfunc Window::getProcAddress() const {
     return reinterpret_cast<GLADloadfunc>(glfwGetProcAddress);
@@ -315,8 +318,7 @@ void Window::setKeyInputCallback(KeyInputCallback callback) {
     keyInputCallback = std::move(callback);
 }
 
-void Window::framebufferSizeCallback(GLFWwindow *window, int width,
-                                     int height) {
+void Window::framebufferSizeCallback(GLFWwindow *window, int width, int height) {
     auto *self = static_cast<Window *>(glfwGetWindowUserPointer(window));
     if (!self) {
         return;
@@ -330,8 +332,7 @@ void Window::framebufferSizeCallback(GLFWwindow *window, int width,
     }
 }
 
-void Window::keyCallback(GLFWwindow *window, int key, int scancode, int action,
-                         int mods) {
+void Window::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     auto *self = static_cast<Window *>(glfwGetWindowUserPointer(window));
     if (!self || !self->keyInputCallback) {
         return;

@@ -38,7 +38,9 @@ struct Mesh {
 
     ~Mesh();
     void setup();
-    bool isReady() const { return vao != 0 && indexCount > 0; }
+    bool isReady() const {
+        return vao != 0 && indexCount > 0;
+    }
 };
 
 class ShaderSource {
@@ -63,7 +65,9 @@ public:
     Shader(const Shader &) = delete;
     Shader &operator=(const Shader &) = delete;
 
-    bool isValid() const { return valid; }
+    bool isValid() const {
+        return valid;
+    }
 
     void use();
     void set(const std::string &name, bool value) const;
@@ -90,8 +94,8 @@ public:
 
 class Material {
 public:
-    explicit Material(std::shared_ptr<Shader> shader)
-        : shader(std::move(shader)) {}
+    explicit Material(std::shared_ptr<Shader> shader) : shader(std::move(shader)) {
+    }
 
     virtual void bind() {
         if (shader) {
@@ -99,7 +103,9 @@ public:
         }
     }
 
-    std::shared_ptr<Shader> getShader() const { return shader; }
+    std::shared_ptr<Shader> getShader() const {
+        return shader;
+    }
 
 protected:
     std::shared_ptr<Shader> shader;
@@ -107,8 +113,8 @@ protected:
 
 class TextureMaterial : public Material {
 public:
-    TextureMaterial(std::shared_ptr<Shader> s, unsigned int textureId)
-        : Material(s), textureId(textureId) {}
+    TextureMaterial(std::shared_ptr<Shader> s, unsigned int textureId) : Material(s), textureId(textureId) {
+    }
 
     void bind() override {
         if (!shader)
@@ -128,8 +134,8 @@ private:
 
 class AlphaMaterial : public TextureMaterial {
 public:
-    AlphaMaterial(std::shared_ptr<Shader> s, glm::vec3 color)
-        : TextureMaterial(s, createSolidColorTexture(color)), color(color) {}
+    AlphaMaterial(std::shared_ptr<Shader> s, glm::vec3 color) : TextureMaterial(s, createSolidColorTexture(color)), color(color) {
+    }
 
 private:
     glm::vec3 color;
@@ -144,9 +150,9 @@ struct Object {
     glm::vec3 scale = glm::vec3(1.0f);
     glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 
-    Object(std::shared_ptr<Mesh> m, std::shared_ptr<Material> mat,
-           unsigned int objectId)
-        : mesh(std::move(m)), material(std::move(mat)), id(objectId) {}
+    Object(std::shared_ptr<Mesh> m, std::shared_ptr<Material> mat, unsigned int objectId)
+        : mesh(std::move(m)), material(std::move(mat)), id(objectId) {
+    }
 
     glm::mat4 getWorldMatrix() const;
 };

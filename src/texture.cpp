@@ -19,20 +19,17 @@ unsigned int createSolidColorTexture(glm::vec3 color) {
     return createTexture(pixelData, 1, 1, GL_RGB);
 }
 
-unsigned int createTexture(unsigned char *data, int width, int height,
-                           GLenum format) {
+unsigned int createTexture(unsigned char *data, int width, int height, GLenum format) {
     unsigned int textureID;
     glGenTextures(1, &textureID);
 
     glBindTexture(GL_TEXTURE_2D, textureID);
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format,
-                 GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                    GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     return textureID;
@@ -40,12 +37,10 @@ unsigned int createTexture(unsigned char *data, int width, int height,
 
 unsigned int loadTextureFromFile(const std::string &path) {
     int width, height, nrComponents;
-    unsigned char *data =
-        stbi_load(path.c_str(), &width, &height, &nrComponents, 0);
+    unsigned char *data = stbi_load(path.c_str(), &width, &height, &nrComponents, 0);
 
     if (!data) {
-        std::cout << "[Error] Texture failed to load at path: " << path
-                  << std::endl;
+        std::cout << "[Error] Texture failed to load at path: " << path << std::endl;
         return createSolidColorTexture(glm::vec3(1.0f, 0.0f, 1.0f));
     }
 
