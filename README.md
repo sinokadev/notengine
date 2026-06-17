@@ -1,4 +1,4 @@
-# Not Engine Alpha 1.1
+# Not Engine Alpha 1.2
 
 Everything as a code!
 
@@ -6,7 +6,7 @@ Everything as a code!
 
 - [ ] 수학 라이브러리 작성(math.h)
 
-- [ ] 마우스 입력받기
+- [x] 마우스 입력받기
 
 - [ ] 이벤트 시스템(SDL에 있는것과 비슷한)(엔진에 구현)
 
