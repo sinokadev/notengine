@@ -262,8 +262,10 @@ bool Window::init(int width, int height, const std::string& title) {
     }
 
     glfwSetWindowUserPointer(windowHandle, this);
-    glfwSetFramebufferSizeCallback(windowHandle, framebufferSizeCallback);
-    glfwSetKeyCallback(windowHandle, keyCallback);
+    glfwSetFramebufferSizeCallback(windowHandle, framebufferSizeCallback_glfw);
+    glfwSetKeyCallback(windowHandle, keyCallback_glfw);
+    glfwSetCursorPosCallback(windowHandle, cursorPositionCallback_glfw);
+    glfwSetMouseButtonCallback(windowHandle, mouseButtonCallback_glfw);
 
     framebufferWidth = width;
     framebufferHeight = height;
@@ -318,7 +320,15 @@ void Window::setKeyInputCallback(KeyInputCallback callback) {
     keyInputCallback = std::move(callback);
 }
 
-void Window::framebufferSizeCallback(GLFWwindow* window, int width, int height) {
+void Window::setMousePositionCallback(MousePositionCallback callback) {
+    mousePositionCallback = std::move(callback);
+}
+
+void Window::setMouseButtonCallback(MouseButtonCallback callback) {
+    mouseButtonCallback = std::move(callback);
+}
+
+void Window::framebufferSizeCallback_glfw(GLFWwindow* window, int width, int height) {
     auto* self = static_cast<Window*>(glfwGetWindowUserPointer(window));
     if (!self) {
         return;
@@ -332,7 +342,7 @@ void Window::framebufferSizeCallback(GLFWwindow* window, int width, int height) 
     }
 }
 
-void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+void Window::keyCallback_glfw(GLFWwindow* window, int key, int scancode, int action, int mods) {
     auto* self = static_cast<Window*>(glfwGetWindowUserPointer(window));
     if (!self || !self->keyInputCallback) {
         return;
@@ -341,5 +351,22 @@ void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, 
     ScanCode knotScancode = convertGlfwToKnotScancode(key);
 
     self->keyInputCallback(knotScancode, (KeyState)action);
+}
+
+void Window::cursorPositionCallback_glfw(GLFWwindow* window, double xpos, double ypos) {
+    auto* self = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    if (!self || !self->mousePositionCallback) {
+        return;
+    }
+
+    self->mousePositionCallback(xpos, ypos);
+}
+void Window::mouseButtonCallback_glfw(GLFWwindow* window, int button, int action, int mods) {
+    auto* self = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    if (!self || !self->mouseButtonCallback) {
+        return;
+    }
+
+    self->mouseButtonCallback((MouseKey)button, (KeyState)action);
 }
 } // namespace knot
