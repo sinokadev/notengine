@@ -113,12 +113,12 @@ protected:
 
 class TextureMaterial : public Material {
 public:
-    TextureMaterial(std::shared_ptr<Shader> s, unsigned int textureId) : Material(s), textureId(textureId) {
+    TextureMaterial(std::shared_ptr<Shader> s, unsigned int textureId) 
+        : Material(s), textureId(textureId) {
     }
 
     void bind() override {
-        if (!shader)
-            return;
+        if (!shader) return; 
 
         shader->use();
 
@@ -134,7 +134,8 @@ private:
 
 class AlphaMaterial : public TextureMaterial {
 public:
-    AlphaMaterial(std::shared_ptr<Shader> s, glm::vec3 color) : TextureMaterial(s, createSolidColorTexture(color)), color(color) {
+    AlphaMaterial(std::shared_ptr<Shader> s, glm::vec3 color) 
+        : TextureMaterial(s, createSolidColorTexture(color)), color(color) {
     }
 
 private:

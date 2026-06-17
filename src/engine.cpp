@@ -1,4 +1,5 @@
 #include <knot/engine.h>
+#include <knot/scene.h>
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -43,8 +44,7 @@ bool Engine::init(int width, int height, const std::string& title, const std::st
         this->width = framebufferWidth;
         this->height = framebufferHeight;
     });
-
-    setupCamera();
+    
     renderer.beginFrame(window.getFramebufferWidth(), window.getFramebufferHeight());
 
     window.enableVsync();
@@ -52,8 +52,17 @@ bool Engine::init(int width, int height, const std::string& title, const std::st
     return true;
 }
 
+Engine& Engine::get() {
+    static Engine instance; 
+    return instance;
+}
+
 int Engine::run() {
     if (!initialized) {
+        return 1;
+    }
+
+    if (!activeScene) {
         return 1;
     }
 
@@ -61,6 +70,10 @@ int Engine::run() {
         update();
         render();
         window.loop();
+    }
+
+    if (activeScene) {
+        activeScene->onExit();
     }
 
     return 0;
@@ -71,8 +84,8 @@ void Engine::update() {
     deltaTime = currentFrame - lastFrame;
     lastFrame = currentFrame;
 
-    if (updateCallback) {
-        updateCallback(*this, deltaTime);
+    if (activeScene) {
+        activeScene->onUpdate(deltaTime);
     }
 }
 
@@ -85,14 +98,15 @@ void Engine::render() {
     renderer.beginFrame(framebufferWidth, framebufferHeight);
 
     const float aspectRatio = getAspectRatio();
-    for (const auto& object : objectManager.getObjects()) {
-        renderer.renderObject(object, camera, aspectRatio);
-    }
-}
 
-void Engine::setupCamera() {
-    camera.position = glm::vec3(0.0f, 0.0f, 3.0f);
-    camera.lookAtTarget(glm::vec3(0.0f, 0.0f, 0.0f));
+    if (activeScene) {
+        auto& objectManager = activeScene->getObjectManager();
+        auto& camera = activeScene->getCamera();
+
+        for (const auto& object : objectManager.getObjects()) {
+            renderer.renderObject(object, camera, aspectRatio);
+        }
+    }
 }
 
 float Engine::getAspectRatio() const {
@@ -105,20 +119,8 @@ float Engine::getAspectRatio() const {
     return static_cast<float>(framebufferWidth) / static_cast<float>(framebufferHeight);
 }
 
-void Engine::setUpdateCallback(UpdateCallback callback) {
-    updateCallback = std::move(callback);
-}
-
-ObjectManager& Engine::getObjectManager() {
-    return objectManager;
-}
-
 ResourceManager& Engine::getResourceManager() {
     return resourceManager;
-}
-
-MovingCamera& Engine::getCamera() {
-    return camera;
 }
 
 Window& Engine::getWindow() {
