@@ -6,7 +6,8 @@
 
 #include <glad/gl.h>
 #include <glm/glm.hpp>
-#include <knot/utility/texture.h>
+
+#include <knot/utility.h>
 
 namespace knot {
 

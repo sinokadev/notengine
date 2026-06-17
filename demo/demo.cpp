@@ -23,6 +23,12 @@ int main() {
 
     std::unordered_map<knot::ScanCode, bool> keyStates;
 
+    // --- 마우스 회전을 위한 변수 추가 ---
+    bool firstMouse = true;
+    float lastX = 1280.0f / 2.0f; // 화면 중심 초기값
+    float lastY = 720.0f / 2.0f;
+    // ----------------------------------
+
     float totalTime = 0.0f;
 
     engine.getWindow().setKeyInputCallback(
@@ -33,6 +39,29 @@ int main() {
                 keyStates[code] = false;
             }
         });
+
+    // --- 마우스 위치 콜백 함수 추가 ---
+    engine.getWindow().setMousePositionCallback(
+        [&](double xpos, double ypos) {
+            if (firstMouse) {
+                lastX = static_cast<float>(xpos);
+                lastY = static_cast<float>(ypos);
+                firstMouse = false;
+            }
+
+            // 마우스 이동량(Offset) 계산
+            float xOffset = static_cast<float>(xpos) - lastX;
+            // GLFW는 왼쪽 위가 (0,0)이고 아래로 갈수록 Y가 커지므로, 
+            // 3D 카메라 피치(Pitch) 방향과 맞추기 위해 Y는 반대로 뒤집어줍니다.
+            float yOffset = lastY - static_cast<float>(ypos); 
+
+            lastX = static_cast<float>(xpos);
+            lastY = static_cast<float>(ypos);
+
+            // 카메라 회전 함수 호출
+            engine.getCamera().rotate(xOffset, yOffset, true);
+        });
+    // ----------------------------------
 
     engine.setUpdateCallback([&](knot::Engine &, float deltaTime) {
         totalTime += deltaTime;
