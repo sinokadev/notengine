@@ -26,6 +26,8 @@ private:
     Window window;
     Renderer renderer;
 
+    glm::vec3 clearColor = {0,0,0};
+
     int width = 0;
     int height = 0;
     std::string title;

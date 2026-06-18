@@ -15,7 +15,6 @@
 #include <knot/manager.h>
 
 int main() {
-    // 1. 모듈 개별 초기화
     knot::Window window;
     if (!window.init(1280, 720, "Knot Toolkit Demo")) return 1;
 
@@ -34,13 +33,11 @@ int main() {
     knot::MovingCamera camera;
     camera.position = glm::vec3(0.0f, 0.0f, 5.0f);
 
-    // 2. 리소스 로드
     auto mesh = knot::createCube();
     auto shader = resourceManager.getShader("alphaShader");
     auto material = std::make_shared<knot::AlphaMaterial>(shader, glm::vec3(0.2f, 0.6f, 1.0f));
     auto &cubeObject = objectManager.createObject(mesh, material);
 
-    // 3. 루프 제어용 변수
     std::unordered_map<knot::ScanCode, bool> keyStates;
     window.setKeyInputCallback([&](knot::ScanCode code, knot::KeyState action) {
         keyStates[code] = (action == knot::KeyState::PRESS);
@@ -49,14 +46,12 @@ int main() {
     float lastFrame = static_cast<float>(glfwGetTime());
     float totalTime = 0.0f;
 
-    // 4. 메인 루프 (사용자가 직접 제어)
     while (!window.isClose()) {
         float currentFrame = static_cast<float>(glfwGetTime());
         float deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         totalTime += deltaTime;
 
-        // 업데이트 로직
         float speed = 0.5f;
         cubeObject.rotation = glm::quat(glm::vec3(sin(totalTime * 0.5f) * 0.2f, totalTime * speed, 0.0f));
         
@@ -67,7 +62,6 @@ int main() {
         if (keyStates[knot::ScanCode::D]) moveDir += camera.right;
         if (glm::length(moveDir) > 0.0f) camera.move(glm::normalize(moveDir), deltaTime);
 
-        // 렌더링 로직
         glClearColor(0.12f, 0.14f, 0.18f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
@@ -75,7 +69,7 @@ int main() {
         float aspect = (float)window.getFramebufferWidth() / (float)window.getFramebufferHeight();
         
         for (const auto &object : objectManager.getObjects()) {
-            renderer.renderObject(object, camera, aspect);
+            renderer.renderObject(*object, camera, aspect);
         }
 
         window.loop();

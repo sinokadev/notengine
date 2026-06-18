@@ -15,9 +15,10 @@ unsigned int createSolidColorTexture(glm::vec3 color) {
     unsigned char r = static_cast<unsigned char>(color.r * 255.0f);
     unsigned char g = static_cast<unsigned char>(color.g * 255.0f);
     unsigned char b = static_cast<unsigned char>(color.b * 255.0f);
-    unsigned char pixelData[] = {r, g, b};
+    unsigned char a = 255;
+    unsigned char pixelData[] = {r, g, b, a};
 
-    return createTexture(pixelData, 1, 1, GL_RGB);
+    return createTexture(pixelData, 1, 1, GL_RGBA);
 }
 
 unsigned int createTexture(unsigned char* data, int width, int height, GLenum format) {

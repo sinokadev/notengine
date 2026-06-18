@@ -14,6 +14,8 @@ namespace knot {
     public:
         using UpdateCallback = std::function<void(Scene&, float)>;
 
+        Scene();
+
         ObjectManager& getObjectManager();
         ResourceManager& getResourceManager();
         Camera& getCamera();
@@ -21,13 +23,18 @@ namespace knot {
         void setUpdateCallback(UpdateCallback callback);
 
         void update(float dt);
+
+        Object& getMainCameraObject() { return *mainCameraObj; }
+        void setMainCameraObject(Object& obj) { mainCameraObj = &obj; }
     
     private:
-        Camera camera;
         ObjectManager objectManager;
         ResourceManager resourceManager;
 
         UpdateCallback updateCallback;
+
+        Camera* camera = nullptr;
+        Object* mainCameraObj = nullptr;
 
         void setupCamera();
     };

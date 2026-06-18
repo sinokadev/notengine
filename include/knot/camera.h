@@ -6,26 +6,25 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <knot/resources.h>
+
 namespace knot {
 
-class Camera {
+class Camera : public Object {
 public:
-    glm::vec3 position;
-    glm::vec3 front;
-    glm::vec3 up;
-    glm::vec3 right;
     glm::vec3 worldUp;
 
     float yaw;
     float pitch;
     float fov;
 
-    Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = -90.0f, float pitch = 0.0f);
+    Camera(glm::vec3 startPos = glm::vec3(0.0f, 0.0f, 3.0f), 
+           glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f), 
+           float yaw = -90.0f, float pitch = 0.0f,
+           unsigned int objectId = 0);
 
     glm::mat4 getViewMatrix() const;
-
     void updateCameraVector();
-
     void lookAtTarget(glm::vec3 targetPos);
 };
 
@@ -34,11 +33,10 @@ public:
     float speed;
     float sensitivity;
 
-    MovingCamera(glm::vec3 startPos = glm::vec3(0.0f, 0.0f, 5.0f));
+    MovingCamera(glm::vec3 startPos = glm::vec3(0.0f, 0.0f, 5.0f), unsigned int objectId = 0);
 
-    void move(glm::vec3 direction, float deltaTime);
-
-    void rotate(float xOffset, float yOffset, bool constrainPitch = true);
+    void move(glm::vec3 direction, float deltaTime) override;
+    void rotate(float xOffset, float yOffset, bool constrainPitch = true) override;
 };
 
 } // namespace knot

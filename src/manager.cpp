@@ -7,12 +7,25 @@ namespace knot {
 Object& ObjectManager::createObject(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material) {
     const unsigned int newId = nextId++;
 
-    objects.emplace_back(std::move(mesh), std::move(material), newId);
+    auto obj = std::make_shared<Object>(std::move(mesh), std::move(material), newId);
+    objects.push_back(obj);
 
     auto it = --objects.end();
     idToIterator[newId] = it;
 
-    return *it;
+    return **it;
+}
+
+MovingCamera& ObjectManager::createMovingCamera(glm::vec3 startPos) {
+    const unsigned int newId = nextId++;
+
+    auto camera = std::make_shared<MovingCamera>(startPos, newId);
+    objects.push_back(camera);
+
+    auto it = --objects.end();
+    idToIterator[newId] = it;
+
+    return *camera;
 }
 
 bool ObjectManager::removeObject(unsigned int id) {
@@ -29,7 +42,7 @@ bool ObjectManager::removeObject(unsigned int id) {
 Object* ObjectManager::getObject(unsigned int id) {
     auto it = idToIterator.find(id);
     if (it != idToIterator.end()) {
-        return &(*it->second);
+        return it->second->get();
     }
 
     return nullptr;
