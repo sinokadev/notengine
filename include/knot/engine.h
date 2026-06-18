@@ -21,12 +21,15 @@ public:
     float getAspectRatio() const;
 
     bool setScene(Scene& s);
+    void setClearColor(float r,float g,float b,float a) {
+        clearColor = {r,g,b,a};
+    }
 
 private:
     Window window;
     Renderer renderer;
 
-    glm::vec3 clearColor = {0,0,0};
+    glm::vec4 clearColor = {0,0,0,1};
 
     int width = 0;
     int height = 0;
