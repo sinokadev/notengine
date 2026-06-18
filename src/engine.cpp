@@ -75,7 +75,7 @@ void Engine::update() {
 }
 
 void Engine::render() {
-    glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f);
+    glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     renderer.beginFrame(window.getFramebufferWidth(), window.getFramebufferHeight());
     renderer.renderScene(*scene, getAspectRatio());

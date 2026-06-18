@@ -12,6 +12,7 @@
 #include <string>
 
 namespace knot {
+
 class Window {
 public:
     using ResizeCallback = std::function<void(int width, int height)>;
@@ -39,12 +40,14 @@ public:
     int getFramebufferHeight() const {
         return framebufferHeight;
     }
+    GLFWwindow* getHandle() const {
+        return windowHandle;
+    }
 
     void setResizeCallback(ResizeCallback callback);
     void setKeyInputCallback(KeyInputCallback callback);
     void setMousePositionCallback(MousePositionCallback callback);
     void setMouseButtonCallback(MouseButtonCallback callback);
-
 private:
     GLFWwindow* windowHandle = nullptr;
     bool initialized = false;

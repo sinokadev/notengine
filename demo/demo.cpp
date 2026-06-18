@@ -8,12 +8,16 @@
 #include <knot/resources.h>
 #include <knot/utility.h>
 #include <unordered_map>
+#include <GLFW/glfw3.h>
 
 int main() {
     knot::Engine engine;
     if (!engine.init(1280, 720, "Knot Demo")) {
         return 1;
     }
+    glfwSetInputMode(engine.getWindow().getHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    engine.setClearColor(0.12f, 0.14f, 0.18f, 1.0f);
 
     knot::Scene scene;
 
@@ -36,9 +40,19 @@ int main() {
 
     float totalTime = 0.0f;
 
+    bool stop = false;
+
     engine.getWindow().setKeyInputCallback(
         [&](knot::ScanCode code, knot::KeyState action) {
             if (action == knot::KeyState::PRESS) {
+                if (code == knot::ScanCode::ESCAPE) {
+                    if (!stop)
+                        glfwSetInputMode(engine.getWindow().getHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                    else
+                        glfwSetInputMode(engine.getWindow().getHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                    stop = !stop;
+                }
+
                 keyStates[code] = true;
             } else if (action == knot::KeyState::RELEASE) {
                 keyStates[code] = false;
@@ -47,6 +61,8 @@ int main() {
 
     engine.getWindow().setMousePositionCallback(
         [&](double xpos, double ypos) {
+            if (stop)
+                return;
             if (firstMouse) {
                 lastX = static_cast<float>(xpos);
                 lastY = static_cast<float>(ypos);
@@ -63,6 +79,8 @@ int main() {
         });
 
     scene.setUpdateCallback([&](knot::Scene &currentScene, float deltaTime) {
+        if (stop)
+            return;
         totalTime += deltaTime;
 
         float speed = 0.5f;
