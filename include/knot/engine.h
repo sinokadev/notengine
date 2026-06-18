@@ -1,41 +1,30 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 SinokaDev
 
-#pragma once
-
 #include <functional>
 #include <string>
 
-#include <knot/camera.h>
-#include <knot/manager.h>
 #include <knot/renderer.h>
 #include <knot/window.h>
+#include <knot/scene.h>
 
 namespace knot {
 class Engine {
 public:
-    using UpdateCallback = std::function<void(Engine&, float)>;
-
     bool init(int width, int height, const std::string& title, const std::string& assetRoot = "");
     int run();
-
-    ObjectManager& getObjectManager();
-    ResourceManager& getResourceManager();
-    MovingCamera& getCamera();
+    
     Window& getWindow();
     float getDeltaTime() const {
         return deltaTime;
     }
     float getAspectRatio() const;
 
-    void setUpdateCallback(UpdateCallback callback);
+    bool setScene(Scene& s);
 
 private:
     Window window;
     Renderer renderer;
-    MovingCamera camera;
-    ObjectManager objectManager;
-    ResourceManager resourceManager;
 
     int width = 0;
     int height = 0;
@@ -44,10 +33,10 @@ private:
     bool initialized = false;
     float deltaTime = 0.0f;
     float lastFrame = 0.0f;
-    UpdateCallback updateCallback;
+
+    Scene* scene = nullptr;
 
     void update();
     void render();
-    void setupCamera();
 };
 } // namespace knot
