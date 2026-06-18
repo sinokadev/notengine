@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 SinokaDev
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <knot/engine.h>

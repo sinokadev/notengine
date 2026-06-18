@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 SinokaDev
 // Knot Toolkit refers to a development approach that does not use Engine classes.
 
 #include <glm/gtc/matrix_transform.hpp>
