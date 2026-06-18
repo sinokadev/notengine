@@ -153,10 +153,23 @@ struct Object {
     glm::vec3 scale = glm::vec3(1.0f);
     glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 
+    glm::vec3 front = glm::vec3(0.0f, 0.0f, -1.0f);
+    glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0f);
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+
     Object(std::shared_ptr<Mesh> m, std::shared_ptr<Material> mat, unsigned int objectId)
         : mesh(std::move(m)), material(std::move(mat)), id(objectId) {
     }
 
+    Object(unsigned int objectId)
+        : mesh(nullptr), material(nullptr), id(objectId) {
+    }
+
+    virtual ~Object() = default;
+
     glm::mat4 getWorldMatrix() const;
+
+    virtual void move(glm::vec3 direction, float deltaTime) {}
+    virtual void rotate(float xOffset, float yOffset, bool constrainPitch = true) {}
 };
 } // namespace knot

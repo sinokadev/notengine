@@ -9,23 +9,25 @@
 #include <unordered_set>
 
 #include <knot/resources.h>
+#include <knot/camera.h>
 
 namespace knot {
 class ObjectManager {
 public:
     Object& createObject(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material);
+    MovingCamera& createMovingCamera(glm::vec3 startPos);
 
     bool removeObject(unsigned int id);
 
     Object* getObject(unsigned int id);
 
-    const std::list<Object>& getObjects() const {
+    const std::list<std::shared_ptr<Object>>& getObjects() const {
         return objects;
     }
 
 private:
-    std::list<Object> objects;
-    std::unordered_map<unsigned int, std::list<Object>::iterator> idToIterator;
+    std::list<std::shared_ptr<Object>> objects;
+    std::unordered_map<unsigned int, std::list<std::shared_ptr<Object>>::iterator> idToIterator;
 
     unsigned int nextId = 1;
 };

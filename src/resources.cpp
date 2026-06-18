@@ -15,7 +15,17 @@ unsigned int createSolidColorTexture(glm::vec3 color);
 
 namespace {
 
-std::string assetRoot;
+#ifdef NOTENGINE_ASSET_ROOT
+std::string assetRoot = []() {
+    std::string root = NOTENGINE_ASSET_ROOT;
+    if (!root.empty() && root.back() != '/') {
+        root += '/';
+    }
+    return root;
+}();
+#else
+std::string assetRoot = "";
+#endif
 
 unsigned int compileShader(unsigned int type, const char* source, const char* label) {
     unsigned int shader = glCreateShader(type);

@@ -25,7 +25,8 @@ int main() {
     auto &cubeObject = scene.getObjectManager().createObject(mesh, material);
     cubeObject.position = glm::vec3(0.0f, 0.0f, 0.0f);
 
-    scene.getCamera().position = glm::vec3(0.0f, 0.0f, 5.0f);
+    auto &cameraObj = scene.getObjectManager().createMovingCamera(glm::vec3(0.0f, 0.0f, 5.0f));
+    scene.setMainCameraObject(cameraObj); 
 
     std::unordered_map<knot::ScanCode, bool> keyStates;
 
@@ -58,7 +59,7 @@ int main() {
             lastX = static_cast<float>(xpos);
             lastY = static_cast<float>(ypos);
 
-            scene.getCamera().rotate(xOffset, yOffset, true);
+            scene.getMainCameraObject().rotate(xOffset, yOffset, true);
         });
 
     scene.setUpdateCallback([&](knot::Scene &currentScene, float deltaTime) {
@@ -68,7 +69,7 @@ int main() {
         cubeObject.rotation = glm::quat(
             glm::vec3(sin(totalTime * 0.5f) * 0.2f, totalTime * speed, 0.0f));
             
-        auto &activeCamera = currentScene.getCamera();
+        auto &activeCamera = currentScene.getMainCameraObject();
         glm::vec3 moveDir(0.0f);
 
         if (keyStates[knot::ScanCode::W])
