@@ -64,4 +64,21 @@ bool Renderer::renderObject(const Object& object, const Camera& camera, float as
     return true;
 }
 
+bool Renderer::renderScene(Scene& scene, float aspectRatio) {
+    if (!initialized) {
+        return false;
+    }
+
+    // 1. Scene에서 카메라와 오브젝트 매니저를 가져옵니다.
+    const auto& camera = scene.getCamera();
+    auto& objectManager = scene.getObjectManager();
+
+    // 2. Scene 내부의 모든 오브젝트를 순회하며 기존 renderObject를 호출합니다.
+    for (const auto& object : objectManager.getObjects()) {
+        renderObject(object, camera, aspectRatio);
+    }
+
+    return true;
+}
+
 } // namespace knot

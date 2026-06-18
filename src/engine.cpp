@@ -34,17 +34,11 @@ bool Engine::init(int width, int height, const std::string& title, const std::st
         return false;
     }
 
-    if (!resourceManager.init()) {
-        window.shutdown();
-        return false;
-    }
-
     window.setResizeCallback([this](int framebufferWidth, int framebufferHeight) {
         this->width = framebufferWidth;
         this->height = framebufferHeight;
     });
 
-    setupCamera();
     renderer.beginFrame(window.getFramebufferWidth(), window.getFramebufferHeight());
 
     window.enableVsync();
@@ -54,6 +48,12 @@ bool Engine::init(int width, int height, const std::string& title, const std::st
 
 int Engine::run() {
     if (!initialized) {
+        std::cerr << "[Error] Engine is not initialized" << std::endl;
+        return 1;
+    }
+
+    if (!scene) {
+        std::cerr << "[Error] Engine cannot run without a Scene registered." << std::endl;
         return 1;
     }
 
@@ -71,28 +71,12 @@ void Engine::update() {
     deltaTime = currentFrame - lastFrame;
     lastFrame = currentFrame;
 
-    if (updateCallback) {
-        updateCallback(*this, deltaTime);
-    }
+    scene->update(deltaTime);
 }
 
 void Engine::render() {
-    glClearColor(0.12f, 0.14f, 0.18f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    const int framebufferWidth = window.getFramebufferWidth();
-    const int framebufferHeight = window.getFramebufferHeight();
-    renderer.beginFrame(framebufferWidth, framebufferHeight);
-
-    const float aspectRatio = getAspectRatio();
-    for (const auto& object : objectManager.getObjects()) {
-        renderer.renderObject(object, camera, aspectRatio);
-    }
-}
-
-void Engine::setupCamera() {
-    camera.position = glm::vec3(0.0f, 0.0f, 3.0f);
-    camera.lookAtTarget(glm::vec3(0.0f, 0.0f, 0.0f));
+    renderer.beginFrame(window.getFramebufferWidth(), window.getFramebufferHeight());
+    renderer.renderScene(*scene, getAspectRatio());
 }
 
 float Engine::getAspectRatio() const {
@@ -105,24 +89,12 @@ float Engine::getAspectRatio() const {
     return static_cast<float>(framebufferWidth) / static_cast<float>(framebufferHeight);
 }
 
-void Engine::setUpdateCallback(UpdateCallback callback) {
-    updateCallback = std::move(callback);
-}
-
-ObjectManager& Engine::getObjectManager() {
-    return objectManager;
-}
-
-ResourceManager& Engine::getResourceManager() {
-    return resourceManager;
-}
-
-MovingCamera& Engine::getCamera() {
-    return camera;
-}
-
 Window& Engine::getWindow() {
     return window;
 }
 
+bool Engine::setScene(Scene& s) {
+    scene = &s;
+    return true;
+}
 } // namespace knot
