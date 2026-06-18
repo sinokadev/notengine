@@ -1,6 +1,17 @@
 For third-party libraries (e.g., `include/glad`, `include/KHR`):
 - The applicable license is indicated within each individual file in the respective folders. Please refer to their headers for terms and conditions.
 
-For proprietary source codes:
-- Copyright (c) 2026 Sinokadev. All rights reserved.
-- This software is proprietary and confidential. No part of this software may be reproduced, distributed, or transmitted in any form or by any means, including photocopying, recording, or other electronic or mechanical methods, without the prior written permission of the copyright owner.
+For proprietary source codes(Apache-2.0):
+Copyright 2026 SinokaDev
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
