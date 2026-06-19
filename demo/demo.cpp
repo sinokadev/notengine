@@ -21,13 +21,14 @@ int main() {
 
     knot::Scene scene;
 
-    auto mesh = knot::createCube();
+    auto mesh = knot::loadModelOBJ("assets/utah_teapot.obj");
     auto shader = scene.getResourceManager().getShader("alphaShader");
     auto material = std::make_shared<knot::AlphaMaterial>(
         shader, glm::vec3(0.2f, 0.6f, 1.0f));
 
     auto &cubeObject = scene.getObjectManager().createObject(mesh, material);
     cubeObject.position = glm::vec3(0.0f, 0.0f, 0.0f);
+    cubeObject.scale = glm::vec3(0.1, 0.1, 0.1);
 
     auto &cameraObj = scene.getObjectManager().createMovingCamera(glm::vec3(0.0f, 0.0f, 5.0f));
     scene.setMainCameraObject(cameraObj); 

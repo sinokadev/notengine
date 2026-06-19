@@ -16,7 +16,7 @@ Everything as a code!
 
 - [x] 네이밍 케이스 정리
 
-- [ ] OBJ 임포트
+- [x] OBJ 임포트
 
 - [x] camera.hpp를 구현과 헤더로 나누기
 
