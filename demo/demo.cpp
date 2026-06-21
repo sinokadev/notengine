@@ -24,21 +24,18 @@ int main() {
     auto mesh = knot::loadModelOBJ(knot::getAssetRoot() + "assets/utah_teapot.obj");
     auto shader = scene.getResourceManager().getShader("pongShader");
     // 1. 기존의 AlphaMaterial 대신 모든 속성을 채워 넣은 PongMaterial을 생성합니다.
-    auto material = std::make_shared<knot::PongMaterial>(
+auto material = std::make_shared<knot::PongMaterial>(
         shader, 
-        glm::vec3(0.2f, 0.6f, 1.0f),  // baseDiffuse (디퓨즈 반사 색상: 기존 하늘색 값)
-        glm::vec3(0.5f, 0.5f, 0.5f),  // baseSpecular (스펙큘러 반사 색상: 흰색~회색조)
-        32.0f,                        // baseShininess (신하이니스: 광택의 날카로운 정도)
-        0,                            // diffuseMap (텍스처 미사용 시 0)
-        0,                            // specularMap (텍스처 미사용 시 0)
-        0,                            // normalMap (텍스처 미사용 시 0)
-        0                             // roughnessMap (텍스처 미사용 시 0)
+        glm::vec3(0.85f, 0.85f, 0.85f), // baseDiffuse: 완전히 새하얗지 않고 고급스러운 연회색조 (0.8 ~ 0.9 사이 추천)
+        glm::vec3(0.6f, 0.6f, 0.6f),   // baseSpecular: 하이라이트 광택이 너무 튀지 않도록 살짝 톤다운된 흰색
+        32.0f,                         // baseShininess: 도자기나 매끄러운 플라스틱 느낌의 적당히 선명한 하이라이트 범위
+        0, 0, 0, 0                     // 텍스처 미사용 (0)
     );
 
     auto cubeObject = std::make_shared<knot::Object>(mesh, material);
     scene.getObjectManager().registerObject(cubeObject);
     cubeObject->position = glm::vec3(0.0f, 0.0f, 0.0f);
-    cubeObject->scale = glm::vec3(0.1, 0.1, 0.1);
+    cubeObject->scale = glm::vec3(0.5, 0.5, 0.5);
 
     auto dirLightObj = std::make_shared<knot::PongDirLight>(
         glm::vec3(-0.2f, -1.0f, -0.3f), // direction (빛이 나아가는 방향)
