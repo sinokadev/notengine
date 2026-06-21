@@ -8,8 +8,12 @@ Scene::Scene() {
     }
 }
 
-Object& Scene::getMainCameraObject() { return *mainCameraObj; }
-void Scene::setMainCameraObject(Object& obj) { mainCameraObj = &obj; }
+Object& Scene::getMainCameraObject() {
+    return *mainCameraObj;
+}
+void Scene::setMainCameraObject(Object& obj) {
+    mainCameraObj = &obj;
+}
 
 void Scene::setUpdateCallback(UpdateCallback callback) {
     updateCallback = std::move(callback);
@@ -35,7 +39,7 @@ Camera& Scene::getCamera() {
 
 void Scene::update(float dt) {
     if (updateCallback) {
-        updateCallback(*this, dt); 
+        updateCallback(*this, dt);
     }
 }
-}
+} // namespace knot

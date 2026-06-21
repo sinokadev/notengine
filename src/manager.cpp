@@ -5,10 +5,11 @@
 namespace knot {
 
 unsigned int ObjectManager::registerObject(std::shared_ptr<Object> newObject) {
-    if (!newObject) return 0;
+    if (!newObject)
+        return 0;
 
     if (newObject->id == 0) {
-        newObject->id = nextId++; 
+        newObject->id = nextId++;
     }
 
     objects.push_back(newObject);
