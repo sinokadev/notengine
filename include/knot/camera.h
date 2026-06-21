@@ -20,8 +20,7 @@ public:
 
     Camera(glm::vec3 startPos = glm::vec3(0.0f, 0.0f, 3.0f), 
            glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f), 
-           float yaw = -90.0f, float pitch = 0.0f,
-           unsigned int objectId = 0);
+           float yaw = -90.0f, float pitch = 0.0f);
 
     glm::mat4 getViewMatrix() const;
     void updateCameraVector();
@@ -33,7 +32,7 @@ public:
     float speed;
     float sensitivity;
 
-    MovingCamera(glm::vec3 startPos = glm::vec3(0.0f, 0.0f, 5.0f), unsigned int objectId = 0);
+    MovingCamera(glm::vec3 startPos = glm::vec3(0.0f, 0.0f, 5.0f));
 
     void move(glm::vec3 direction, float deltaTime) override;
     void rotate(float xOffset, float yOffset, bool constrainPitch = true) override;

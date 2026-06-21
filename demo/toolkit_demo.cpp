@@ -36,7 +36,7 @@ int main() {
     auto mesh = knot::createCube();
     auto shader = resourceManager.getShader("alphaShader");
     auto material = std::make_shared<knot::AlphaMaterial>(shader, glm::vec3(0.2f, 0.6f, 1.0f));
-    auto &cubeObject = objectManager.createObject(mesh, material);
+    auto cubeObject = std::make_shared<knot::Object>(mesh, material);
 
     std::unordered_map<knot::ScanCode, bool> keyStates;
     window.setKeyInputCallback([&](knot::ScanCode code, knot::KeyState action) {
@@ -53,7 +53,7 @@ int main() {
         totalTime += deltaTime;
 
         float speed = 0.5f;
-        cubeObject.rotation = glm::quat(glm::vec3(sin(totalTime * 0.5f) * 0.2f, totalTime * speed, 0.0f));
+        cubeObject->rotation = glm::quat(glm::vec3(sin(totalTime * 0.5f) * 0.2f, totalTime * speed, 0.0f));
         
         glm::vec3 moveDir(0.0f);
         if (keyStates[knot::ScanCode::W]) moveDir += camera.front;

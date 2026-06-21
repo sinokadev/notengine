@@ -24,8 +24,8 @@ namespace knot {
 
         void update(float dt);
 
-        Object& getMainCameraObject() { return *mainCameraObj; }
-        void setMainCameraObject(Object& obj) { mainCameraObj = &obj; }
+        Object& getMainCameraObject();
+        void setMainCameraObject(Object& obj);
     
     private:
         ObjectManager objectManager;
