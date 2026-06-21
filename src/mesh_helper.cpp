@@ -121,17 +121,17 @@ std::shared_ptr<Mesh> createSphere(int sectors, int stacks) {
         for (int j = 0; j < sectors; ++j) {
             int first = (i * (sectors + 1)) + j;
             int second = first + sectors + 1;
-            
+
             mesh->indices.push_back(first);
             mesh->indices.push_back(second);
             mesh->indices.push_back(first + 1);
-            
+
             mesh->indices.push_back(second);
             mesh->indices.push_back(second + 1);
             mesh->indices.push_back(first + 1);
         }
     }
-    
+
     mesh->setup();
     return mesh;
 }
@@ -139,7 +139,7 @@ std::shared_ptr<Mesh> createSphere(int sectors, int stacks) {
 std::shared_ptr<Mesh> createPlane(float width, float height) {
     auto mesh = std::make_shared<Mesh>();
     float hw = width * 0.5f, hh = height * 0.5f;
-    
+
     mesh->vertices = {{{-hw, -hh, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
                       {{hw, -hh, 0.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
                       {{hw, hh, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
@@ -150,7 +150,8 @@ std::shared_ptr<Mesh> createPlane(float width, float height) {
 }
 
 std::shared_ptr<Mesh> createRegularPolygon(int sectors, float radius) {
-    if (sectors < 3) return nullptr;
+    if (sectors < 3)
+        return nullptr;
 
     auto mesh = std::make_shared<Mesh>();
     const float PI = 3.14159265359f;
@@ -176,16 +177,18 @@ std::shared_ptr<Mesh> createRegularPolygon(int sectors, float radius) {
 }
 
 std::shared_ptr<Mesh> createMeshFromVertices(const std::vector<glm::vec3>& positions) {
-    if (positions.size() < 3) return nullptr;
+    if (positions.size() < 3)
+        return nullptr;
 
     auto mesh = std::make_shared<Mesh>();
 
     glm::vec3 center(0.0f);
-    for (const auto& pos : positions) center += pos;
+    for (const auto& pos : positions)
+        center += pos;
     center /= static_cast<float>(positions.size());
 
     mesh->vertices.push_back({center, {0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}});
-    
+
     float maxDist = 0.001f;
     for (const auto& pos : positions) {
         maxDist = glm::max(maxDist, glm::distance(center, pos));
@@ -227,8 +230,10 @@ std::shared_ptr<Mesh> loadModelOBJ(const std::string& filePath) {
     struct IndexTuple {
         int v_idx, vt_idx, vn_idx;
         bool operator<(const IndexTuple& other) const {
-            if (v_idx != other.v_idx) return v_idx < other.v_idx;
-            if (vt_idx != other.vt_idx) return vt_idx < other.vt_idx;
+            if (v_idx != other.v_idx)
+                return v_idx < other.v_idx;
+            if (vt_idx != other.vt_idx)
+                return vt_idx < other.vt_idx;
             return vn_idx < other.vn_idx;
         }
     };
@@ -236,32 +241,24 @@ std::shared_ptr<Mesh> loadModelOBJ(const std::string& filePath) {
 
     for (const auto& shape : shapes) {
         for (const auto& index : shape.mesh.indices) {
-            IndexTuple idxTuple = { index.vertex_index, index.texcoord_index, index.normal_index };
+            IndexTuple idxTuple = {index.vertex_index, index.texcoord_index, index.normal_index};
 
             if (uniqueVertices.count(idxTuple) == 0) {
                 Vertex vertex{};
 
-                vertex.Position = glm::vec3(
-                    attrib.vertices[3 * index.vertex_index + 0],
-                    attrib.vertices[3 * index.vertex_index + 1],
-                    attrib.vertices[3 * index.vertex_index + 2]
-                );
+                vertex.Position = glm::vec3(attrib.vertices[3 * index.vertex_index + 0], attrib.vertices[3 * index.vertex_index + 1],
+                                            attrib.vertices[3 * index.vertex_index + 2]);
 
                 if (index.texcoord_index >= 0) {
-                    vertex.TexCoords = glm::vec2(
-                        attrib.texcoords[2 * index.texcoord_index + 0],
-                        1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
-                    );
+                    vertex.TexCoords =
+                        glm::vec2(attrib.texcoords[2 * index.texcoord_index + 0], 1.0f - attrib.texcoords[2 * index.texcoord_index + 1]);
                 } else {
                     vertex.TexCoords = glm::vec2(0.0f);
                 }
 
                 if (index.normal_index >= 0) {
-                    vertex.Normal = glm::vec3(
-                        attrib.normals[3 * index.normal_index + 0],
-                        attrib.normals[3 * index.normal_index + 1],
-                        attrib.normals[3 * index.normal_index + 2]
-                    );
+                    vertex.Normal = glm::vec3(attrib.normals[3 * index.normal_index + 0], attrib.normals[3 * index.normal_index + 1],
+                                              attrib.normals[3 * index.normal_index + 2]);
                 } else {
                     vertex.Normal = glm::vec3(0.0f, 1.0f, 0.0f);
                 }

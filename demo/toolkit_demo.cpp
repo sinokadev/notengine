@@ -16,7 +16,8 @@
 
 int main() {
     knot::Window window;
-    if (!window.init(1280, 720, "Knot Toolkit Demo")) return 1;
+    if (!window.init(1280, 720, "Knot Toolkit Demo"))
+        return 1;
 
     if (!window.active()) {
         std::cerr << "[Error] Failed to activate window context" << std::endl;
@@ -39,9 +40,7 @@ int main() {
     auto cubeObject = std::make_shared<knot::Object>(mesh, material);
 
     std::unordered_map<knot::ScanCode, bool> keyStates;
-    window.setKeyInputCallback([&](knot::ScanCode code, knot::KeyState action) {
-        keyStates[code] = (action == knot::KeyState::PRESS);
-    });
+    window.setKeyInputCallback([&](knot::ScanCode code, knot::KeyState action) { keyStates[code] = (action == knot::KeyState::PRESS); });
 
     float lastFrame = static_cast<float>(glfwGetTime());
     float totalTime = 0.0f;
@@ -54,21 +53,26 @@ int main() {
 
         float speed = 0.5f;
         cubeObject->rotation = glm::quat(glm::vec3(sin(totalTime * 0.5f) * 0.2f, totalTime * speed, 0.0f));
-        
+
         glm::vec3 moveDir(0.0f);
-        if (keyStates[knot::ScanCode::W]) moveDir += camera.front;
-        if (keyStates[knot::ScanCode::S]) moveDir -= camera.front;
-        if (keyStates[knot::ScanCode::A]) moveDir -= camera.right;
-        if (keyStates[knot::ScanCode::D]) moveDir += camera.right;
-        if (glm::length(moveDir) > 0.0f) camera.move(glm::normalize(moveDir), deltaTime);
+        if (keyStates[knot::ScanCode::W])
+            moveDir += camera.front;
+        if (keyStates[knot::ScanCode::S])
+            moveDir -= camera.front;
+        if (keyStates[knot::ScanCode::A])
+            moveDir -= camera.right;
+        if (keyStates[knot::ScanCode::D])
+            moveDir += camera.right;
+        if (glm::length(moveDir) > 0.0f)
+            camera.move(glm::normalize(moveDir), deltaTime);
 
         glClearColor(0.12f, 0.14f, 0.18f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
+
         renderer.beginFrame(window.getFramebufferWidth(), window.getFramebufferHeight());
         float aspect = (float)window.getFramebufferWidth() / (float)window.getFramebufferHeight();
-        
-        for (const auto &object : objectManager.getObjects()) {
+
+        for (const auto& object : objectManager.getObjects()) {
             renderer.renderObject(*object, camera, aspect);
         }
 

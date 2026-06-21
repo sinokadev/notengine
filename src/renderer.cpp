@@ -40,7 +40,7 @@ bool Renderer::renderObject(const Object& object, const Camera& camera, float as
     }
 
     if (dynamic_cast<const PongPointLight*>(&object)) {
-        return true; 
+        return true;
     }
 
     if (dynamic_cast<const PongDirLight*>(&object)) {
@@ -69,14 +69,14 @@ bool Renderer::renderObject(const Object& object, const Camera& camera, float as
     if (!activeDirLights.empty()) {
         const auto* dirLight = activeDirLights.front();
         shader->set("dirLight.direction", dirLight->direction);
-        shader->set("dirLight.ambient",   dirLight->ambient);
-        shader->set("dirLight.diffuse",   dirLight->diffuse);
-        shader->set("dirLight.specular",  dirLight->specular);
+        shader->set("dirLight.ambient", dirLight->ambient);
+        shader->set("dirLight.diffuse", dirLight->diffuse);
+        shader->set("dirLight.specular", dirLight->specular);
     } else {
         shader->set("dirLight.direction", glm::vec3(0.0f, -1.0f, 0.0f));
-        shader->set("dirLight.ambient",   glm::vec3(0.0f));
-        shader->set("dirLight.diffuse",   glm::vec3(0.0f));
-        shader->set("dirLight.specular",  glm::vec3(0.0f));
+        shader->set("dirLight.ambient", glm::vec3(0.0f));
+        shader->set("dirLight.diffuse", glm::vec3(0.0f));
+        shader->set("dirLight.specular", glm::vec3(0.0f));
     }
 
     // Set Point Light uniforms
@@ -85,21 +85,21 @@ bool Renderer::renderObject(const Object& object, const Camera& camera, float as
         if (i < static_cast<int>(activePointLights.size())) {
             const auto* pointLight = activePointLights[i];
             shader->set(prefix + "position", pointLight->position);
-            shader->set(prefix + "ambient",  pointLight->ambient);
-            shader->set(prefix + "diffuse",  pointLight->diffuse);
+            shader->set(prefix + "ambient", pointLight->ambient);
+            shader->set(prefix + "diffuse", pointLight->diffuse);
             shader->set(prefix + "specular", pointLight->specular);
             shader->set(prefix + "constant", pointLight->constant);
-            shader->set(prefix + "linear",   pointLight->linear);
-            shader->set(prefix + "quadratic",pointLight->quadratic);
+            shader->set(prefix + "linear", pointLight->linear);
+            shader->set(prefix + "quadratic", pointLight->quadratic);
         } else {
             // Safe default to avoid division by zero and contribution
             shader->set(prefix + "position", glm::vec3(0.0f));
-            shader->set(prefix + "ambient",  glm::vec3(0.0f));
-            shader->set(prefix + "diffuse",  glm::vec3(0.0f));
+            shader->set(prefix + "ambient", glm::vec3(0.0f));
+            shader->set(prefix + "diffuse", glm::vec3(0.0f));
             shader->set(prefix + "specular", glm::vec3(0.0f));
             shader->set(prefix + "constant", 1.0f);
-            shader->set(prefix + "linear",   0.0f);
-            shader->set(prefix + "quadratic",0.0f);
+            shader->set(prefix + "linear", 0.0f);
+            shader->set(prefix + "quadratic", 0.0f);
         }
     }
 

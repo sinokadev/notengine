@@ -152,40 +152,39 @@ private:
 class PongMaterial : public Material {
 public:
     // 생성자: 부모 클래스 Material(shader)을 호출하여 셰이더를 등록합니다.
-    PongMaterial(
-        std::shared_ptr<Shader> s,
-        glm::vec3 diffColor,
-        glm::vec3 specColor,
-        float shininess,
-        unsigned int diffMap = 0,
-        unsigned int specMap = 0,
-        unsigned int normMap = 0,
-        unsigned int roughMap = 0
-    ) : Material(s), 
-        baseDiffuse(diffColor), 
-        baseSpecular(specColor), 
-        baseShininess(shininess),
-        diffuseMap(diffMap), 
-        specularMap(specMap), 
-        normalMap(normMap), 
-        roughnessMap(roughMap) 
-    {
+    PongMaterial(std::shared_ptr<Shader> s, glm::vec3 diffColor, glm::vec3 specColor, float shininess, unsigned int diffMap = 0,
+                 unsigned int specMap = 0, unsigned int normMap = 0, unsigned int roughMap = 0)
+        : Material(s), baseDiffuse(diffColor), baseSpecular(specColor), baseShininess(shininess), diffuseMap(diffMap), specularMap(specMap),
+          normalMap(normMap), roughnessMap(roughMap) {
         // 텍스처 ID가 0이 아니면(유효한 텍스처가 들어오면) 자동으로 사용 플래그를 true로 설정합니다.
-        useDiffuseMap   = (diffuseMap != 0);
-        useSpecularMap  = (specularMap != 0);
-        useNormalMap    = (normalMap != 0);
+        useDiffuseMap = (diffuseMap != 0);
+        useSpecularMap = (specularMap != 0);
+        useNormalMap = (normalMap != 0);
         useRoughnessMap = (roughnessMap != 0);
     }
 
     // 텍스처 설정 메서드들 (필요에 따라 사용)
-    void setDiffuseMap(unsigned int texID)   { diffuseMap = texID;   useDiffuseMap = true; }
-    void setSpecularMap(unsigned int texID)  { specularMap = texID;  useSpecularMap = true; }
-    void setNormalMap(unsigned int texID)    { normalMap = texID;    useNormalMap = true; }
-    void setRoughnessMap(unsigned int texID) { roughnessMap = texID; useRoughnessMap = true; }
+    void setDiffuseMap(unsigned int texID) {
+        diffuseMap = texID;
+        useDiffuseMap = true;
+    }
+    void setSpecularMap(unsigned int texID) {
+        specularMap = texID;
+        useSpecularMap = true;
+    }
+    void setNormalMap(unsigned int texID) {
+        normalMap = texID;
+        useNormalMap = true;
+    }
+    void setRoughnessMap(unsigned int texID) {
+        roughnessMap = texID;
+        useRoughnessMap = true;
+    }
 
     // 렌더러가 오브젝트를 그리기 직전에 호출할 바인딩 함수
     void bind() override {
-        if (!shader) return;
+        if (!shader)
+            return;
 
         // 1. 셰이더 프로그램 활성화
         shader->use();
@@ -238,7 +237,7 @@ public:
 
     glm::vec3 baseDiffuse;
     glm::vec3 baseSpecular;
-    float     baseShininess;
+    float baseShininess;
 };
 struct Object {
     std::shared_ptr<Material> material;
@@ -253,20 +252,20 @@ struct Object {
     glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
-    Object(std::shared_ptr<Mesh> m, std::shared_ptr<Material> mat)
-        : mesh(std::move(m)), material(std::move(mat)) {
+    Object(std::shared_ptr<Mesh> m, std::shared_ptr<Material> mat) : mesh(std::move(m)), material(std::move(mat)) {
     }
 
-    Object()
-        : mesh(nullptr), material(nullptr) {
+    Object() : mesh(nullptr), material(nullptr) {
     }
 
     virtual ~Object() = default;
 
     glm::mat4 getWorldMatrix() const;
 
-    virtual void move(glm::vec3 direction, float deltaTime) {}
-    virtual void rotate(float xOffset, float yOffset, bool constrainPitch = true) {}
+    virtual void move(glm::vec3 direction, float deltaTime) {
+    }
+    virtual void rotate(float xOffset, float yOffset, bool constrainPitch = true) {
+    }
 };
 
 class Light : public Object {
@@ -275,8 +274,8 @@ public:
     float intensity;
 
     // 생성자: Mesh와 Material은 Light에 필요 없으므로 nullptr로 부모 생성자 호출
-    Light(glm::vec3 lightColor = glm::vec3(1.0f), float lightIntensity = 1.0f)
-        : Object(), color(lightColor), intensity(lightIntensity) {}
+    Light(glm::vec3 lightColor = glm::vec3(1.0f), float lightIntensity = 1.0f) : Object(), color(lightColor), intensity(lightIntensity) {
+    }
 
     virtual ~Light() = default;
 };
@@ -294,19 +293,12 @@ public:
     float quadratic;
 
     // 생성자
-    PongPointLight(
-               glm::vec3 amb = glm::vec3(0.05f), 
-               glm::vec3 diff = glm::vec3(0.8f), 
-               glm::vec3 spec = glm::vec3(1.0f),
-               float cons = 1.0f, 
-               float lin = 0.09f, 
-               float quad = 0.032f)
-        :  
-          ambient(amb), diffuse(diff), specular(spec), 
-          constant(cons), linear(lin), quadratic(quad) {
-        
+    PongPointLight(glm::vec3 amb = glm::vec3(0.05f), glm::vec3 diff = glm::vec3(0.8f), glm::vec3 spec = glm::vec3(1.0f), float cons = 1.0f,
+                   float lin = 0.09f, float quad = 0.032f)
+        : ambient(amb), diffuse(diff), specular(spec), constant(cons), linear(lin), quadratic(quad) {
+
         // 필요하다면 Light 클래스의 기본 color나 intensity도 여기서 초기화할 수 있습니다.
-        this->color = diff; 
+        this->color = diff;
     }
 };
 
@@ -321,18 +313,12 @@ public:
     glm::vec3 specular;
 
     // 생성자
-    PongDirLight(
-        glm::vec3 dir  = glm::vec3(-0.2f, -1.0f, -0.3f), // 아래를 향하는 디폴트 방향
-        glm::vec3 amb  = glm::vec3(0.05f), 
-        glm::vec3 diff = glm::vec3(0.8f), 
-        glm::vec3 spec = glm::vec3(1.0f)
-    ) : // 매니저가 ID를 줄 것이므로 임시로 0 전달
-        direction(dir), 
-        ambient(amb), 
-        diffuse(diff), 
-        specular(spec) 
-    {
-        this->color = diff; 
+    PongDirLight(glm::vec3 dir = glm::vec3(-0.2f, -1.0f, -0.3f), // 아래를 향하는 디폴트 방향
+                 glm::vec3 amb = glm::vec3(0.05f), glm::vec3 diff = glm::vec3(0.8f),
+                 glm::vec3 spec = glm::vec3(1.0f))
+        : // 매니저가 ID를 줄 것이므로 임시로 0 전달
+          direction(dir), ambient(amb), diffuse(diff), specular(spec) {
+        this->color = diff;
     }
 
     virtual ~PongDirLight() = default;

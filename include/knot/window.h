@@ -48,6 +48,7 @@ public:
     void setKeyInputCallback(KeyInputCallback callback);
     void setMousePositionCallback(MousePositionCallback callback);
     void setMouseButtonCallback(MouseButtonCallback callback);
+
 private:
     GLFWwindow* windowHandle = nullptr;
     bool initialized = false;

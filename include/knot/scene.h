@@ -10,32 +10,32 @@
 #include <knot/manager.h>
 
 namespace knot {
-    class Scene {
-    public:
-        using UpdateCallback = std::function<void(Scene&, float)>;
+class Scene {
+public:
+    using UpdateCallback = std::function<void(Scene&, float)>;
 
-        Scene();
+    Scene();
 
-        ObjectManager& getObjectManager();
-        ResourceManager& getResourceManager();
-        Camera& getCamera();
+    ObjectManager& getObjectManager();
+    ResourceManager& getResourceManager();
+    Camera& getCamera();
 
-        void setUpdateCallback(UpdateCallback callback);
+    void setUpdateCallback(UpdateCallback callback);
 
-        void update(float dt);
+    void update(float dt);
 
-        Object& getMainCameraObject();
-        void setMainCameraObject(Object& obj);
-    
-    private:
-        ObjectManager objectManager;
-        ResourceManager resourceManager;
+    Object& getMainCameraObject();
+    void setMainCameraObject(Object& obj);
 
-        UpdateCallback updateCallback;
+private:
+    ObjectManager objectManager;
+    ResourceManager resourceManager;
 
-        Camera* camera = nullptr;
-        Object* mainCameraObj = nullptr;
+    UpdateCallback updateCallback;
 
-        void setupCamera();
-    };
-}
+    Camera* camera = nullptr;
+    Object* mainCameraObj = nullptr;
+
+    void setupCamera();
+};
+} // namespace knot
