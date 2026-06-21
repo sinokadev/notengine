@@ -14,8 +14,7 @@
 namespace knot {
 class ObjectManager {
 public:
-    Object& createObject(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material);
-    MovingCamera& createMovingCamera(glm::vec3 startPos);
+    unsigned int registerObject(std::shared_ptr<Object> newObject);
 
     bool removeObject(unsigned int id);
 

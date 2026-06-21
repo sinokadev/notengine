@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <vector>
 #include <knot/camera.h>
 #include <knot/resources.h>
 #include <knot/scene.h>
@@ -20,5 +21,7 @@ public:
 
 private:
     bool initialized = false;
+    std::vector<const PongDirLight*> activeDirLights;
+    std::vector<const PongPointLight*> activePointLights;
 };
 } // namespace knot

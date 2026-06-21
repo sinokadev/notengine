@@ -6,15 +6,10 @@ Scene::Scene() {
     if (glad_glCreateShader != nullptr) {
         resourceManager.init();
     }
-    setupCamera();
 }
 
-void Scene::setupCamera() {
-    auto& movingCam = objectManager.createMovingCamera(glm::vec3(0.0f, 0.0f, 3.0f));
-    camera = &movingCam;
-    mainCameraObj = &movingCam;
-    camera->lookAtTarget(glm::vec3(0.0f, 0.0f, 0.0f));
-}
+Object& Scene::getMainCameraObject() { return *mainCameraObj; }
+void Scene::setMainCameraObject(Object& obj) { mainCameraObj = &obj; }
 
 void Scene::setUpdateCallback(UpdateCallback callback) {
     updateCallback = std::move(callback);

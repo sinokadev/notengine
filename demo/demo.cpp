@@ -21,17 +21,36 @@ int main() {
 
     knot::Scene scene;
 
-    auto mesh = knot::loadModelOBJ("assets/utah_teapot.obj");
-    auto shader = scene.getResourceManager().getShader("alphaShader");
-    auto material = std::make_shared<knot::AlphaMaterial>(
-        shader, glm::vec3(0.2f, 0.6f, 1.0f));
+    auto mesh = knot::loadModelOBJ(knot::getAssetRoot() + "assets/utah_teapot.obj");
+    auto shader = scene.getResourceManager().getShader("pongShader");
+    // 1. 기존의 AlphaMaterial 대신 모든 속성을 채워 넣은 PongMaterial을 생성합니다.
+    auto material = std::make_shared<knot::PongMaterial>(
+        shader, 
+        glm::vec3(0.2f, 0.6f, 1.0f),  // baseDiffuse (디퓨즈 반사 색상: 기존 하늘색 값)
+        glm::vec3(0.5f, 0.5f, 0.5f),  // baseSpecular (스펙큘러 반사 색상: 흰색~회색조)
+        32.0f,                        // baseShininess (신하이니스: 광택의 날카로운 정도)
+        0,                            // diffuseMap (텍스처 미사용 시 0)
+        0,                            // specularMap (텍스처 미사용 시 0)
+        0,                            // normalMap (텍스처 미사용 시 0)
+        0                             // roughnessMap (텍스처 미사용 시 0)
+    );
 
-    auto &cubeObject = scene.getObjectManager().createObject(mesh, material);
-    cubeObject.position = glm::vec3(0.0f, 0.0f, 0.0f);
-    cubeObject.scale = glm::vec3(0.1, 0.1, 0.1);
+    auto cubeObject = std::make_shared<knot::Object>(mesh, material);
+    scene.getObjectManager().registerObject(cubeObject);
+    cubeObject->position = glm::vec3(0.0f, 0.0f, 0.0f);
+    cubeObject->scale = glm::vec3(0.1, 0.1, 0.1);
 
-    auto &cameraObj = scene.getObjectManager().createMovingCamera(glm::vec3(0.0f, 0.0f, 5.0f));
-    scene.setMainCameraObject(cameraObj); 
+    auto dirLightObj = std::make_shared<knot::PongDirLight>(
+        glm::vec3(-0.2f, -1.0f, -0.3f), // direction (빛이 나아가는 방향)
+        glm::vec3(0.1f),               // ambient
+        glm::vec3(1.0f, 1.0f, 1.0f),   // diffuse
+        glm::vec3(1.0f, 1.0f, 1.0f)    // specular
+    );
+    scene.getObjectManager().registerObject(dirLightObj);
+
+    auto cameraObj = std::make_shared<knot::MovingCamera>(glm::vec3(0.0f, 0.0f, 5.0f));
+    scene.getObjectManager().registerObject(cameraObj);
+    scene.setMainCameraObject(*cameraObj);
 
     std::unordered_map<knot::ScanCode, bool> keyStates;
 
@@ -85,7 +104,7 @@ int main() {
         totalTime += deltaTime;
 
         float speed = 0.5f;
-        cubeObject.rotation = glm::quat(
+        cubeObject->rotation = glm::quat(
             glm::vec3(sin(totalTime * 0.5f) * 0.2f, totalTime * speed, 0.0f));
             
         auto &activeCamera = currentScene.getMainCameraObject();

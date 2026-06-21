@@ -4,30 +4,19 @@
 
 namespace knot {
 
-Object& ObjectManager::createObject(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material) {
-    const unsigned int newId = nextId++;
+unsigned int ObjectManager::registerObject(std::shared_ptr<Object> newObject) {
+    if (!newObject) return 0;
 
-    auto obj = std::make_shared<Object>(std::move(mesh), std::move(material), newId);
-    objects.push_back(obj);
+    if (newObject->id == 0) {
+        newObject->id = nextId++; 
+    }
 
+    objects.push_back(newObject);
     auto it = --objects.end();
-    idToIterator[newId] = it;
+    idToIterator[newObject->id] = it;
 
-    return **it;
+    return newObject->id;
 }
-
-MovingCamera& ObjectManager::createMovingCamera(glm::vec3 startPos) {
-    const unsigned int newId = nextId++;
-
-    auto camera = std::make_shared<MovingCamera>(startPos, newId);
-    objects.push_back(camera);
-
-    auto it = --objects.end();
-    idToIterator[newId] = it;
-
-    return *camera;
-}
-
 bool ObjectManager::removeObject(unsigned int id) {
     auto it = idToIterator.find(id);
     if (it == idToIterator.end()) {
@@ -55,13 +44,27 @@ bool ResourceManager::init() {
         return false;
     }
 
-    auto defaultShader = createShader(alphaSource, "alphaShader");
-    if (!defaultShader) {
+    auto alphaShader = createShader(alphaSource, "alphaShader");
+    if (!alphaShader) {
         std::cerr << "[Error] Failed to create default alpha shader" << std::endl;
         return false;
     }
 
-    defaultShaderIds.insert(defaultShader->getId());
+    defaultShaderIds.insert(alphaShader->getId());
+
+    auto pongSource = std::make_shared<ShaderSource>(PongShader::GetSource());
+    if (!pongSource->isValid()) {
+        std::cerr << "[Error] Failed to load default pong shader sources" << std::endl;
+        return false;
+    }
+
+    auto pongShader = createShader(pongSource, "pongShader");
+    if (!pongShader) {
+        std::cerr << "[Error] Failed to create default pong shader" << std::endl;
+        return false;
+    }
+
+    defaultShaderIds.insert(pongShader->getId());
     return true;
 }
 
