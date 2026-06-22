@@ -66,6 +66,20 @@ bool ResourceManager::init() {
     }
 
     defaultShaderIds.insert(pongShader->getId());
+
+    auto pbrSource = std::make_shared<ShaderSource>(PbrShader::GetSource());
+    if (!pbrSource->isValid()) {
+        std::cerr << "[Error] Failed to load default pbr shader sources" << std::endl;
+        return false;
+    }
+
+    auto pbrShader = createShader(pbrSource, "pbrShader");
+    if (!pbrShader) {
+        std::cerr << "[Error] Failed to create default pbr shader" << std::endl;
+        return false;
+    }
+
+    defaultShaderIds.insert(pbrShader->getId());
     return true;
 }
 

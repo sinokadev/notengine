@@ -95,6 +95,11 @@ public:
     static ShaderSource GetSource();
 };
 
+class PbrShader {
+public:
+    static ShaderSource GetSource();
+};
+
 class AlphaShader {
 public:
     static ShaderSource GetSource();
@@ -239,6 +244,96 @@ public:
     glm::vec3 baseSpecular;
     float baseShininess;
 };
+
+class PbrMaterial : public Material {
+public:
+    // 생성자: 기본 상수 값과 텍스처 ID를 한 번에 초기화할 수 있도록 매핑
+    PbrMaterial(std::shared_ptr<Shader> s, 
+                glm::vec3 albedoColor = glm::vec3(1.0f), 
+                float metallicFactor = 0.0f, 
+                float roughnessFactor = 0.5f, 
+                float aoFactor = 1.0f,
+                unsigned int albedoM = 0, 
+                unsigned int metallicM = 0, 
+                unsigned int roughnessM = 0, 
+                unsigned int aoM = 0)
+        : Material(s), 
+          baseAlbedo(albedoColor), baseMetallic(metallicFactor), baseRoughness(roughnessFactor), baseAo(aoFactor),
+          albedoMap(albedoM), metallicMap(metallicM), roughnessMap(roughnessM), aoMap(aoM) {
+        
+        // 텍스처 ID가 들어오면 활성화 플래그를 자동으로 켭니다.
+        useAlbedoMap    = (albedoMap != 0);
+        useMetallicMap  = (metallicMap != 0);
+        useRoughnessMap = (roughnessMap != 0);
+        useAoMap        = (aoMap != 0);
+    }
+
+    // 개별 텍스처 설정을 위한 헬퍼 메서드들
+    void setAlbedoMap(unsigned int texID)    { albedoMap = texID;    useAlbedoMap = true; }
+    void setMetallicMap(unsigned int texID)  { metallicMap = texID;  useMetallicMap = true; }
+    void setRoughnessMap(unsigned int texID) { roughnessMap = texID; useRoughnessMap = true; }
+    void setAoMap(unsigned int texID)        { aoMap = texID;        useAoMap = true; }
+
+    // 메인 렌더러가 오브젝트를 그리기 직전에 호출하여 상태를 바인딩하는 오버라이드 함수
+    void bind() override {
+        if (!shader) return;
+
+        // 1. 셰이더 프로그램 활성화
+        shader->use();
+
+        // 2. PBR 전용 텍스처 슬롯 순차적 바인딩 (0 ~ 3번 유닛 사용)
+        if (useAlbedoMap) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, albedoMap);
+            shader->set("material.albedoMap", 0);
+        }
+        if (useMetallicMap) {
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, metallicMap);
+            shader->set("material.metallicMap", 1);
+        }
+        if (useRoughnessMap) {
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, roughnessMap);
+            shader->set("material.roughnessMap", 2);
+        }
+        if (useAoMap) {
+            glActiveTexture(GL_TEXTURE3);
+            glBindTexture(GL_TEXTURE_2D, aoMap);
+            shader->set("material.aoMap", 3);
+        }
+
+        // 3. 텍스처 사용 여부 셰이더로 전송 (셰이더 단에서 없으면 단색/상수로 대체하기 위함)
+        shader->set("material.useAlbedoMap", useAlbedoMap);
+        shader->set("material.useMetallicMap", useMetallicMap);
+        shader->set("material.useRoughnessMap", useRoughnessMap);
+        shader->set("material.useAoMap", useAoMap);
+
+        // 4. 기본 상수 피드백/팩터 값 전송
+        shader->set("material.baseAlbedo", baseAlbedo);
+        shader->set("material.baseMetallic", baseMetallic);
+        shader->set("material.baseRoughness", baseRoughness);
+        shader->set("material.baseAo", baseAo);
+    }
+
+public:
+    // 텍스처 자원 상태 보관 변수
+    unsigned int albedoMap;
+    unsigned int metallicMap;
+    unsigned int roughnessMap;
+    unsigned int aoMap;
+
+    bool useAlbedoMap;
+    bool useMetallicMap;
+    bool useRoughnessMap;
+    bool useAoMap;
+
+    // 텍스처가 없을 때 사용하거나, 혹은 텍스처 결과물에 곱해줄 기본 팩터 속성들
+    glm::vec3 baseAlbedo;
+    float baseMetallic;
+    float baseRoughness;
+    float baseAo;
+};
 struct Object {
     std::shared_ptr<Material> material;
     std::shared_ptr<Mesh> mesh;
@@ -302,7 +397,20 @@ public:
     }
 };
 
-class PongDirLight : public Light { // 앞서 정의한 PongLight 상속
+class PbrPointLight : public Light {
+public:
+    // 내부에 glm::vec3 color; 나 brightness 같은 변수가 없어야 합니다! (부모인 Light의 것을 사용)
+    
+    PbrPointLight(glm::vec3 pos = glm::vec3(0.0f), 
+                  glm::vec3 col = glm::vec3(1.0f), 
+                  float bright = 1.0f)
+        : Light(col, bright) {
+        this->position = pos;
+    }
+
+    virtual ~PbrPointLight() = default;
+};
+class DirLight : public Light {
 public:
     // 방향성 조명은 '방향'이 핵심입니다.
     glm::vec3 direction;
@@ -313,7 +421,7 @@ public:
     glm::vec3 specular;
 
     // 생성자
-    PongDirLight(glm::vec3 dir = glm::vec3(-0.2f, -1.0f, -0.3f), // 아래를 향하는 디폴트 방향
+    DirLight(glm::vec3 dir = glm::vec3(-0.2f, -1.0f, -0.3f), // 아래를 향하는 디폴트 방향
                  glm::vec3 amb = glm::vec3(0.05f), glm::vec3 diff = glm::vec3(0.8f),
                  glm::vec3 spec = glm::vec3(1.0f))
         : // 매니저가 ID를 줄 것이므로 임시로 0 전달
@@ -321,6 +429,6 @@ public:
         this->color = diff;
     }
 
-    virtual ~PongDirLight() = default;
+    virtual ~DirLight() = default;
 };
 } // namespace knot

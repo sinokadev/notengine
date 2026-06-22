@@ -21,7 +21,8 @@ public:
 
 private:
     bool initialized = false;
-    std::vector<const PongDirLight*> activeDirLights;
+    std::vector<const DirLight*> activeDirLights;
     std::vector<const PongPointLight*> activePointLights;
+    std::vector<const PbrPointLight*> activePbrPointLights;
 };
 } // namespace knot
