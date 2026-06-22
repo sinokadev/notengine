@@ -267,8 +267,8 @@ bool Window::init(int width, int height, const std::string& title) {
     glfwSetCursorPosCallback(windowHandle, cursorPositionCallback_glfw);
     glfwSetMouseButtonCallback(windowHandle, mouseButtonCallback_glfw);
 
-    framebufferWidth = width;
-    framebufferHeight = height;
+    glfwGetFramebufferSize(windowHandle, &framebufferWidth, &framebufferHeight);
+
     initialized = true;
     return true;
 }
