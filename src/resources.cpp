@@ -198,6 +198,10 @@ ShaderSource AlphaShader::GetSource() {
     return ShaderSource(getAssetRoot() + "assets/shaders/alpha.vert", getAssetRoot() + "assets/shaders/alpha.frag");
 }
 
+ShaderSource PbrShader::GetSource() {
+    return ShaderSource(getAssetRoot() + "assets/shaders/alpha.vert", getAssetRoot() + "assets/shaders/pbr.frag");
+}
+
 Mesh::~Mesh() {
     if (vao != 0) {
         glDeleteVertexArrays(1, &vao);

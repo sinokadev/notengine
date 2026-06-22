@@ -33,5 +33,5 @@ Everything as a code!
 
 - [x] 퐁 셰이더 만들기
 - [x] 라이트(light) 오브젝트
-- [ ] PBR 셰이더 만들기
+- [x] PBR 셰이더 만들기
 - [ ] 큐브매핑 구현하기

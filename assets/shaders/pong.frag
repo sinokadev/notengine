@@ -46,7 +46,7 @@ struct Material {
 };
 uniform Material material;
 
-uniform vec3 viewPos;
+uniform vec3 u_CameraPos;
 
 vec3 calcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 diffColor, vec3 specColor, float roughness) {
     vec3 lightDir = normalize(-light.direction);
@@ -106,7 +106,7 @@ void main() {
         
     }
     
-    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 viewDir = normalize(u_CameraPos - FragPos);
 
     vec3 diffColor;
     if(material.useDiffuseMap)
