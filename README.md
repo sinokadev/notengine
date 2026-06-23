@@ -35,3 +35,5 @@ Everything as a code!
 - [x] 라이트(light) 오브젝트
 - [x] PBR 셰이더 만들기
 - [ ] 큐브매핑 구현하기
+
+- [ ] 콜리전 구현
