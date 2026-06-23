@@ -21,6 +21,7 @@ int main() {
 
     knot::Scene scene;
 
+    auto mesh2 = knot::createCube();
     auto mesh = knot::loadModelOBJ(knot::getAssetRoot() + "assets/utah_teapot.obj");
     auto shader = scene.getResourceManager().getShader("pbrShader");
     auto material = std::make_shared<knot::PbrMaterial>(shader, 
@@ -35,6 +36,16 @@ int main() {
     cubeObject->position = glm::vec3(0.0f, 0.0f, 0.0f);
     cubeObject->scale = glm::vec3(0.5, 0.5, 0.5);
 
+    auto cubeObject2 = std::make_shared<knot::Object>(mesh2, material);
+    scene.getObjectManager().registerObject(cubeObject2);
+    cubeObject2->position = glm::vec3(1.0f, 1.0f, 1.0f);
+    cubeObject2->scale = glm::vec3(0.1, 0.1, 0.1);
+
+        auto cubeObject3 = std::make_shared<knot::Object>(mesh2, material);
+    scene.getObjectManager().registerObject(cubeObject3);
+    cubeObject3->position = glm::vec3(0.0f, 1.0f, 1.0f);
+    cubeObject3->scale = glm::vec3(0.1, 0.1, 0.1);
+
     auto dirLightObj = std::make_shared<knot::DirLight>(glm::vec3(-0.2f, -1.0f, -0.3f), // direction
                                                             glm::vec3(0.1f),                // ambient
                                                             glm::vec3(1.0f, 1.0f, 1.0f),    // diffuse
@@ -48,6 +59,13 @@ int main() {
         2.0f
     );
     scene.getObjectManager().registerObject(pointLightObj);
+
+    auto pointLightObjj = std::make_shared<knot::PbrPointLight>(
+        glm::vec3(0.0f,1.0f,1.0f),
+        glm::vec3(1.0f, 1.0f, 1.0f),    // lightColor (warm orange light)
+        2.0f
+    );
+    scene.getObjectManager().registerObject(pointLightObjj);
 
     auto cameraObj = std::make_shared<knot::MovingCamera>(glm::vec3(0.0f, 0.0f, 5.0f));
     scene.getObjectManager().registerObject(cameraObj);

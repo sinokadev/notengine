@@ -37,7 +37,7 @@ struct PointLight {
     float brightness;
     float radius;
 };
-#define POINT_LIGHT_COUNT 1
+#define POINT_LIGHT_COUNT 2
 uniform PointLight pointLights[POINT_LIGHT_COUNT];
 
 struct Material {
