@@ -84,7 +84,7 @@ bool Renderer::renderObject(const Object& object, const Camera& camera, float as
     }
 
     // 2. Point Light 유니폼 설정 (PBR 자동 감쇄 및 반경 연산 반영)
-    for (int i = 0; i < 1; ++i) { // POINT_LIGHT_COUNT is 1
+    for (int i = 0; i < 2; ++i) { // POINT_LIGHT_COUNT is 1
         std::string prefix = "pointLights[" + std::to_string(i) + "].";
         
         if (i < static_cast<int>(activePbrPointLights.size())) {
