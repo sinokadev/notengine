@@ -41,20 +41,10 @@ struct PointLight {
 uniform PointLight pointLights[POINT_LIGHT_COUNT];
 
 struct Material {
-    vec3  baseAlbedo;
-    float baseMetallic;
-    float baseRoughness;
-    float baseAo;
-
     sampler2D albedoMap;
     sampler2D metallicMap;
     sampler2D roughnessMap;
     sampler2D aoMap;
-
-    bool useAlbedoMap;
-    bool useMetallicMap;
-    bool useRoughnessMap;
-    bool useAoMap;
 };
 uniform Material material;
 
@@ -121,19 +111,19 @@ void main() {
     vec3 N = normalize(Normal);
     vec3 V = normalize(u_CameraPos - FragPos);
 
-    // 2. 텍스처 맵 샘플링 및 보정
-    vec3 albedo    = material.useAlbedoMap    ? texture(material.albedoMap, TexCoords).rgb * material.baseAlbedo : material.baseAlbedo;
-    float metallic  = material.useMetallicMap  ? texture(material.metallicMap, TexCoords).r * material.baseMetallic : material.baseMetallic;
-    float roughness = material.useRoughnessMap ? texture(material.roughnessMap, TexCoords).r * material.baseRoughness : material.baseRoughness;
-    float ao        = material.useAoMap        ? texture(material.aoMap, TexCoords).r * material.baseAo : material.baseAo;
+    // 2. 텍스처 맵 샘플링 및 보정 (C++ 측에서 단색 텍스처가 무조건 할당되므로 최적화 진행)
+    vec3 albedo     = texture(material.albedoMap, TexCoords).rgb;
+    float metallic  = texture(material.metallicMap, TexCoords).r;
+    float roughness = texture(material.roughnessMap, TexCoords).r;
+    float ao        = texture(material.aoMap, TexCoords).r;
 
-    // [수정] 지각적 roughness를 선형 파라미터로 변환 (제곱 연산 및 최소 한계치 설정)
+    // 지각적 roughness를 선형 파라미터로 변환 (제곱 연산 및 최소 한계치 설정)
     float alphaRoughness = max(roughness * roughness, 0.002); 
 
     // 3. F0 계산
     vec3 f0 = mix(vec3(0.04), albedo, metallic);
 
-    // 4. Directional Light 기여도 계산 (데이터 타입 vec3 명시)
+    // 4. Directional Light 기여도 계산
     vec3 L_dir = normalize(-dirLight.direction);
     vec3 directLighting = calcPbrLight(N, V, L_dir, dirLight.diffuse, albedo, metallic, alphaRoughness, f0);
     vec3 ambient = dirLight.ambient * albedo * ao; 
@@ -155,7 +145,6 @@ void main() {
         // 최종 광도 계산
         vec3 lightColor = pointLights[i].color * pointLights[i].brightness * attenuation;
         
-        // [수정] 포인트 라이트 계산 시에도 roughness 대신 변환된 alphaRoughness를 전달합니다.
         directLighting += calcPbrLight(N, V, L_point, lightColor, albedo, metallic, alphaRoughness, f0);
         ambient += (pointLights[i].color * 0.05) * albedo * ao * attenuation;
     }
@@ -167,6 +156,6 @@ void main() {
     // 7. 감마 보정
     finalColor = pow(finalColor, vec3(1.0 / 2.2));  
 
-    // 8. 최종 출력 (기존에 중복 기재되어 있던 코드 정리)
+    // 8. 최종 출력
     FragColor = vec4(finalColor, 1.0);
 }

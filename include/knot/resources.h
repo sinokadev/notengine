@@ -247,7 +247,6 @@ public:
 
 class PbrMaterial : public Material {
 public:
-    // 생성자: 기본 상수 값과 텍스처 ID를 한 번에 초기화할 수 있도록 매핑
     PbrMaterial(std::shared_ptr<Shader> s, 
                 glm::vec3 albedoColor = glm::vec3(1.0f), 
                 float metallicFactor = 0.0f, 
@@ -258,66 +257,114 @@ public:
                 unsigned int roughnessM = 0, 
                 unsigned int aoM = 0)
         : Material(s), 
-          baseAlbedo(albedoColor), baseMetallic(metallicFactor), baseRoughness(roughnessFactor), baseAo(aoFactor),
-          albedoMap(albedoM), metallicMap(metallicM), roughnessMap(roughnessM), aoMap(aoM) {
+          baseAlbedo(albedoColor), baseMetallic(metallicFactor), baseRoughness(roughnessFactor), baseAo(aoFactor) {
         
-        // 텍스처 ID가 들어오면 활성화 플래그를 자동으로 켭니다.
-        useAlbedoMap    = (albedoMap != 0);
-        useMetallicMap  = (metallicMap != 0);
-        useRoughnessMap = (roughnessMap != 0);
-        useAoMap        = (aoMap != 0);
+        // 1. Albedo 텍스처 처리
+        if (albedoM != 0) {
+            albedoMap = albedoM;
+        } else {
+            albedoMap = createSolidColorTexture(baseAlbedo);
+            isAlbedoAllocated = true; // 내부에서 할당됨을 기록
+        }
+        
+        // 2. Metallic 텍스처 처리
+        if (metallicM != 0) {
+            metallicMap = metallicM;
+        } else {
+            metallicMap = createSolidColorTexture(glm::vec3(baseMetallic));
+            isMetallicAllocated = true;
+        }
+        
+        // 3. Roughness 텍스처 처리
+        if (roughnessM != 0) {
+            roughnessMap = roughnessM;
+        } else {
+            roughnessMap = createSolidColorTexture(glm::vec3(baseRoughness));
+            isRoughnessAllocated = true;
+        }
+        
+        // 4. AO 텍스처 처리
+        if (aoM != 0) {
+            aoMap = aoM;
+        } else {
+            aoMap = createSolidColorTexture(glm::vec3(baseAo));
+            isAoAllocated = true;
+        }
+
+        useAlbedoMap    = true;
+        useMetallicMap  = true;
+        useRoughnessMap = true;
+        useAoMap        = true;
     }
 
-    // 개별 텍스처 설정을 위한 헬퍼 메서드들
-    void setAlbedoMap(unsigned int texID)    { albedoMap = texID;    useAlbedoMap = true; }
-    void setMetallicMap(unsigned int texID)  { metallicMap = texID;  useMetallicMap = true; }
-    void setRoughnessMap(unsigned int texID) { roughnessMap = texID; useRoughnessMap = true; }
-    void setAoMap(unsigned int texID)        { aoMap = texID;        useAoMap = true; }
+    // 소멸자: 내부에서 생성한 단색 텍스처만 선택적으로 안전하게 해제
+    ~PbrMaterial() {
+        if (isAlbedoAllocated && albedoMap != 0)    glDeleteTextures(1, &albedoMap);
+        if (isMetallicAllocated && metallicMap != 0)  glDeleteTextures(1, &metallicMap);
+        if (isRoughnessAllocated && roughnessMap != 0) glDeleteTextures(1, &roughnessMap);
+        if (isAoAllocated && aoMap != 0)       glDeleteTextures(1, &aoMap);
+    }
 
-    // 메인 렌더러가 오브젝트를 그리기 직전에 호출하여 상태를 바인딩하는 오버라이드 함수
+    // 개별 텍스처 설정 메서드 (기존 내부 텍스처 누수 방지)
+    void setAlbedoMap(unsigned int texID) { 
+        if (isAlbedoAllocated && albedoMap != 0) {
+            glDeleteTextures(1, &albedoMap);
+            isAlbedoAllocated = false;
+        }
+        albedoMap = texID; 
+        useAlbedoMap = true; 
+    }
+    
+    void setMetallicMap(unsigned int texID) { 
+        if (isMetallicAllocated && metallicMap != 0) {
+            glDeleteTextures(1, &metallicMap);
+            isMetallicAllocated = false;
+        }
+        metallicMap = texID; 
+        useMetallicMap = true; 
+    }
+
+    void setRoughnessMap(unsigned int texID) { 
+        if (isRoughnessAllocated && roughnessMap != 0) {
+            glDeleteTextures(1, &roughnessMap);
+            isRoughnessAllocated = false;
+        }
+        roughnessMap = texID; 
+        useRoughnessMap = true; 
+    }
+
+    void setAoMap(unsigned int texID) { 
+        if (isAoAllocated && aoMap != 0) {
+            glDeleteTextures(1, &aoMap);
+            isAoAllocated = false;
+        }
+        aoMap = texID; 
+        useAoMap = true; 
+    }
+
     void bind() override {
         if (!shader) return;
 
-        // 1. 셰이더 프로그램 활성화
         shader->use();
 
-        // 2. PBR 전용 텍스처 슬롯 순차적 바인딩 (0 ~ 3번 유닛 사용)
-        if (useAlbedoMap) {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, albedoMap);
-            shader->set("material.albedoMap", 0);
-        }
-        if (useMetallicMap) {
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, metallicMap);
-            shader->set("material.metallicMap", 1);
-        }
-        if (useRoughnessMap) {
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, roughnessMap);
-            shader->set("material.roughnessMap", 2);
-        }
-        if (useAoMap) {
-            glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, aoMap);
-            shader->set("material.aoMap", 3);
-        }
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, albedoMap);
+        shader->set("material.albedoMap", 0);
 
-        // 3. 텍스처 사용 여부 셰이더로 전송 (셰이더 단에서 없으면 단색/상수로 대체하기 위함)
-        shader->set("material.useAlbedoMap", useAlbedoMap);
-        shader->set("material.useMetallicMap", useMetallicMap);
-        shader->set("material.useRoughnessMap", useRoughnessMap);
-        shader->set("material.useAoMap", useAoMap);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, metallicMap);
+        shader->set("material.metallicMap", 1);
 
-        // 4. 기본 상수 피드백/팩터 값 전송
-        shader->set("material.baseAlbedo", baseAlbedo);
-        shader->set("material.baseMetallic", baseMetallic);
-        shader->set("material.baseRoughness", baseRoughness);
-        shader->set("material.baseAo", baseAo);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, roughnessMap);
+        shader->set("material.roughnessMap", 2);
+
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, aoMap);
+        shader->set("material.aoMap", 3);
     }
 
 public:
-    // 텍스처 자원 상태 보관 변수
     unsigned int albedoMap;
     unsigned int metallicMap;
     unsigned int roughnessMap;
@@ -328,12 +375,19 @@ public:
     bool useRoughnessMap;
     bool useAoMap;
 
-    // 텍스처가 없을 때 사용하거나, 혹은 텍스처 결과물에 곱해줄 기본 팩터 속성들
     glm::vec3 baseAlbedo;
     float baseMetallic;
     float baseRoughness;
     float baseAo;
+
+private:
+    // 자기가 직접 단색 텍스처를 해제해야 하는지 판별하는 플래그
+    bool isAlbedoAllocated = false;
+    bool isMetallicAllocated = false;
+    bool isRoughnessAllocated = false;
+    bool isAoAllocated = false;
 };
+
 struct Object {
     std::shared_ptr<Material> material;
     std::shared_ptr<Mesh> mesh;
