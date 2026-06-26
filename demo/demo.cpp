@@ -55,14 +55,14 @@ int main() {
 
     auto pointLightObj = std::make_shared<knot::PbrPointLight>(
         glm::vec3(1.0f,1.0f,1.0f),
-        glm::vec3(1.0f, 1.0f, 1.0f),    // lightColor (warm orange light)
+        glm::vec3(1.0f, 1.0f, 1.0f),
         2.0f
     );
     scene.getObjectManager().registerObject(pointLightObj);
 
     auto pointLightObjj = std::make_shared<knot::PbrPointLight>(
         glm::vec3(0.0f,1.0f,1.0f),
-        glm::vec3(1.0f, 1.0f, 1.0f),    // lightColor (warm orange light)
+        glm::vec3(1.0f, 1.0f, 1.0f),
         2.0f
     );
     scene.getObjectManager().registerObject(pointLightObjj);
@@ -81,38 +81,38 @@ int main() {
 
     bool stop = false;
 
-    engine.getWindow().setKeyInputCallback([&](knot::ScanCode code, knot::KeyState action) {
-        if (action == knot::KeyState::PRESS) {
-            if (code == knot::ScanCode::ESCAPE) {
-                if (!stop)
-                    glfwSetInputMode(engine.getWindow().getHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-                else
-                    glfwSetInputMode(engine.getWindow().getHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                stop = !stop;
+
+
+    engine.setEventCallback([&](knot::Event &event) {
+        if (event.type == knot::KeyInput) {
+            if (event.action == knot::KeyState::PRESS) {
+                if (event.key == knot::ScanCode::ESCAPE) {
+                    if (!stop)
+                        glfwSetInputMode(engine.getWindow().getHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                    else
+                        glfwSetInputMode(engine.getWindow().getHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                    stop = !stop;
+                    event.handled = true;
+                }
+
+                keyStates[event.key] = true;
+            } else if (event.action == knot::KeyState::RELEASE) {
+                keyStates[event.key] = false;
             }
-
-            keyStates[code] = true;
-        } else if (action == knot::KeyState::RELEASE) {
-            keyStates[code] = false;
-        }
-    });
-
-    engine.getWindow().setMousePositionCallback([&](double xpos, double ypos) {
-        if (stop)
-            return;
-        if (firstMouse) {
-            lastX = static_cast<float>(xpos);
-            lastY = static_cast<float>(ypos);
-            firstMouse = false;
         }
 
-        float xOffset = static_cast<float>(xpos) - lastX;
-        float yOffset = lastY - static_cast<float>(ypos);
+        if (event.type == knot::MouseMoved) {
+            if (stop) return;
 
-        lastX = static_cast<float>(xpos);
-        lastY = static_cast<float>(ypos);
+            float xOffset = static_cast<float>(event.x) - lastX;
+            float yOffset = lastY - static_cast<float>(event.y);
 
-        scene.getMainCameraObject().rotate(xOffset, yOffset, true);
+            lastX = static_cast<float>(event.x);
+            lastY = static_cast<float>(event.y);
+
+            scene.getMainCameraObject().rotate(xOffset, yOffset, true);
+            event.handled = true;
+        }
     });
 
     scene.setUpdateCallback([&](knot::Scene& currentScene, float deltaTime) {
