@@ -190,10 +190,6 @@ unsigned int Shader::getId() const {
     return id;
 }
 
-ShaderSource PongShader::GetSource() {
-    return ShaderSource(getAssetRoot() + "assets/shaders/alpha.vert", getAssetRoot() + "assets/shaders/pong.frag");
-}
-
 ShaderSource AlphaShader::GetSource() {
     return ShaderSource(getAssetRoot() + "assets/shaders/alpha.vert", getAssetRoot() + "assets/shaders/alpha.frag");
 }

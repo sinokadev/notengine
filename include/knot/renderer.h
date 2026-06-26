@@ -9,6 +9,14 @@
 #include <knot/scene.h>
 
 namespace knot {
+struct GPUMovingPointLight {
+    glm::vec4 position;  // [x, y, z, w(원하는 데이터나 패딩)]
+    glm::vec4 color;     // [r, g, b, brightness] -> w에 밝기를 넣어 16바이트 정렬을 맞춥니다!
+    float radius;
+    float constant;
+    float linear;
+    float quadratic;
+}; // 딱 48바이트로 16바이트 배수 정렬 완성!
 class Renderer {
 public:
     static constexpr float kNearPlane = 0.1f;
@@ -21,8 +29,8 @@ public:
 
 private:
     bool initialized = false;
+    GLuint lightSSBO = 0;
     std::vector<const DirLight*> activeDirLights;
-    std::vector<const PongPointLight*> activePointLights;
     std::vector<const PbrPointLight*> activePbrPointLights;
 };
 } // namespace knot

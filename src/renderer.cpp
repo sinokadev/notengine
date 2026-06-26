@@ -1,7 +1,5 @@
 #include <knot/renderer.h>
-
 #include <glad/gl.h>
-
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 
@@ -18,6 +16,9 @@ bool Renderer::init(GLADloadfunc loadProc) {
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
+    // SSBO 버퍼 생성
+    glGenBuffers(1, &lightSSBO);
+
     initialized = true;
     return true;
 }
@@ -26,28 +27,15 @@ void Renderer::beginFrame(int framebufferWidth, int framebufferHeight) {
     if (framebufferWidth <= 0 || framebufferHeight <= 0) {
         return;
     }
-
     glViewport(0, 0, framebufferWidth, framebufferHeight);
 }
 
 bool Renderer::renderObject(const Object& object, const Camera& camera, float aspectRatio) {
-    if (!initialized) {
-        return false;
-    }
+    if (!initialized) return false;
 
-    if (dynamic_cast<const Camera*>(&object)) {
-        return true;
-    }
-
-    if (dynamic_cast<const PongPointLight*>(&object)) {
-        return true;
-    }
-
-    if (dynamic_cast<const PbrPointLight*>(&object)) {
-        return true;
-    }
-
-    if (dynamic_cast<const DirLight*>(&object)) {
+    if (dynamic_cast<const Camera*>(&object) || 
+        dynamic_cast<const PbrPointLight*>(&object) || 
+        dynamic_cast<const DirLight*>(&object)) {
         return true;
     }
 
@@ -69,7 +57,6 @@ bool Renderer::renderObject(const Object& object, const Camera& camera, float as
     shader->set("model", object.getWorldMatrix());
     shader->set("u_CameraPos", camera.position);
 
-    // Set Directional Light uniforms
     if (!activeDirLights.empty()) {
         const auto* dirLight = activeDirLights.front();
         shader->set("dirLight.direction", dirLight->direction);
@@ -83,69 +70,8 @@ bool Renderer::renderObject(const Object& object, const Camera& camera, float as
         shader->set("dirLight.specular", glm::vec3(0.0f));
     }
 
-    // 2. Point Light 유니폼 설정 (PBR 자동 감쇄 및 반경 연산 반영)
-    for (int i = 0; i < 2; ++i) { // POINT_LIGHT_COUNT is 1
-        std::string prefix = "pointLights[" + std::to_string(i) + "].";
-        
-        if (i < static_cast<int>(activePbrPointLights.size())) {
-            const auto* pointLight = activePbrPointLights[i];
-            
-            // PBR 광원 강도 기준 자동 유효 반경 계산
-            float autoRadius = 5.0f * std::sqrt(pointLight->intensity);
-
-            shader->set(prefix + "position", pointLight->position);
-            shader->set(prefix + "color", pointLight->color);
-            shader->set(prefix + "brightness", pointLight->intensity); // 'brightness'로 바인딩 명칭 정정
-            shader->set(prefix + "radius", autoRadius);               // 자동 반경 추가
-
-            // 구형 퐁(Phong) 셰이더와 호환성을 유지하기 위한 조명 감쇄 기본 세팅
-            shader->set(prefix + "ambient", 0.05f * pointLight->color * pointLight->intensity);
-            shader->set(prefix + "diffuse", pointLight->color * pointLight->intensity);
-            shader->set(prefix + "specular", pointLight->color * pointLight->intensity);
-            shader->set(prefix + "constant", 1.0f);
-            shader->set(prefix + "linear", 0.09f);
-            shader->set(prefix + "quadratic", 0.032f);
-
-        } else if (i < static_cast<int>(activePointLights.size())) {
-            const auto* pointLight = activePointLights[i];
-            
-            // 기존 퐁(Phong) 광원의 감쇄 계수를 기반으로 유효 반경 역산
-            // (감쇄도 공식 역산: 최종 감쇄율이 대략 0.01 이하가 되는 한계 거리를 반경으로 추출)
-            float intensityEstimate = glm::length(pointLight->diffuse);
-            float autoRadius = 10.0f; 
-            if (pointLight->quadratic > 0.0f) {
-                autoRadius = std::sqrt(intensityEstimate / (pointLight->quadratic * 0.01f));
-            } else if (pointLight->linear > 0.0f) {
-                autoRadius = intensityEstimate / (pointLight->linear * 0.01f);
-            }
-
-            shader->set(prefix + "position", pointLight->position);
-            shader->set(prefix + "ambient", pointLight->ambient);
-            shader->set(prefix + "diffuse", pointLight->diffuse);
-            shader->set(prefix + "specular", pointLight->specular);
-            shader->set(prefix + "constant", pointLight->constant);
-            shader->set(prefix + "linear", pointLight->linear);
-            shader->set(prefix + "quadratic", pointLight->quadratic);
-
-            // 신형 PBR 셰이더 데이터 파이프라인 대응용 변환 바인딩
-            shader->set(prefix + "color", glm::length(pointLight->diffuse) > 0.0f ? glm::normalize(pointLight->diffuse) : glm::vec3(1.0f));
-            shader->set(prefix + "brightness", intensityEstimate);
-            shader->set(prefix + "radius", autoRadius);
-
-        } else {
-            // 빈 슬롯용 기본 안전장치 값들 보충
-            shader->set(prefix + "position", glm::vec3(0.0f));
-            shader->set(prefix + "color", glm::vec3(0.0f));
-            shader->set(prefix + "brightness", 0.0f);
-            shader->set(prefix + "radius", 1.0f); // 0 나누기 오류 방지용 최소 크기
-            shader->set(prefix + "ambient", glm::vec3(0.0f));
-            shader->set(prefix + "diffuse", glm::vec3(0.0f));
-            shader->set(prefix + "specular", glm::vec3(0.0f));
-            shader->set(prefix + "constant", 1.0f);
-            shader->set(prefix + "linear", 0.0f);
-            shader->set(prefix + "quadratic", 0.0f);
-        }
-    }
+    // 셰이더에게 현재 활성화된 포인트 라이트 개수 제보
+    shader->set("u_ActivePointLightCount", static_cast<int>(activePbrPointLights.size()));
 
     if (!object.mesh || !object.mesh->isReady()) {
         std::cerr << "[Error] Object ID " << object.id << " has no valid mesh" << std::endl;
@@ -168,18 +94,43 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     auto& objectManager = scene.getObjectManager();
 
     activeDirLights.clear();
-    activePointLights.clear();
     activePbrPointLights.clear();
+    
+    // 1. 오브젝트 배열 순회하며 라이트 컴포넌트 수집
     for (const auto& object : objectManager.getObjects()) {
         if (const auto* dl = dynamic_cast<const DirLight*>(object.get())) {
             activeDirLights.push_back(dl);
-        } else if (const auto* pl = dynamic_cast<const PongPointLight*>(object.get())) {
-            activePointLights.push_back(pl);
         } else if (const auto* pbrl = dynamic_cast<const PbrPointLight*>(object.get())) {
             activePbrPointLights.push_back(pbrl);
         }
     }
 
+    // 🌟 [누락되었던 핵심 최적화 구간] SSBO 데이터 빌드 및 전송
+    std::vector<GPUMovingPointLight> gpuLights;
+    gpuLights.reserve(activePbrPointLights.size());
+
+    for (const auto* light : activePbrPointLights) {
+        GPUMovingPointLight gpuLight;
+        gpuLight.position = glm::vec4(light->position, 1.0f);
+        // rgb 영역에는 색상을, alpha(w) 영역에는 intensity(brightness)를 저장하여 16바이트 정렬 고수
+        gpuLight.color = glm::vec4(light->color, light->intensity); 
+        gpuLight.radius = 5.0f * std::sqrt(light->intensity);
+        gpuLight.constant = 1.0f;
+        gpuLight.linear = 0.09f;
+        gpuLight.quadratic = 0.032f;
+        gpuLights.push_back(gpuLight);
+    }
+
+    // 데이터가 존재할 때만 안전하게 전송하되, 0개일 때도 버퍼 바인딩은 안전하게 유지
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
+    if (!gpuLights.empty()) {
+        glBufferData(GL_SHADER_STORAGE_BUFFER, gpuLights.size() * sizeof(GPUMovingPointLight), gpuLights.data(), GL_DYNAMIC_DRAW);
+    }
+    // binding = 0 슬롯에 이 SSBO를 글로벌하게 고정시킵니다.
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightSSBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); 
+
+    // 2. 오브젝트 드로우 콜 호출 수행
     for (const auto& object : objectManager.getObjects()) {
         renderObject(*object, camera, aspectRatio);
     }

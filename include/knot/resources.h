@@ -90,10 +90,6 @@ private:
     mutable std::unordered_map<std::string, int> uniformLocations;
 };
 
-class PongShader {
-public:
-    static ShaderSource GetSource();
-};
 
 class PbrShader {
 public:
@@ -152,97 +148,6 @@ public:
 
 private:
     glm::vec3 color;
-};
-
-class PongMaterial : public Material {
-public:
-    // 생성자: 부모 클래스 Material(shader)을 호출하여 셰이더를 등록합니다.
-    PongMaterial(std::shared_ptr<Shader> s, glm::vec3 diffColor, glm::vec3 specColor, float shininess, unsigned int diffMap = 0,
-                 unsigned int specMap = 0, unsigned int normMap = 0, unsigned int roughMap = 0)
-        : Material(s), baseDiffuse(diffColor), baseSpecular(specColor), baseShininess(shininess), diffuseMap(diffMap), specularMap(specMap),
-          normalMap(normMap), roughnessMap(roughMap) {
-        // 텍스처 ID가 0이 아니면(유효한 텍스처가 들어오면) 자동으로 사용 플래그를 true로 설정합니다.
-        useDiffuseMap = (diffuseMap != 0);
-        useSpecularMap = (specularMap != 0);
-        useNormalMap = (normalMap != 0);
-        useRoughnessMap = (roughnessMap != 0);
-    }
-
-    // 텍스처 설정 메서드들 (필요에 따라 사용)
-    void setDiffuseMap(unsigned int texID) {
-        diffuseMap = texID;
-        useDiffuseMap = true;
-    }
-    void setSpecularMap(unsigned int texID) {
-        specularMap = texID;
-        useSpecularMap = true;
-    }
-    void setNormalMap(unsigned int texID) {
-        normalMap = texID;
-        useNormalMap = true;
-    }
-    void setRoughnessMap(unsigned int texID) {
-        roughnessMap = texID;
-        useRoughnessMap = true;
-    }
-
-    // 렌더러가 오브젝트를 그리기 직전에 호출할 바인딩 함수
-    void bind() override {
-        if (!shader)
-            return;
-
-        // 1. 셰이더 프로그램 활성화
-        shader->use();
-
-        // 2. 텍스처 맵 바인딩 (활성화된 텍스처 유닛 0~3번 순차 배정)
-        if (useDiffuseMap) {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, diffuseMap);
-            shader->set("material.diffuseMap", 0);
-        }
-        if (useSpecularMap) {
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, specularMap);
-            shader->set("material.specularMap", 1);
-        }
-        if (useNormalMap) {
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, normalMap);
-            shader->set("material.normalMap", 2);
-        }
-        if (useRoughnessMap) {
-            glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, roughnessMap);
-            shader->set("material.roughnessMap", 3);
-        }
-
-        // 3. 텍스처 사용 여부 플래그(bool) 전송
-        shader->set("material.useDiffuseMap", useDiffuseMap);
-        shader->set("material.useSpecularMap", useSpecularMap);
-        shader->set("material.useNormalMap", useNormalMap);
-        shader->set("material.useRoughnessMap", useRoughnessMap);
-
-        // 4. 기본 색상 및 속성 데이터(vec3, float) 전송
-        shader->set("material.baseDiffuse", baseDiffuse);
-        shader->set("material.baseSpecular", baseSpecular);
-        shader->set("material.baseShininess", baseShininess);
-    }
-
-public:
-    // GLSL 구조체 멤버와 1:1 매핑되는 멤버 변수들
-    unsigned int diffuseMap;
-    unsigned int specularMap;
-    unsigned int normalMap;
-    unsigned int roughnessMap;
-
-    bool useDiffuseMap;
-    bool useSpecularMap;
-    bool useRoughnessMap;
-    bool useNormalMap;
-
-    glm::vec3 baseDiffuse;
-    glm::vec3 baseSpecular;
-    float baseShininess;
 };
 
 class PbrMaterial : public Material {
@@ -427,28 +332,6 @@ public:
     }
 
     virtual ~Light() = default;
-};
-
-class PongPointLight : public Light {
-public:
-    // Phong 조명 구성 요소
-    glm::vec3 ambient;
-    glm::vec3 diffuse;
-    glm::vec3 specular;
-
-    // 거리 감쇄(Attenuation) 계수
-    float constant;
-    float linear;
-    float quadratic;
-
-    // 생성자
-    PongPointLight(glm::vec3 amb = glm::vec3(0.05f), glm::vec3 diff = glm::vec3(0.8f), glm::vec3 spec = glm::vec3(1.0f), float cons = 1.0f,
-                   float lin = 0.09f, float quad = 0.032f)
-        : ambient(amb), diffuse(diff), specular(spec), constant(cons), linear(lin), quadratic(quad) {
-
-        // 필요하다면 Light 클래스의 기본 color나 intensity도 여기서 초기화할 수 있습니다.
-        this->color = diff;
-    }
 };
 
 class PbrPointLight : public Light {

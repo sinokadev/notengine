@@ -53,20 +53,6 @@ bool ResourceManager::init() {
 
     defaultShaderIds.insert(alphaShader->getId());
 
-    auto pongSource = std::make_shared<ShaderSource>(PongShader::GetSource());
-    if (!pongSource->isValid()) {
-        std::cerr << "[Error] Failed to load default pong shader sources" << std::endl;
-        return false;
-    }
-
-    auto pongShader = createShader(pongSource, "pongShader");
-    if (!pongShader) {
-        std::cerr << "[Error] Failed to create default pong shader" << std::endl;
-        return false;
-    }
-
-    defaultShaderIds.insert(pongShader->getId());
-
     auto pbrSource = std::make_shared<ShaderSource>(PbrShader::GetSource());
     if (!pbrSource->isValid()) {
         std::cerr << "[Error] Failed to load default pbr shader sources" << std::endl;
