@@ -7,6 +7,7 @@
 #include <knot/renderer.h>
 #include <knot/window.h>
 #include <knot/scene.h>
+#include <knot/event.h>
 
 namespace knot {
 class Engine {
@@ -23,6 +24,10 @@ public:
     bool setScene(Scene& s);
     void setClearColor(float r, float g, float b, float a) {
         clearColor = {r, g, b, a};
+    }
+
+    void setEventCallback(std::function<void(Event&)> callback) {
+        eventCallback = std::move(callback);
     }
 
 private:
@@ -43,5 +48,7 @@ private:
 
     void update();
     void render();
+
+    std::function<void(Event&)> eventCallback = nullptr;
 };
 } // namespace knot
