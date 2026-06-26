@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#version 330 core
+#version 430 core
 out vec4 FragColor;
 
 in vec3 FragPos;
@@ -32,13 +32,19 @@ struct DirLight {
 uniform DirLight dirLight;
 
 struct PointLight {
-    vec3 position;
-    vec3 color;
-    float brightness;
-    float radius;
+    vec4 position;    // 0 ~ 15 바이트
+    vec4 color;       // 16 ~ 31 바이트 (rgb: 색상, a: 밝기)
+    float radius;     // 32 ~ 35 바이트
+    float constant;   // 36 ~ 39 바이트
+    float linear;     // 40 ~ 43 바이트
+    float quadratic;  // 44 ~ 47 바이트
+}; // 명확하게 48바이트 블록으로 떨어짐
+
+layout(std430, binding = 0) readonly buffer LightBuffer {
+    PointLight pointLights[]; 
 };
-#define POINT_LIGHT_COUNT 2
-uniform PointLight pointLights[POINT_LIGHT_COUNT];
+
+uniform int u_ActivePointLightCount;
 
 struct Material {
     sampler2D albedoMap;
@@ -61,18 +67,17 @@ float PREVENT_DIV0(float num, float den, float alsh) {
     return num / max(den, alsh);
 }
 
-// 매개변수 이름을 명확하게 alpha로 변경하여 혼선을 방지합니다.
 float D_GGX(float alpha, float NoH, const vec3 h) {
     float oneMinusNoHSquared = 1.0 - NoH * NoH;
 
     float a = NoH * alpha;
-    float k = min(alpha / (oneMinusNoHSquared + a * a), 453.5); // 453.5 prevents fp16 overflow
+    float k = min(alpha / (oneMinusNoHSquared + a * a), 453.5); 
     float d = k * (k * (1.0 / PI));
     return d;
 }
 
 float V_SmithGGXCorrelated(float alpha, float NoV, float NoL) {
-    float a2 = alpha; // 이미 외부에서 roughness가 제곱되어 들어오므로 다시 제곱하지 않습니다.
+    float a2 = alpha; 
     float lambdaV = NoL * sqrt((NoV - a2 * NoV) * NoV + a2);
     float lambdaL = NoV * sqrt((NoL - a2 * NoL) * NoL + a2);
     float v = PREVENT_DIV0(0.5, lambdaV + lambdaL, 0.0000077);
@@ -111,13 +116,12 @@ void main() {
     vec3 N = normalize(Normal);
     vec3 V = normalize(u_CameraPos - FragPos);
 
-    // 2. 텍스처 맵 샘플링 및 보정 (C++ 측에서 단색 텍스처가 무조건 할당되므로 최적화 진행)
+    // 2. 텍스처 맵 샘플링 및 보정
     vec3 albedo     = texture(material.albedoMap, TexCoords).rgb;
     float metallic  = texture(material.metallicMap, TexCoords).r;
     float roughness = texture(material.roughnessMap, TexCoords).r;
     float ao        = texture(material.aoMap, TexCoords).r;
 
-    // 지각적 roughness를 선형 파라미터로 변환 (제곱 연산 및 최소 한계치 설정)
     float alphaRoughness = max(roughness * roughness, 0.002); 
 
     // 3. F0 계산
@@ -129,9 +133,13 @@ void main() {
     vec3 ambient = dirLight.ambient * albedo * ao; 
 
     // 5. Point Light 기여도 계산
-    for (int i = 0; i < POINT_LIGHT_COUNT; ++i) {
-        vec3 L_point = normalize(pointLights[i].position - FragPos);
-        float dist = length(pointLights[i].position - FragPos);
+    for (int i = 0; i < u_ActivePointLightCount; ++i) {
+        vec3 lightPos = pointLights[i].position.xyz;
+        vec3 lightColorRaw = pointLights[i].color.rgb;
+        float brightness = pointLights[i].color.a; 
+
+        vec3 L_point = normalize(lightPos - FragPos);
+        float dist = length(lightPos - FragPos);
         
         // 기본 역제곱 감쇄
         float attenuation = 1.0 / (dist * dist + 0.01);
@@ -143,10 +151,10 @@ void main() {
         attenuation *= windowing;
         
         // 최종 광도 계산
-        vec3 lightColor = pointLights[i].color * pointLights[i].brightness * attenuation;
+        vec3 lightColor = lightColorRaw * brightness * attenuation;
         
         directLighting += calcPbrLight(N, V, L_point, lightColor, albedo, metallic, alphaRoughness, f0);
-        ambient += (pointLights[i].color * 0.05) * albedo * ao * attenuation;
+        ambient += (lightColorRaw * 0.05) * albedo * ao * attenuation;
     }
     vec3 finalColor = ambient + directLighting;
 
