@@ -2,6 +2,7 @@
 #include <glad/gl.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
+#include <cassert>
 
 namespace knot {
 
@@ -41,13 +42,13 @@ bool Renderer::renderObject(const Object& object, const Camera& camera, float as
 
     if (!object.material) {
         std::cerr << "[Error] Object ID " << object.id << " has no material" << std::endl;
-        return false;
+        assert(false && "Object missing material component");
     }
 
     const auto shader = object.material->getShader();
     if (!shader || !shader->isValid()) {
         std::cerr << "[Error] Object ID " << object.id << " has no valid shader" << std::endl;
-        return false;
+        assert(false && "Object material has invalid or uncompiled shader");
     }
 
     object.material->bind();
