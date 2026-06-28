@@ -27,10 +27,11 @@ public:
     bool renderObject(const Object& object, const Camera& camera, float aspectRatio);
     bool renderScene(Scene& scene, float aspectRatio);
 
+    void processDirLights(const std::shared_ptr<Shader>& shader, const std::vector<const DirLight*>& dirLights);
+    void processPointLights(const std::vector<const PbrPointLight*>& pointLights);
+
 private:
     bool initialized = false;
     GLuint lightSSBO = 0;
-    std::vector<const DirLight*> activeDirLights;
-    std::vector<const PbrPointLight*> activePbrPointLights;
 };
 } // namespace knot
