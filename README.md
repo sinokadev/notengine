@@ -9,8 +9,6 @@ Everything as a code!
 
 ## Todo
 
-- [ ] 수학 라이브러리 작성(math.h)
-
 - [x] 마우스 입력받기
 
 - [x] 이벤트 시스템(SDL에 있는것과 비슷한)(엔진에 구현)
