@@ -1,6 +1,6 @@
 # Not Engine Alpha 1.4
 
-Everything as a code!
+Everything as code!
 
 ## 로드맵
 
