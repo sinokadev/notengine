@@ -2,6 +2,29 @@
 
 Everything as code!
 
+# Build
+
+You will need the `cmake` and `glfw3` (development) packages to build this project.
+
+## Prerequisites (Linux/Ubuntu)
+
+```
+sudo apt update
+sudo apt install cmake libglfw3-dev build-essential
+```
+
+## Instructions
+
+Run the following scripts to build the library and the demos:
+
+```
+# Build the core library
+./script/library_relase_build.sh
+
+# Build the demo executables
+./script/demo_relase_build.sh
+```
+
 ## 로드맵
 
 - Beta 1.0: 이벤트와 PBR, 그리고 인스턴싱과 콜리전 구현, 제대로된 게임을 만들 수 있을 수준에 다다랐을때 릴리즈
