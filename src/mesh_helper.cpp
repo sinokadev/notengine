@@ -8,7 +8,6 @@
 
 namespace knot {
 
-// 탄젠트 유도를 위한 헬퍼 함수 (삼각형 UV 기준)
 void calculateMeshTangents(std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices) {
     for (auto& v : vertices) {
         v.Tangent = glm::vec3(0.0f);
