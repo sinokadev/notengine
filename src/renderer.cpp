@@ -19,6 +19,10 @@ bool Renderer::init(GLADloadfunc loadProc) {
 
     glGenBuffers(1, &lightSSBO);
 
+    skyboxMesh = createCube();
+    auto skyboxSource = std::make_shared<ShaderSource>(getAssetRoot() + "assets/shaders/skybox.vert", getAssetRoot() + "assets/shaders/skybox.frag");
+    skyboxShader = std::make_shared<Shader>(skyboxSource, SKYBOX_SHADER_ID);
+
     initialized = true;
     return true;
 }
@@ -97,6 +101,28 @@ bool Renderer::renderObject(const Object& object, const Camera& camera, float as
     return true;
 }
 
+void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio) {
+    glDepthFunc(GL_LEQUAL);
+    glDisable(GL_CULL_FACE);
+    skyboxShader->use();
+    
+    glm::mat4 view = glm::mat4(glm::mat3(camera.getViewMatrix())); 
+    glm::mat4 projection = glm::perspective(glm::radians(camera.fov), aspectRatio, kNearPlane, kFarPlane);
+    
+    skyboxShader->set("transform", projection * view);
+    
+    glBindVertexArray(skyboxMesh->vao);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, cubemapID);
+    skyboxShader->set("tex", 0);
+    
+    glDrawElements(GL_TRIANGLES, skyboxMesh->indexCount, GL_UNSIGNED_INT, nullptr);
+    
+    glBindVertexArray(0);
+    glEnable(GL_CULL_FACE);
+    glDepthFunc(GL_LESS);
+}
+
 bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     if (!initialized) return false;
 
@@ -105,6 +131,8 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
 
     std::vector<const DirLight*> localDirLights;
     std::vector<const PbrPointLight*> localPointLights;
+
+    renderSkybox(scene.getHDRMap(), camera, aspectRatio);
     
     for (const auto& object : objectManager.getObjects()) {
         if (const auto* dl = dynamic_cast<const DirLight*>(object.get())) {

@@ -27,6 +27,9 @@ public:
     Object& getMainCameraObject();
     void setMainCameraObject(Object& obj);
 
+    void loadHDRMap(const std::string& path);
+    unsigned int getHDRMap() const { return hdrMap; }
+
 private:
     ObjectManager objectManager;
     ResourceManager resourceManager;
@@ -35,6 +38,8 @@ private:
 
     Camera* camera = nullptr;
     Object* mainCameraObj = nullptr;
+
+    unsigned int hdrMap;
 
     void setupCamera();
 };

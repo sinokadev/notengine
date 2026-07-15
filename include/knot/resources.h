@@ -80,6 +80,7 @@ public:
     void set(const std::string& name, const glm::vec3& value) const;
     void set(const std::string& name, const glm::mat4& value) const;
     unsigned int getId() const;
+    unsigned int getShaderProgram() const;
 
 private:
     int uniformLocation(const std::string& name) const;

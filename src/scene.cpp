@@ -1,11 +1,23 @@
 #include <knot/scene.h>
 #include <glad/gl.h>
 
+#include <knot/utility.h>
+
 namespace knot {
 Scene::Scene() {
     if (glad_glCreateShader != nullptr) {
         resourceManager.init();
     }
+
+    hdrMap = createSolidColorTexture({0,0,0});
+}
+
+void Scene::loadHDRMap(const std::string& path) {
+    if (hdrMap != 0) {
+        glDeleteTextures(1, &hdrMap);
+    }
+    
+    hdrMap = loadHDRTexture(path);
 }
 
 Object& Scene::getMainCameraObject() {
