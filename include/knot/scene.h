@@ -28,7 +28,7 @@ public:
     void setMainCameraObject(Object& obj);
 
     void loadHDRMap(const std::string& path);
-    unsigned int getHDRMap() const { return hdrMap; }
+    unsigned int getCubeMap() const { return cubeMap; }
 
 private:
     ObjectManager objectManager;
@@ -40,6 +40,7 @@ private:
     Object* mainCameraObj = nullptr;
 
     unsigned int hdrMap;
+    unsigned int cubeMap;
 
     void setupCamera();
 };

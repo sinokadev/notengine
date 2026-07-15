@@ -21,6 +21,8 @@ int main() {
 
     knot::Scene scene;
 
+    scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
+
     auto mesh2 = knot::createCube();
     auto mesh = knot::loadModelOBJ(knot::getAssetRoot() + "assets/utah_teapot.obj");
     auto shader = scene.getResourceManager().getShader("pbrShader");

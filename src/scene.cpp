@@ -8,16 +8,15 @@ Scene::Scene() {
     if (glad_glCreateShader != nullptr) {
         resourceManager.init();
     }
-
-    hdrMap = createSolidColorTexture({0,0,0});
 }
 
 void Scene::loadHDRMap(const std::string& path) {
-    if (hdrMap != 0) {
-        glDeleteTextures(1, &hdrMap);
-    }
+    if (hdrMap != 0) glDeleteTextures(1, &hdrMap);
+    if (cubeMap != 0) glDeleteTextures(1, &cubeMap);
+
+    hdrMap = loadHDRTexture(path); 
     
-    hdrMap = loadHDRTexture(path);
+    cubeMap = bakeHDRMapToCubemap(hdrMap, 512); 
 }
 
 Object& Scene::getMainCameraObject() {

@@ -59,6 +59,8 @@ Run the following scripts to build the library and the demos:
 - [ ] IBL 구현하기
 - [ ] 그림자 매핑 구현하기
 
+- [ ] EXR 확장자 지원 (TinyEXR 사용)
+
 - [ ] 콜리전 구현
 
 - [ ] GUI 시스템

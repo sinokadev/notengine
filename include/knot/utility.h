@@ -5,3 +5,4 @@
 
 #include <knot/utility/mesh_helper.h>
 #include <knot/utility/texture.h>
+#include <knot/utility/cubemap_baker.h>
