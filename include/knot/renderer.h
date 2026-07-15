@@ -30,6 +30,7 @@ public:
 
     void processDirLights(const std::shared_ptr<Shader>& shader, const std::vector<const DirLight*>& dirLights);
     void processPointLights(const std::vector<const PbrPointLight*>& pointLights);
+    unsigned int bakeHDRMapToCubemap(unsigned int hdrTexture2D, int size);
 
 private:
     bool initialized = false;

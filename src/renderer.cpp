@@ -102,25 +102,31 @@ bool Renderer::renderObject(const Object& object, const Camera& camera, float as
 }
 
 void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio) {
+    glDepthMask(GL_FALSE);
     glDepthFunc(GL_LEQUAL);
     glDisable(GL_CULL_FACE);
     skyboxShader->use();
     
+    // 뷰 행렬에서 이동 성분 제거 (Skybox는 항상 중심에 있어야 함)
     glm::mat4 view = glm::mat4(glm::mat3(camera.getViewMatrix())); 
     glm::mat4 projection = glm::perspective(glm::radians(camera.fov), aspectRatio, kNearPlane, kFarPlane);
     
-    skyboxShader->set("transform", projection * view);
+    // 셰이더에 행렬 전달 (각각 설정하는 것이 정석입니다)
+    skyboxShader->set("view", view);
+    skyboxShader->set("projection", projection);
     
     glBindVertexArray(skyboxMesh->vao);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, cubemapID);
-    skyboxShader->set("tex", 0);
+    // [수정] GL_TEXTURE_2D -> GL_TEXTURE_CUBE_MAP
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID); 
+    skyboxShader->set("skybox", 0); // 셰이더의 uniform 이름과 일치시킴
     
     glDrawElements(GL_TRIANGLES, skyboxMesh->indexCount, GL_UNSIGNED_INT, nullptr);
     
     glBindVertexArray(0);
     glEnable(GL_CULL_FACE);
     glDepthFunc(GL_LESS);
+    glDepthMask(GL_TRUE);
 }
 
 bool Renderer::renderScene(Scene& scene, float aspectRatio) {
@@ -132,7 +138,7 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     std::vector<const DirLight*> localDirLights;
     std::vector<const PbrPointLight*> localPointLights;
 
-    renderSkybox(scene.getHDRMap(), camera, aspectRatio);
+    renderSkybox(scene.getCubeMap(), camera, aspectRatio);
     
     for (const auto& object : objectManager.getObjects()) {
         if (const auto* dl = dynamic_cast<const DirLight*>(object.get())) {

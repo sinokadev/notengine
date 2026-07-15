@@ -1,16 +1,17 @@
 #version 330 core
-out vec4 fragColor;
-in vec3 localPos;
-uniform sampler2D tex;
-uniform float exposure;
+out vec4 FragColor;
 
-const vec2 invPi = vec2(0.1591549, 0.3183098862);
-vec2 SampleSphericalMap(vec3 v) {
-    return vec2(atan(v.z, v.x), asin(v.y)) * invPi + 0.5;
-}
+in vec3 TexCoords;
 
-void main() {
-    vec2 uv = SampleSphericalMap(normalize(localPos)); // normalize
-    vec3 color = texture(tex, uv).rgb;
-    fragColor = vec4(color, 1.0);
+uniform samplerCube skybox;
+
+void main()
+{    
+    vec3 envColor = texture(skybox, TexCoords).rgb;
+
+    envColor = envColor / (envColor + vec3(1.0));
+
+    envColor = pow(envColor, vec3(1.0 / 2.2));
+    
+    FragColor = vec4(envColor, 1.0);
 }
