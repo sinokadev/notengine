@@ -55,9 +55,12 @@ Run the following scripts to build the library and the demos:
 - [x] 퐁 셰이더 만들기
 - [x] 라이트(light) 오브젝트
 - [x] PBR 셰이더 만들기
-- [ ] 큐브매핑 구현하기
+- [x] 스카이박스 구현하기
+- [ ] IBL 구현하기
 - [ ] 그림자 매핑 구현하기
 
 - [ ] 콜리전 구현
 
 - [ ] GUI 시스템
+
+- [ ] 빌드시 셰이더를 소스코드에 자동으로 포함하도록 하기(Cmake)
