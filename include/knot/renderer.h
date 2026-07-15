@@ -10,13 +10,13 @@
 
 namespace knot {
 struct GPUMovingPointLight {
-    glm::vec4 position;  // [x, y, z, w(원하는 데이터나 패딩)]
-    glm::vec4 color;     // [r, g, b, brightness] -> w에 밝기를 넣어 16바이트 정렬을 맞춥니다!
+    glm::vec4 position;  // [x, y, z, w(Any data or Padding)]
+    glm::vec4 color;     // [r, g, b, brightness]
     float radius;
     float constant;
     float linear;
     float quadratic;
-}; // 딱 48바이트로 16바이트 배수 정렬 완성!
+};
 class Renderer {
 public:
     static constexpr float kNearPlane = 0.1f;
@@ -25,6 +25,7 @@ public:
     bool init(GLADloadfunc loadProc);
     void beginFrame(int framebufferWidth, int framebufferHeight);
     bool renderObject(const Object& object, const Camera& camera, float aspectRatio);
+    void renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio); 
     bool renderScene(Scene& scene, float aspectRatio);
 
     void processDirLights(const std::shared_ptr<Shader>& shader, const std::vector<const DirLight*>& dirLights);
@@ -33,5 +34,8 @@ public:
 private:
     bool initialized = false;
     GLuint lightSSBO = 0;
+    static constexpr unsigned int SKYBOX_SHADER_ID = 999999;
+    std::shared_ptr<Mesh> skyboxMesh;
+    std::shared_ptr<Shader> skyboxShader;
 };
 } // namespace knot

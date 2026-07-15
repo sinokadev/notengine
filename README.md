@@ -19,10 +19,10 @@ Run the following scripts to build the library and the demos:
 
 ```
 # Build the core library
-./script/library_relase_build.sh
+./script/library_release_build.sh
 
 # Build the demo executables
-./script/demo_relase_build.sh
+./script/demo_release_build.sh
 ```
 
 ## 로드맵

@@ -190,6 +190,10 @@ unsigned int Shader::getId() const {
     return id;
 }
 
+unsigned int Shader::getShaderProgram() const {
+    return shaderProgram;
+}
+
 ShaderSource AlphaShader::GetSource() {
     return ShaderSource(getAssetRoot() + "assets/shaders/alpha.vert", getAssetRoot() + "assets/shaders/alpha.frag");
 }
