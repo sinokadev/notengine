@@ -4,10 +4,12 @@ out vec4 FragColor;
 in vec3 TexCoords;
 
 uniform samplerCube skybox;
+uniform float exposure;
 
-void main()
-{    
+void main() {
     vec3 envColor = texture(skybox, TexCoords).rgb;
+
+    envColor *= exposure;
 
     envColor = envColor / (envColor + vec3(1.0));
 
