@@ -75,4 +75,4 @@ Run the following scripts to build the library and the demos:
 
 ## 에셋 출처
 
-- 빵: https://ambientcg.com/view?id=3DBread006
+- https://ambientcg.com/view?id=DaySkyHDRI001A
