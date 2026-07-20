@@ -40,15 +40,14 @@ unsigned int createTexture(unsigned char* data, int width, int height, GLenum fo
 unsigned int loadTextureFromFile(const std::string& path) {
     int width, height, nrComponents;
     stbi_set_flip_vertically_on_load(true);
-    unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrComponents, 0);
+    unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrComponents, 4);
 
     if (!data) {
         std::cout << "[Error] Texture failed to load at path: " << path << std::endl;
         return createSolidColorTexture(glm::vec3(1.0f, 0.0f, 1.0f));
     }
 
-    GLenum format = (nrComponents == 4) ? GL_RGBA : GL_RGB;
-    unsigned int textureID = createTexture(data, width, height, format);
+    unsigned int textureID = createTexture(data, width, height, GL_RGBA);
 
     stbi_image_free(data);
     return textureID;
@@ -57,7 +56,7 @@ unsigned int loadTextureFromFile(const std::string& path) {
 unsigned int loadHDRTexture(const std::string& path) {
     int width, height, nrComponents;
     stbi_set_flip_vertically_on_load(true);
-    float* data = stbi_loadf(path.c_str(), &width, &height, &nrComponents, 0);
+    float* data = stbi_loadf(path.c_str(), &width, &height, &nrComponents, 3);
 
     if (!data) {
         std::cout << "[Error] HDR Texture failed to load at path: " << path << std::endl;

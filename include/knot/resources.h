@@ -161,9 +161,15 @@ public:
                 unsigned int albedoM = 0, 
                 unsigned int metallicM = 0, 
                 unsigned int roughnessM = 0, 
-                unsigned int aoM = 0)
+                unsigned int aoM = 0,
+                unsigned int normalM = 0)
         : Material(s), 
-          baseAlbedo(albedoColor), baseMetallic(metallicFactor), baseRoughness(roughnessFactor), baseAo(aoFactor) {
+          albedoMap(0), metallicMap(0), roughnessMap(0), aoMap(0), normalMap(0),
+          isAlbedoAllocated(false), isMetallicAllocated(false), 
+          isRoughnessAllocated(false), isAoAllocated(false), isNormalAllocated(false),
+          baseAlbedo(albedoColor), baseMetallic(metallicFactor), 
+          baseRoughness(roughnessFactor), baseAo(aoFactor) 
+    {
         
         // 1. Albedo 텍스처 처리
         if (albedoM != 0) {
@@ -197,10 +203,14 @@ public:
             isAoAllocated = true;
         }
 
-        useAlbedoMap    = true;
-        useMetallicMap  = true;
-        useRoughnessMap = true;
-        useAoMap        = true;
+        // 5. Normal 텍스처 처리
+        if (normalM != 0) {
+            normalMap = normalM;
+        } else {
+            // 노멀맵은 단색이 아니라 '평평한 노멀(0.5, 0.5, 1.0)' 텍스처를 생성해야 합니다!
+            normalMap = createSolidColorTexture(glm::vec3(0.5f, 0.5f, 1.0f));
+            isNormalAllocated = true;
+        }
     }
 
     // 소멸자: 내부에서 생성한 단색 텍스처만 선택적으로 안전하게 해제
@@ -209,6 +219,7 @@ public:
         if (isMetallicAllocated && metallicMap != 0)  glDeleteTextures(1, &metallicMap);
         if (isRoughnessAllocated && roughnessMap != 0) glDeleteTextures(1, &roughnessMap);
         if (isAoAllocated && aoMap != 0)       glDeleteTextures(1, &aoMap);
+        if (isNormalAllocated && normalMap != 0) glDeleteTextures(1, &normalMap);
     }
 
     // 개별 텍스처 설정 메서드 (기존 내부 텍스처 누수 방지)
@@ -217,8 +228,7 @@ public:
             glDeleteTextures(1, &albedoMap);
             isAlbedoAllocated = false;
         }
-        albedoMap = texID; 
-        useAlbedoMap = true; 
+        albedoMap = texID;
     }
     
     void setMetallicMap(unsigned int texID) { 
@@ -226,8 +236,7 @@ public:
             glDeleteTextures(1, &metallicMap);
             isMetallicAllocated = false;
         }
-        metallicMap = texID; 
-        useMetallicMap = true; 
+        metallicMap = texID;
     }
 
     void setRoughnessMap(unsigned int texID) { 
@@ -235,8 +244,7 @@ public:
             glDeleteTextures(1, &roughnessMap);
             isRoughnessAllocated = false;
         }
-        roughnessMap = texID; 
-        useRoughnessMap = true; 
+        roughnessMap = texID;
     }
 
     void setAoMap(unsigned int texID) { 
@@ -244,8 +252,15 @@ public:
             glDeleteTextures(1, &aoMap);
             isAoAllocated = false;
         }
-        aoMap = texID; 
-        useAoMap = true; 
+        aoMap = texID;
+    }
+
+    void setNormalMap(unsigned int texID) {
+        if (isNormalAllocated && normalMap != 0) {
+            glDeleteTextures(1, &normalMap);
+            isNormalAllocated = false;
+        }
+        normalMap = texID;
     }
 
     void bind() override {
@@ -268,6 +283,10 @@ public:
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, aoMap);
         shader->set("material.aoMap", 3);
+
+        glActiveTexture(GL_TEXTURE4); // 4번 슬롯에 할당
+        glBindTexture(GL_TEXTURE_2D, normalMap);
+        shader->set("material.normalMap", 4);
     }
 
 public:
@@ -275,11 +294,7 @@ public:
     unsigned int metallicMap;
     unsigned int roughnessMap;
     unsigned int aoMap;
-
-    bool useAlbedoMap;
-    bool useMetallicMap;
-    bool useRoughnessMap;
-    bool useAoMap;
+    unsigned int normalMap;
 
     glm::vec3 baseAlbedo;
     float baseMetallic;
@@ -292,6 +307,7 @@ private:
     bool isMetallicAllocated = false;
     bool isRoughnessAllocated = false;
     bool isAoAllocated = false;
+    bool isNormalAllocated = false;
 };
 
 struct Object {

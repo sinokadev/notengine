@@ -23,56 +23,38 @@ int main() {
 
     scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
-    auto mesh2 = knot::createCube();
-    auto mesh = knot::loadModelOBJ(knot::getAssetRoot() + "assets/utah_teapot.obj");
-    if (!mesh) {
-        std::cout << "[Knot Demo] Failed to load teapot mesh: mesh is nullptr!" << std::endl;
-    } else {
-        std::cout << "[Knot Demo] Loaded teapot mesh. Vertices: " << mesh->vertices.size() << ", Indices: " << mesh->indices.size() << std::endl;
-    }
+    auto breadMesh = knot::loadModelOBJ(knot::getAssetRoot() + "assets/3DBread006_SQ-2K-PNG/3DBread006_SQ-2K-PNG.obj");
     auto shader = scene.getResourceManager().getShader("pbrShader");
-    auto material = std::make_shared<knot::PbrMaterial>(shader, 
-                                                         glm::vec3(1,1,1), // albedoColor
-                                                         0.2f,                           // metallicFactor
-                                                         0.0f,                           // roughnessFactor
-                                                         1.0f                            // aoFactor
+
+    auto breadAo = knot::loadTextureFromFile(knot::getAssetRoot() + "assets/3DBread006_SQ-2K-PNG/3DBread006_SQ-2K-PNG_AmbientOcclusion.png");
+    auto breadColor = knot::loadTextureFromFile(knot::getAssetRoot() + "assets/3DBread006_SQ-2K-PNG/3DBread006_SQ-2K-PNG_Color.png");
+    auto breadNormal = knot::loadTextureFromFile(knot::getAssetRoot() + "assets/3DBread006_SQ-2K-PNG/3DBread006_SQ-2K-PNG_NormalGL.png");
+
+    auto breadMaterial = std::make_shared<knot::PbrMaterial>(
+        shader,
+        glm::vec3(1,1,1),
+        0.0f,
+        0.5f,
+        1.0f,
+        breadColor,
+        0,
+        0,
+        breadAo,
+        breadNormal
     );
 
-    auto cubeObject = std::make_shared<knot::Object>(mesh, material);
-    scene.getObjectManager().registerObject(cubeObject);
-    cubeObject->position = glm::vec3(0.0f, 0.0f, 0.0f);
-    cubeObject->scale = glm::vec3(0.5, 0.5, 0.5);
+    auto bread = std::make_shared<knot::Object>(breadMesh, breadMaterial);
+    scene.getObjectManager().registerObject(bread);
+    bread->position = glm::vec3(0.0f, 0.0f, 0.0f);
+    bread->scale = glm::vec3(7);
 
-    auto cubeObject2 = std::make_shared<knot::Object>(mesh2, material);
-    scene.getObjectManager().registerObject(cubeObject2);
-    cubeObject2->position = glm::vec3(1.0f, 1.0f, 1.0f);
-    cubeObject2->scale = glm::vec3(0.1, 0.1, 0.1);
-
-        auto cubeObject3 = std::make_shared<knot::Object>(mesh2, material);
-    scene.getObjectManager().registerObject(cubeObject3);
-    cubeObject3->position = glm::vec3(0.0f, 1.0f, 1.0f);
-    cubeObject3->scale = glm::vec3(0.1, 0.1, 0.1);
-
-    auto dirLightObj = std::make_shared<knot::DirLight>(glm::vec3(-0.2f, -1.0f, -0.3f), // direction
-                                                            glm::vec3(0.1f),                // ambient
-                                                            glm::vec3(1.0f, 1.0f, 1.0f),    // diffuse
-                                                            glm::vec3(1.0f, 1.0f, 1.0f)     // specular
+    auto pointLightObj = std::make_shared<knot::PbrPointLight>(
+        glm::vec3(1.0f,1.0f,1.0f),
+        glm::vec3(1.0f, 1.0f, 1.0f),
+        2.0f
     );
-    scene.getObjectManager().registerObject(dirLightObj);
+    scene.getObjectManager().registerObject(pointLightObj);
 
-    //auto pointLightObj = std::make_shared<knot::PbrPointLight>(
-    //    glm::vec3(1.0f,1.0f,1.0f),
-    //    glm::vec3(1.0f, 1.0f, 1.0f),
-    //    2.0f
-    //);
-    //scene.getObjectManager().registerObject(pointLightObj);
-
-    //auto pointLightObjj = std::make_shared<knot::PbrPointLight>(
-    //    glm::vec3(0.0f,1.0f,1.0f),
-    //    glm::vec3(1.0f, 1.0f, 1.0f),
-    //    2.0f
-    //);
-    //scene.getObjectManager().registerObject(pointLightObjj);
 
     auto cameraObj = std::make_shared<knot::MovingCamera>(glm::vec3(0.0f, 0.0f, 5.0f));
     scene.getObjectManager().registerObject(cameraObj);
@@ -126,9 +108,6 @@ int main() {
         if (stop)
             return;
         totalTime += deltaTime;
-
-        float speed = 0.5f;
-        cubeObject->rotation = glm::quat(glm::vec3(sin(totalTime * 0.5f) * 0.2f, totalTime * speed, 0.0f));
 
         auto& activeCamera = currentScene.getMainCameraObject();
         glm::vec3 moveDir(0.0f);

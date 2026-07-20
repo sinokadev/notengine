@@ -48,6 +48,7 @@ uniform int u_ActivePointLightCount;
 
 struct Material {
     sampler2D albedoMap;
+    sampler2D normalMap;
     sampler2D metallicMap;
     sampler2D roughnessMap;
     sampler2D aoMap;
@@ -121,7 +122,6 @@ vec3 calcPbrLight(vec3 N, vec3 V, vec3 L, vec3 lightColor, vec3 albedo, float me
 
 void main() {
     // 1. 주요 렌더링 벡터 계산
-    vec3 N = normalize(Normal);
     vec3 V = normalize(u_CameraPos - FragPos);
 
     // 2. 텍스처 맵 샘플링 및 보정
@@ -129,6 +129,11 @@ void main() {
     float metallic  = texture(material.metallicMap, TexCoords).r;
     float roughness = texture(material.roughnessMap, TexCoords).r;
     float ao        = texture(material.aoMap, TexCoords).r;
+
+    // 노멀맵
+    vec3 normalMap = texture(material.normalMap, TexCoords).rgb;
+    vec3 N = normalize(normalMap * 2.0 - 1.0);
+    N = normalize(TBN * N);
 
     float alphaRoughness = max(roughness * roughness, 0.002); 
 
