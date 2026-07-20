@@ -120,7 +120,7 @@ void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float 
     // [수정] GL_TEXTURE_2D -> GL_TEXTURE_CUBE_MAP
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID); 
     skyboxShader->set("skybox", 0); // 셰이더의 uniform 이름과 일치시킴
-    skyboxShader->set("exposure", 5.0f);
+    skyboxShader->set("exposure", 1.0f);
     
     glDrawElements(GL_TRIANGLES, skyboxMesh->indexCount, GL_UNSIGNED_INT, nullptr);
     
@@ -157,8 +157,13 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
         
         if (shader && shader->isValid()) {
             shader->use();
+
             processDirLights(shader, localDirLights);
             shader->set("u_ActivePointLightCount", static_cast<int>(localPointLights.size()));
+
+            glActiveTexture(GL_TEXTURE8);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, scene.getIrradianceMap());
+            shader->set("irradianceMap", 8);
         }
 
         renderObject(*object, camera, aspectRatio);

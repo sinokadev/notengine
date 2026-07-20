@@ -25,6 +25,11 @@ int main() {
 
     auto mesh2 = knot::createCube();
     auto mesh = knot::loadModelOBJ(knot::getAssetRoot() + "assets/utah_teapot.obj");
+    if (!mesh) {
+        std::cout << "[Knot Demo] Failed to load teapot mesh: mesh is nullptr!" << std::endl;
+    } else {
+        std::cout << "[Knot Demo] Loaded teapot mesh. Vertices: " << mesh->vertices.size() << ", Indices: " << mesh->indices.size() << std::endl;
+    }
     auto shader = scene.getResourceManager().getShader("pbrShader");
     auto material = std::make_shared<knot::PbrMaterial>(shader, 
                                                          glm::vec3(1,1,1), // albedoColor
@@ -55,19 +60,19 @@ int main() {
     );
     scene.getObjectManager().registerObject(dirLightObj);
 
-    auto pointLightObj = std::make_shared<knot::PbrPointLight>(
-        glm::vec3(1.0f,1.0f,1.0f),
-        glm::vec3(1.0f, 1.0f, 1.0f),
-        2.0f
-    );
-    scene.getObjectManager().registerObject(pointLightObj);
+    //auto pointLightObj = std::make_shared<knot::PbrPointLight>(
+    //    glm::vec3(1.0f,1.0f,1.0f),
+    //    glm::vec3(1.0f, 1.0f, 1.0f),
+    //    2.0f
+    //);
+    //scene.getObjectManager().registerObject(pointLightObj);
 
-    auto pointLightObjj = std::make_shared<knot::PbrPointLight>(
-        glm::vec3(0.0f,1.0f,1.0f),
-        glm::vec3(1.0f, 1.0f, 1.0f),
-        2.0f
-    );
-    scene.getObjectManager().registerObject(pointLightObjj);
+    //auto pointLightObjj = std::make_shared<knot::PbrPointLight>(
+    //    glm::vec3(0.0f,1.0f,1.0f),
+    //    glm::vec3(1.0f, 1.0f, 1.0f),
+    //    2.0f
+    //);
+    //scene.getObjectManager().registerObject(pointLightObjj);
 
     auto cameraObj = std::make_shared<knot::MovingCamera>(glm::vec3(0.0f, 0.0f, 5.0f));
     scene.getObjectManager().registerObject(cameraObj);
