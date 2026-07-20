@@ -71,6 +71,8 @@ Run the following scripts to build the library and the demos:
 
 - [ ] Vulkan
 
+- [ ] USD 로드
+
 ## 에셋 출처
 
 - 빵: https://ambientcg.com/view?id=3DBread006
