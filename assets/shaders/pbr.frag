@@ -56,6 +56,8 @@ uniform Material material;
 
 uniform vec3 u_CameraPos;
 
+uniform samplerCube irradianceMap;
+
 #define PI 3.14159265359
 
 float pow5(float x) {
@@ -90,6 +92,10 @@ vec3 F_Schlick(const vec3 f0, float f90, float VoH) {
 
 float Fd_Lambert() {
     return 1.0 / PI;
+}
+
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness) {
+    return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
 vec3 calcPbrLight(vec3 N, vec3 V, vec3 L, vec3 lightColor, vec3 albedo, float metallic, float alphaRoughness, vec3 f0) {
@@ -130,7 +136,17 @@ void main() {
     // 4. Directional Light 기여도 계산
     vec3 L_dir = normalize(-dirLight.direction);
     vec3 directLighting = calcPbrLight(N, V, L_dir, dirLight.diffuse, albedo, metallic, alphaRoughness, f0);
-    vec3 ambient = dirLight.ambient * albedo * ao; 
+    // 1. 프레넬 항(F) 계산 (간접광에서의 프레넬)
+    vec3 kS = fresnelSchlickRoughness(max(dot(N, V), 0.0), f0, roughness); 
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - metallic; // 금속은 Diffuse(난반사)가 없으므로 금속성만큼 차감
+
+    // 2. Irradiance Map 샘플링 (Diffuse IBL)
+    vec3 irradiance = texture(irradianceMap, N).rgb;
+
+    // 3. Ambient 최종 계산
+    vec3 diffuse = irradiance * albedo; // 환경광으로부터 오는 Diffuse 색상
+    vec3 ambient = (kD * diffuse) * ao; // AO와 금속성 보정 적용
 
     // 5. Point Light 기여도 계산
     for (int i = 0; i < u_ActivePointLightCount; ++i) {
@@ -154,7 +170,6 @@ void main() {
         vec3 lightColor = lightColorRaw * brightness * attenuation;
         
         directLighting += calcPbrLight(N, V, L_point, lightColor, albedo, metallic, alphaRoughness, f0);
-        ambient += (lightColorRaw * 0.05) * albedo * ao * attenuation;
     }
     vec3 finalColor = ambient + directLighting;
 
