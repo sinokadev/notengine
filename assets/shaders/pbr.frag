@@ -58,6 +58,8 @@ uniform vec3 u_CameraPos;
 
 uniform samplerCube irradianceMap;
 
+uniform float u_AmbientIntensity;
+
 #define PI 3.14159265359
 
 float pow5(float x) {
@@ -142,11 +144,11 @@ void main() {
     kD *= 1.0 - metallic; // 금속은 Diffuse(난반사)가 없으므로 금속성만큼 차감
 
     // 2. Irradiance Map 샘플링 (Diffuse IBL)
-    vec3 irradiance = texture(irradianceMap, N).rgb;
+    vec3 irradiance = texture(irradianceMap, normalize(N)).rgb;
 
     // 3. Ambient 최종 계산
     vec3 diffuse = irradiance * albedo; // 환경광으로부터 오는 Diffuse 색상
-    vec3 ambient = (kD * diffuse) * ao; // AO와 금속성 보정 적용
+    vec3 ambient = (kD * diffuse) * ao * u_AmbientIntensity; // AO와 금속성 보정 적용
 
     // 5. Point Light 기여도 계산
     for (int i = 0; i < u_ActivePointLightCount; ++i) {

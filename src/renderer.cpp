@@ -4,6 +4,8 @@
 #include <iostream>
 #include <cassert>
 
+#define AMBIENT_INTENSITY 5.0f
+
 namespace knot {
 
 bool Renderer::init(GLADloadfunc loadProc) {
@@ -120,7 +122,7 @@ void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float 
     // [수정] GL_TEXTURE_2D -> GL_TEXTURE_CUBE_MAP
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID); 
     skyboxShader->set("skybox", 0); // 셰이더의 uniform 이름과 일치시킴
-    skyboxShader->set("exposure", 1.0f);
+    skyboxShader->set("exposure", AMBIENT_INTENSITY);
     
     glDrawElements(GL_TRIANGLES, skyboxMesh->indexCount, GL_UNSIGNED_INT, nullptr);
     
@@ -164,6 +166,8 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
             glActiveTexture(GL_TEXTURE8);
             glBindTexture(GL_TEXTURE_CUBE_MAP, scene.getIrradianceMap());
             shader->set("irradianceMap", 8);
+
+            shader->set("u_AmbientIntensity", AMBIENT_INTENSITY);
         }
 
         renderObject(*object, camera, aspectRatio);
