@@ -67,6 +67,10 @@ Run the following scripts to build the library and the demos:
 
 - [ ] 빌드시 셰이더를 소스코드에 자동으로 포함하도록 하기(Cmake)
 
+- [ ] resources.h 분리
+
+- [ ] Vulkan
+
 ## 에셋 출처
 
 - 빵: https://ambientcg.com/view?id=3DBread006
