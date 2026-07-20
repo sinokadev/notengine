@@ -57,7 +57,6 @@ public:
     bool isValid() const;
 
 private:
-    std::string readFile(const std::string& path);
 };
 
 class Shader {

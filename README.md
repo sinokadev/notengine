@@ -65,7 +65,7 @@ Run the following scripts to build the library and the demos:
 
 - [ ] GUI 시스템
 
-- [ ] 빌드시 셰이더를 소스코드에 자동으로 포함하도록 하기(Cmake)
+- [x] 빌드시 셰이더를 소스코드에 자동으로 포함하도록 하기(Cmake)
 
 - [ ] resources.h 분리
 

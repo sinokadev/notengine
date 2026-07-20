@@ -3,11 +3,14 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <filesystem>
 
 #include <glad/gl.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+#include "GeneratedShaders.h"
 
 namespace knot {
 
@@ -58,25 +61,26 @@ const std::string& getAssetRoot() {
     return assetRoot;
 }
 
-ShaderSource::ShaderSource(std::string v, std::string f) : vertexPath(std::move(v)), fragmentPath(std::move(f)) {
-    vertexSourceCode = readFile(vertexPath);
-    fragmentSourceCode = readFile(fragmentPath);
-}
+ShaderSource::ShaderSource(std::string v, std::string f) : vertexPath(v), fragmentPath(f) {
+    // 1. 파일 이름만 추출 (디렉토리 경로 제거)
+    std::string vName = std::filesystem::path(v).filename().string();
+    std::string fName = std::filesystem::path(f).filename().string();
 
+    // 2. 파일 이름으로 Registry 검색
+    if (Shaders::Registry.count(vName)) {
+        vertexSourceCode = Shaders::Registry.at(vName);
+    } else {
+        std::cerr << "[Error] Failed to find shader in Registry: " << vName << std::endl;
+    }
+    
+    if (Shaders::Registry.count(fName)) {
+        fragmentSourceCode = Shaders::Registry.at(fName);
+    } else {
+        std::cerr << "[Error] Failed to find shader in Registry: " << fName << std::endl;
+    }
+}
 bool ShaderSource::isValid() const {
     return !vertexSourceCode.empty() && !fragmentSourceCode.empty();
-}
-
-std::string ShaderSource::readFile(const std::string& path) {
-    std::ifstream file(path);
-    if (!file.is_open()) {
-        std::cerr << "[Error] Failed to open shader file: " << path << std::endl;
-        return "";
-    }
-
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
 }
 
 Shader::Shader(std::shared_ptr<ShaderSource> ss, unsigned int shaderId) : id(shaderId) {
