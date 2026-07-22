@@ -56,7 +56,8 @@ Run the following scripts to build the library and the demos:
 - [x] 라이트(light) 오브젝트
 - [x] PBR 셰이더 만들기
 - [x] 스카이박스 구현하기
-- [ ] IBL 구현하기
+- [x] IBL Diffuse
+- [ ] IBL Specular
 - [ ] 그림자 매핑 구현하기
 
 - [ ] EXR 확장자 지원 (TinyEXR 사용)
