@@ -1,6 +1,8 @@
 # Not Engine Alpha 1.4
 
-Everything as code!
+> Everything as code!
+
+A code-first game engine built on OpenGL, empowering you to build everything from scratch with clean, simple code.
 
 <img width="1282" height="749" alt="image" src="https://github.com/user-attachments/assets/de731f10-f17b-42cb-a143-d4fbbff1a457" />
 <sub>demo/demo.cpp</sub>
