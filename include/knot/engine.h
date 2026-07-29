@@ -36,6 +36,18 @@ public:
         eventCallback = std::move(callback);
     }
 
+    void pushUserEvent(uint32_t userCode, std::any data = {}) {
+        knot::Event event;
+        event.type = knot::EventType::User;
+        event.userCode = userCode;
+        event.userData = std::move(data);
+
+        // 등록된 콜백으로 이벤트 즉시 전송 (또는 큐에 넣어 연기 처리)
+        if (eventCallback) {
+            eventCallback(event);
+        }
+    }
+
 private:
     Window window;
     Renderer renderer;

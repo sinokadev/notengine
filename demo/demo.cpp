@@ -10,6 +10,16 @@
 #include <unordered_map>
 #include <GLFW/glfw3.h>
 
+// 사용자가 정의하는 커스텀 이벤트 ID 목록
+enum UserEventType : uint32_t {
+    PRESS_E
+};
+
+// 이벤트와 함께 전달할 데이터
+struct EventData {
+    int number;
+};
+
 int main() {
     knot::Engine engine;
     if (!engine.init(1280, 720, "Knot Demo")) {
@@ -70,6 +80,8 @@ int main() {
                         glfwSetInputMode(engine.getWindow().getHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                     stop = !stop;
                     event.handled = true;
+                } else if (event.key == knot::ScanCode::E) {
+                    engine.pushUserEvent(PRESS_E, EventData{50});
                 }
 
                 keyStates[event.key] = true;
@@ -90,6 +102,20 @@ int main() {
 
             scene.getMainCameraObject().rotate(xOffset, yOffset, true);
             event.handled = true;
+        }
+
+        if (event.type == knot::EventType::User) {
+            switch (event.userCode) {
+                case PRESS_E: {
+                    // std::any_cast를 사용해 데이터 안전하게 추출
+                    if (event.userData.has_value()) {
+                        auto data = std::any_cast<EventData>(event.userData);
+                        std::cout << data.number << "\n";
+                    }
+                    event.handled = true;
+                    break;
+                }
+            }
         }
     });
 
