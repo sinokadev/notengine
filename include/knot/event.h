@@ -4,10 +4,11 @@
 #pragma once
 
 #include <knot/key.h>
+#include <any>
 
 namespace knot {
 
-enum EventType { None = 0, KeyInput, MouseMoved, MouseButton, WindowResize };
+enum EventType { None = 0, KeyInput, MouseMoved, MouseButton, WindowResize, User };
 
 struct Event {
     EventType type = EventType::None;
@@ -27,6 +28,9 @@ struct Event {
     // 윈도우 리사이즈 데이터 (나중에 확장용)
     int width = 0;
     int height = 0;
+
+    uint32_t userCode = 0;
+    std::any userData;
 };
 
 } // namespace knot
