@@ -1,0 +1,23 @@
+{
+  "sidebar": [
+    {
+      "label": "가이드",
+      "items": [
+        {
+          "label": "시작하기",
+          "slug": "guides/getting-started"
+        }
+      ]
+    },
+    {
+      "label": "문서",
+      "items": [
+        {
+          "autogenerate": {
+            "directory": "docs"
+          }
+        }
+      ]
+    }
+  ]
+}

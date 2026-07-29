@@ -1,0 +1,34 @@
+---
+title: Not Engine Docs
+description: OpenGL 기반 코드 중심 게임엔진으로, 깔끔하고 간결한 코드를 통해 모든 것을 처음부터 구축 할 수 있습니다.
+template: splash # Remove or comment out this line to display the site sidebar on this page.
+hero:
+  tagline: OpenGL 기반 코드 중심 게임엔진으로, 깔끔하고 간결한 코드를 통해 모든 것을 처음부터 구축 할 수 있습니다.
+  actions:
+    - text: 시작하기
+      link: /guides/getting-started/
+      icon: right-arrow
+    - text: 문서 읽기
+      link: /docs/example/
+      icon: right-arrow
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## 빠른 시작하기
+
+<CardGrid stagger>
+    <Card title="빠른 시작 가이드" icon="rocket">
+        엔진 설치부터 첫 번째 렌더링 창을 띄우는 방법까지 단계별로 알아보세요.
+    </Card>
+    <Card title="핵심 기능 탐색" icon="puzzle">
+        OpenGL 기반 렌더링 패이프라인, 입력 처리, 씬 관리 시스템의 구조를 확인하세요.
+    </Card>
+    <Card title="예제 코드 둘러보기" icon="setting">
+        간단한 2D/3D 그래픽 및 물리 효과를 구현한 샘플 코드를 참고하세요.
+    </Card>
+    <Card title="엔진 아키텍처" icon="open-book">
+        모듈식으로 설계된 Not Engine의 내부 구조와 메모리 관리 방식을 살펴봅니다.
+    </Card>
+</CardGrid>
