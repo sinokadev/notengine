@@ -72,7 +72,7 @@ ShaderSource::ShaderSource(std::string v, std::string f) : vertexPath(v), fragme
     } else {
         std::cerr << "[Error] Failed to find shader in Registry: " << vName << std::endl;
     }
-    
+
     if (Shaders::Registry.count(fName)) {
         fragmentSourceCode = Shaders::Registry.at(fName);
     } else {

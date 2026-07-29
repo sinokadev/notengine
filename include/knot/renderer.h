@@ -10,8 +10,8 @@
 
 namespace knot {
 struct GPUMovingPointLight {
-    glm::vec4 position;  // [x, y, z, w(Any data or Padding)]
-    glm::vec4 color;     // [r, g, b, brightness]
+    glm::vec4 position; // [x, y, z, w(Any data or Padding)]
+    glm::vec4 color;    // [r, g, b, brightness]
     float radius;
     float constant;
     float linear;
@@ -25,7 +25,7 @@ public:
     bool init(GLADloadfunc loadProc);
     void beginFrame(int framebufferWidth, int framebufferHeight);
     bool renderObject(const Object& object, const Camera& camera, float aspectRatio);
-    void renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio); 
+    void renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio);
     bool renderScene(Scene& scene, float aspectRatio);
 
     void processDirLights(const std::shared_ptr<Shader>& shader, const std::vector<const DirLight*>& dirLights);

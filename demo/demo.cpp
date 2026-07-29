@@ -25,11 +25,10 @@ int main() {
 
     auto mesh = knot::loadModelOBJ(knot::getAssetRoot() + "assets/notbox.obj");
     auto shader = scene.getResourceManager().getShader("pbrShader");
-    auto material = std::make_shared<knot::PbrMaterial>(shader, 
-                                                         glm::vec3(1,1,1), // albedoColor
-                                                         0.2f,                           // metallicFactor
-                                                         0.0f,                           // roughnessFactor
-                                                         1.0f                            // aoFactor
+    auto material = std::make_shared<knot::PbrMaterial>(shader, glm::vec3(1, 1, 1), // albedoColor
+                                                        0.2f,                       // metallicFactor
+                                                        0.0f,                       // roughnessFactor
+                                                        1.0f                        // aoFactor
     );
 
     auto cubeObject = std::make_shared<knot::Object>(mesh, material);
@@ -38,17 +37,13 @@ int main() {
     cubeObject->scale = glm::vec3(0.5, 0.5, 0.5);
 
     auto dirLightObj = std::make_shared<knot::DirLight>(glm::vec3(-0.2f, -1.0f, -0.3f), // direction
-                                                            glm::vec3(0.1f),                // ambient
-                                                            glm::vec3(1.0f, 1.0f, 1.0f),    // diffuse
-                                                            glm::vec3(1.0f, 1.0f, 1.0f)     // specular
+                                                        glm::vec3(0.1f),                // ambient
+                                                        glm::vec3(1.0f, 1.0f, 1.0f),    // diffuse
+                                                        glm::vec3(1.0f, 1.0f, 1.0f)     // specular
     );
     scene.getObjectManager().registerObject(dirLightObj);
 
-    auto pointLightObj = std::make_shared<knot::PbrPointLight>(
-        glm::vec3(1.0f,1.0f,1.0f),
-        glm::vec3(1.0f, 1.0f, 1.0f),
-        2.0f
-    );
+    auto pointLightObj = std::make_shared<knot::PbrPointLight>(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), 2.0f);
     scene.getObjectManager().registerObject(pointLightObj);
 
     auto cameraObj = std::make_shared<knot::MovingCamera>(glm::vec3(0.0f, 0.0f, 5.0f));
@@ -65,9 +60,7 @@ int main() {
 
     bool stop = false;
 
-
-
-    engine.setEventCallback([&](knot::Event &event) {
+    engine.setEventCallback([&](knot::Event& event) {
         if (event.type == knot::KeyInput) {
             if (event.action == knot::KeyState::PRESS) {
                 if (event.key == knot::ScanCode::ESCAPE) {
@@ -86,7 +79,8 @@ int main() {
         }
 
         if (event.type == knot::MouseMoved) {
-            if (stop) return;
+            if (stop)
+                return;
 
             float xOffset = static_cast<float>(event.x) - lastX;
             float yOffset = lastY - static_cast<float>(event.y);

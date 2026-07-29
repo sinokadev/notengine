@@ -90,7 +90,6 @@ private:
     mutable std::unordered_map<std::string, int> uniformLocations;
 };
 
-
 class PbrShader {
 public:
     static ShaderSource GetSource();
@@ -152,49 +151,34 @@ private:
 
 class PbrMaterial : public Material {
 public:
-    PbrMaterial(std::shared_ptr<Shader> s, 
-                glm::vec3 albedoColor = glm::vec3(1.0f), 
-                float metallicFactor = 0.0f, 
-                float roughnessFactor = 0.5f, 
-                float aoFactor = 1.0f,
-                unsigned int albedoM = 0, 
-                unsigned int metallicM = 0, 
-                unsigned int roughnessM = 0, 
-                unsigned int aoM = 0,
+    PbrMaterial(std::shared_ptr<Shader> s, glm::vec3 albedoColor = glm::vec3(1.0f), float metallicFactor = 0.0f, float roughnessFactor = 0.5f,
+                float aoFactor = 1.0f, unsigned int albedoM = 0, unsigned int metallicM = 0, unsigned int roughnessM = 0, unsigned int aoM = 0,
                 unsigned int normalM = 0)
-        : Material(s), 
-          albedoMap(0), metallicMap(0), roughnessMap(0), aoMap(0), normalMap(0),
-          isAlbedoAllocated(false), isMetallicAllocated(false), 
-          isRoughnessAllocated(false), isAoAllocated(false), isNormalAllocated(false),
-          baseAlbedo(albedoColor), baseMetallic(metallicFactor), 
-          baseRoughness(roughnessFactor), baseAo(aoFactor) 
-    {
-        
-        // 1. Albedo 텍스처 처리
+        : Material(s), albedoMap(0), metallicMap(0), roughnessMap(0), aoMap(0), normalMap(0), isAlbedoAllocated(false), isMetallicAllocated(false),
+          isRoughnessAllocated(false), isAoAllocated(false), isNormalAllocated(false), baseAlbedo(albedoColor), baseMetallic(metallicFactor),
+          baseRoughness(roughnessFactor), baseAo(aoFactor) {
+
         if (albedoM != 0) {
             albedoMap = albedoM;
         } else {
             albedoMap = createSolidColorTexture(baseAlbedo);
-            isAlbedoAllocated = true; // 내부에서 할당됨을 기록
+            isAlbedoAllocated = true;
         }
-        
-        // 2. Metallic 텍스처 처리
+
         if (metallicM != 0) {
             metallicMap = metallicM;
         } else {
             metallicMap = createSolidColorTexture(glm::vec3(baseMetallic));
             isMetallicAllocated = true;
         }
-        
-        // 3. Roughness 텍스처 처리
+
         if (roughnessM != 0) {
             roughnessMap = roughnessM;
         } else {
             roughnessMap = createSolidColorTexture(glm::vec3(baseRoughness));
             isRoughnessAllocated = true;
         }
-        
-        // 4. AO 텍스처 처리
+
         if (aoM != 0) {
             aoMap = aoM;
         } else {
@@ -202,35 +186,36 @@ public:
             isAoAllocated = true;
         }
 
-        // 5. Normal 텍스처 처리
         if (normalM != 0) {
             normalMap = normalM;
         } else {
-            // 노멀맵은 단색이 아니라 '평평한 노멀(0.5, 0.5, 1.0)' 텍스처를 생성해야 합니다!
             normalMap = createSolidColorTexture(glm::vec3(0.5f, 0.5f, 1.0f));
             isNormalAllocated = true;
         }
     }
 
-    // 소멸자: 내부에서 생성한 단색 텍스처만 선택적으로 안전하게 해제
     ~PbrMaterial() {
-        if (isAlbedoAllocated && albedoMap != 0)    glDeleteTextures(1, &albedoMap);
-        if (isMetallicAllocated && metallicMap != 0)  glDeleteTextures(1, &metallicMap);
-        if (isRoughnessAllocated && roughnessMap != 0) glDeleteTextures(1, &roughnessMap);
-        if (isAoAllocated && aoMap != 0)       glDeleteTextures(1, &aoMap);
-        if (isNormalAllocated && normalMap != 0) glDeleteTextures(1, &normalMap);
+        if (isAlbedoAllocated && albedoMap != 0)
+            glDeleteTextures(1, &albedoMap);
+        if (isMetallicAllocated && metallicMap != 0)
+            glDeleteTextures(1, &metallicMap);
+        if (isRoughnessAllocated && roughnessMap != 0)
+            glDeleteTextures(1, &roughnessMap);
+        if (isAoAllocated && aoMap != 0)
+            glDeleteTextures(1, &aoMap);
+        if (isNormalAllocated && normalMap != 0)
+            glDeleteTextures(1, &normalMap);
     }
 
-    // 개별 텍스처 설정 메서드 (기존 내부 텍스처 누수 방지)
-    void setAlbedoMap(unsigned int texID) { 
+    void setAlbedoMap(unsigned int texID) {
         if (isAlbedoAllocated && albedoMap != 0) {
             glDeleteTextures(1, &albedoMap);
             isAlbedoAllocated = false;
         }
         albedoMap = texID;
     }
-    
-    void setMetallicMap(unsigned int texID) { 
+
+    void setMetallicMap(unsigned int texID) {
         if (isMetallicAllocated && metallicMap != 0) {
             glDeleteTextures(1, &metallicMap);
             isMetallicAllocated = false;
@@ -238,7 +223,7 @@ public:
         metallicMap = texID;
     }
 
-    void setRoughnessMap(unsigned int texID) { 
+    void setRoughnessMap(unsigned int texID) {
         if (isRoughnessAllocated && roughnessMap != 0) {
             glDeleteTextures(1, &roughnessMap);
             isRoughnessAllocated = false;
@@ -246,7 +231,7 @@ public:
         roughnessMap = texID;
     }
 
-    void setAoMap(unsigned int texID) { 
+    void setAoMap(unsigned int texID) {
         if (isAoAllocated && aoMap != 0) {
             glDeleteTextures(1, &aoMap);
             isAoAllocated = false;
@@ -263,7 +248,8 @@ public:
     }
 
     void bind() override {
-        if (!shader) return;
+        if (!shader)
+            return;
 
         shader->use();
 
@@ -283,7 +269,7 @@ public:
         glBindTexture(GL_TEXTURE_2D, aoMap);
         shader->set("material.aoMap", 3);
 
-        glActiveTexture(GL_TEXTURE4); // 4번 슬롯에 할당
+        glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, normalMap);
         shader->set("material.normalMap", 4);
     }
@@ -301,7 +287,6 @@ public:
     float baseAo;
 
 private:
-    // 자기가 직접 단색 텍스처를 해제해야 하는지 판별하는 플래그
     bool isAlbedoAllocated = false;
     bool isMetallicAllocated = false;
     bool isRoughnessAllocated = false;
@@ -343,7 +328,6 @@ public:
     glm::vec3 color;
     float intensity;
 
-    // 생성자: Mesh와 Material은 Light에 필요 없으므로 nullptr로 부모 생성자 호출
     Light(glm::vec3 lightColor = glm::vec3(1.0f), float lightIntensity = 1.0f) : Object(), color(lightColor), intensity(lightIntensity) {
     }
 
@@ -352,12 +336,7 @@ public:
 
 class PbrPointLight : public Light {
 public:
-    // 내부에 glm::vec3 color; 나 brightness 같은 변수가 없어야 합니다! (부모인 Light의 것을 사용)
-    
-    PbrPointLight(glm::vec3 pos = glm::vec3(0.0f), 
-                  glm::vec3 col = glm::vec3(1.0f), 
-                  float bright = 1.0f)
-        : Light(col, bright) {
+    PbrPointLight(glm::vec3 pos = glm::vec3(0.0f), glm::vec3 col = glm::vec3(1.0f), float bright = 1.0f) : Light(col, bright) {
         this->position = pos;
     }
 
@@ -365,20 +344,15 @@ public:
 };
 class DirLight : public Light {
 public:
-    // 방향성 조명은 '방향'이 핵심입니다.
     glm::vec3 direction;
 
-    // Phong 조명 구성 요소
     glm::vec3 ambient;
     glm::vec3 diffuse;
     glm::vec3 specular;
 
-    // 생성자
-    DirLight(glm::vec3 dir = glm::vec3(-0.2f, -1.0f, -0.3f), // 아래를 향하는 디폴트 방향
-                 glm::vec3 amb = glm::vec3(0.05f), glm::vec3 diff = glm::vec3(0.8f),
-                 glm::vec3 spec = glm::vec3(1.0f))
-        : // 매니저가 ID를 줄 것이므로 임시로 0 전달
-          direction(dir), ambient(amb), diffuse(diff), specular(spec) {
+    DirLight(glm::vec3 dir = glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3 amb = glm::vec3(0.05f), glm::vec3 diff = glm::vec3(0.8f),
+             glm::vec3 spec = glm::vec3(1.0f))
+        : direction(dir), ambient(amb), diffuse(diff), specular(spec) {
         this->color = diff;
     }
 

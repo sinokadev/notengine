@@ -28,8 +28,12 @@ public:
     void setMainCameraObject(Object& obj);
 
     void loadHDRMap(const std::string& path);
-    unsigned int getCubeMap() const { return cubeMap; }
-    unsigned int getIrradianceMap() const { return irradianceMap; }
+    unsigned int getCubeMap() const {
+        return cubeMap;
+    }
+    unsigned int getIrradianceMap() const {
+        return irradianceMap;
+    }
 
 private:
     ObjectManager objectManager;

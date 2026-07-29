@@ -6,4 +6,4 @@
 namespace knot {
 unsigned int bakeHDRMapToCubemap(unsigned int hdrTexture2D, int size);
 unsigned int bakeCubemapToIrradianceMap(unsigned int envCubemapID, int size);
-}
+} // namespace knot

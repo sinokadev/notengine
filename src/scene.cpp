@@ -11,12 +11,14 @@ Scene::Scene() {
 }
 
 void Scene::loadHDRMap(const std::string& path) {
-    if (cubeMap != 0) glDeleteTextures(1, &cubeMap);
-    if (irradianceMap != 0) glDeleteTextures(1, &irradianceMap);
+    if (cubeMap != 0)
+        glDeleteTextures(1, &cubeMap);
+    if (irradianceMap != 0)
+        glDeleteTextures(1, &irradianceMap);
 
-    unsigned int tempHdrMap = loadHDRTexture(path); 
-    
-    cubeMap = bakeHDRMapToCubemap(tempHdrMap, 512); 
+    unsigned int tempHdrMap = loadHDRTexture(path);
+
+    cubeMap = bakeHDRMapToCubemap(tempHdrMap, 512);
 
     irradianceMap = bakeCubemapToIrradianceMap(cubeMap, 32);
 
