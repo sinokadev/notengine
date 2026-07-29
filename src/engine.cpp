@@ -109,6 +109,9 @@ void Engine::render() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     renderer.beginFrame(window.getFramebufferWidth(), window.getFramebufferHeight());
     renderer.renderScene(*scene, getAspectRatio());
+    if (renderLoopCallback) {
+        renderLoopCallback(deltaTime); 
+    }
 }
 
 float Engine::getAspectRatio() const {

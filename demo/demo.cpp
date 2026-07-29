@@ -96,6 +96,7 @@ int main() {
     scene.setUpdateCallback([&](knot::Scene& currentScene, float deltaTime) {
         if (stop)
             return;
+
         totalTime += deltaTime;
 
         float speed = 0.5f;
