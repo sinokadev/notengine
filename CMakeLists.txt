@@ -97,11 +97,3 @@ target_link_libraries(demo PRIVATE notengine)
 set_target_properties(demo PROPERTIES
     VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
 )
-
-# Toolkit Demo executable (EXCLUDE_FROM_ALL 추가)
-add_executable(toolkit_demo EXCLUDE_FROM_ALL demo/toolkit_demo.cpp)
-target_link_libraries(toolkit_demo PRIVATE notengine)
-
-set_target_properties(toolkit_demo PROPERTIES
-    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-)
