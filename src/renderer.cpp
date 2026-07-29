@@ -30,12 +30,14 @@ bool Renderer::init(GLADloadfunc loadProc) {
 }
 
 void Renderer::beginFrame(int framebufferWidth, int framebufferHeight) {
-    if (framebufferWidth <= 0 || framebufferHeight <= 0) return;
+    if (framebufferWidth <= 0 || framebufferHeight <= 0)
+        return;
     glViewport(0, 0, framebufferWidth, framebufferHeight);
 }
 
 void Renderer::processDirLights(const std::shared_ptr<Shader>& shader, const std::vector<const DirLight*>& dirLights) {
-    if (!shader) return;
+    if (!shader)
+        return;
 
     if (!dirLights.empty()) {
         const auto* dirLight = dirLights.front();
@@ -58,7 +60,7 @@ void Renderer::processPointLights(const std::vector<const PbrPointLight*>& point
     for (const auto* light : pointLights) {
         GPUMovingPointLight gpuLight;
         gpuLight.position = glm::vec4(light->position, 1.0f);
-        gpuLight.color = glm::vec4(light->color, light->intensity); 
+        gpuLight.color = glm::vec4(light->color, light->intensity);
         gpuLight.radius = 5.0f * std::sqrt(light->intensity);
         gpuLight.constant = 1.0f;
         gpuLight.linear = 0.09f;
@@ -71,21 +73,22 @@ void Renderer::processPointLights(const std::vector<const PbrPointLight*>& point
         glBufferData(GL_SHADER_STORAGE_BUFFER, gpuLights.size() * sizeof(GPUMovingPointLight), gpuLights.data(), GL_DYNAMIC_DRAW);
     }
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightSSBO);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); 
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
 bool Renderer::renderObject(const Object& object, const Camera& camera, float aspectRatio) {
-    if (!initialized) return false;
+    if (!initialized)
+        return false;
 
-    if (dynamic_cast<const Camera*>(&object) || 
-        dynamic_cast<const PbrPointLight*>(&object) || 
-        dynamic_cast<const DirLight*>(&object)) {
+    if (dynamic_cast<const Camera*>(&object) || dynamic_cast<const PbrPointLight*>(&object) || dynamic_cast<const DirLight*>(&object)) {
         return true;
     }
 
-    if (!object.material) return false;
+    if (!object.material)
+        return false;
     const auto shader = object.material->getShader();
-    if (!shader || !shader->isValid()) return false;
+    if (!shader || !shader->isValid())
+        return false;
 
     object.material->bind();
 
@@ -94,7 +97,8 @@ bool Renderer::renderObject(const Object& object, const Camera& camera, float as
     shader->set("model", object.getWorldMatrix());
     shader->set("u_CameraPos", camera.position);
 
-    if (!object.mesh || !object.mesh->isReady()) return false;
+    if (!object.mesh || !object.mesh->isReady())
+        return false;
 
     glBindVertexArray(object.mesh->vao);
     glDrawElements(GL_TRIANGLES, object.mesh->indexCount, GL_UNSIGNED_INT, nullptr);
@@ -108,24 +112,21 @@ void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float 
     glDepthFunc(GL_LEQUAL);
     glDisable(GL_CULL_FACE);
     skyboxShader->use();
-    
-    // 뷰 행렬에서 이동 성분 제거 (Skybox는 항상 중심에 있어야 함)
-    glm::mat4 view = glm::mat4(glm::mat3(camera.getViewMatrix())); 
+
+    glm::mat4 view = glm::mat4(glm::mat3(camera.getViewMatrix()));
     glm::mat4 projection = glm::perspective(glm::radians(camera.fov), aspectRatio, kNearPlane, kFarPlane);
-    
-    // 셰이더에 행렬 전달 (각각 설정하는 것이 정석입니다)
+
     skyboxShader->set("view", view);
     skyboxShader->set("projection", projection);
-    
+
     glBindVertexArray(skyboxMesh->vao);
     glActiveTexture(GL_TEXTURE0);
-    // [수정] GL_TEXTURE_2D -> GL_TEXTURE_CUBE_MAP
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID); 
-    skyboxShader->set("skybox", 0); // 셰이더의 uniform 이름과 일치시킴
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
+    skyboxShader->set("skybox", 0);
     skyboxShader->set("exposure", AMBIENT_INTENSITY);
-    
+
     glDrawElements(GL_TRIANGLES, skyboxMesh->indexCount, GL_UNSIGNED_INT, nullptr);
-    
+
     glBindVertexArray(0);
     glEnable(GL_CULL_FACE);
     glDepthFunc(GL_LESS);
@@ -133,7 +134,8 @@ void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float 
 }
 
 bool Renderer::renderScene(Scene& scene, float aspectRatio) {
-    if (!initialized) return false;
+    if (!initialized)
+        return false;
 
     const auto& camera = scene.getCamera();
     auto& objectManager = scene.getObjectManager();
@@ -142,7 +144,7 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     std::vector<const PbrPointLight*> localPointLights;
 
     renderSkybox(scene.getCubeMap(), camera, aspectRatio);
-    
+
     for (const auto& object : objectManager.getObjects()) {
         if (const auto* dl = dynamic_cast<const DirLight*>(object.get())) {
             localDirLights.push_back(dl);
@@ -154,9 +156,10 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     processPointLights(localPointLights);
 
     for (const auto& object : objectManager.getObjects()) {
-        if (!object->material) continue;
+        if (!object->material)
+            continue;
         const auto shader = object->material->getShader();
-        
+
         if (shader && shader->isValid()) {
             shader->use();
 

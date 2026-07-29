@@ -62,13 +62,12 @@ bool Engine::init(int width, int height, const std::string& title, const std::st
     window.setMouseButtonCallback([this](MouseKey button, KeyState action) {
         if (this->eventCallback) {
             knot::Event e;
-            e.type = knot::MouseButton; 
+            e.type = knot::MouseButton;
             e.mouseButton = button;
             e.action = action;
             this->eventCallback(e);
         }
     });
-
 
     renderer.beginFrame(window.getFramebufferWidth(), window.getFramebufferHeight());
 
