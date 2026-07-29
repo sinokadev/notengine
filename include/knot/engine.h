@@ -12,8 +12,14 @@
 namespace knot {
 class Engine {
 public:
+    using RenderLoopCallback = std::function<void(float)>;
+
     bool init(int width, int height, const std::string& title, const std::string& assetRoot = "");
     int run();
+
+    void setRenderLoopCallback(RenderLoopCallback callback) {
+        renderLoopCallback = std::move(callback);
+    }
 
     Window& getWindow();
     float getDeltaTime() const {
@@ -50,5 +56,7 @@ private:
     void render();
 
     std::function<void(Event&)> eventCallback = nullptr;
+    
+    RenderLoopCallback renderLoopCallback;
 };
 } // namespace knot
