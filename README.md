@@ -82,7 +82,9 @@ Run the following scripts to build the library and the demos:
 
 - [ ] Vulkan
 
-- [ ] USD 로드
+- [ ] USD 로드 (또는 자체 씬 확장자 개발)
+
+- [ ] 사용하는 라이브러리들 재작성
 
 - [ ] Docs
 
