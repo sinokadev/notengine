@@ -1,16 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 project(NotEngine LANGUAGES C CXX)
 
-include(FetchContent)
-
-FetchContent_Declare(
-	glm
-	GIT_REPOSITORY	https://github.com/g-truc/glm.git
-	GIT_TAG 	0af55ccecd98d4e5a8d1fad7de25ba429d60e863 #refs/tags/1.0.1
-)
-
-FetchContent_MakeAvailable(glm)
-
 # C++ Standard configuration
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -81,7 +71,6 @@ target_include_directories(notengine PUBLIC
 # CMAKE_DL_LIBS is required on Linux for GLAD (dlopen/dlsym)
 target_link_libraries(notengine PUBLIC
     glfw
-    glm
     OpenGL::GL
     ${CMAKE_DL_LIBS}
 )
