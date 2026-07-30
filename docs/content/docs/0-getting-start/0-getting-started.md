@@ -1,7 +1,6 @@
 ---
 title: 시작하기
 description: 이 게임 엔진을 처음 접하는 사람들을 위한 가이드입니다.
-slug: guides/getting-started
 ---
 
 이 문서는 Not Engine을 처음 접하는 사람들을 위해 빌드하고 데모를 실행하는 방법과 기본적인 기능을 안내합니다.

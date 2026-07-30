@@ -1,0 +1,23 @@
+version = 1
+revision = 3
+requires-python = ">=3.14"
+
+[[package]]
+name = "docs"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "wenmode" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "wenmode", specifier = ">=0.13.2" }]
+
+[[package]]
+name = "wenmode"
+version = "0.13.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b4/75/b69c7e210ede01d65e7a4ce32fd5429d4a636e58906cae2466ebcc32d54c/wenmode-0.13.2.tar.gz", hash = "sha256:4d86ae9ad804ed10674425aba16e4822fb07772c32247c36ee0e1783a4cc454d", size = 90714, upload-time = "2026-07-28T15:56:53.987Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ce/ac/19bf5df29ed8bb91166a04e55401029a722304ad70cd9b7f1c2a8d903267/wenmode-0.13.2-py3-none-any.whl", hash = "sha256:5c11d07782bebe87a3307dd69b3d8479a5a1cf2be65073c7ace2712962f8ff63", size = 136924, upload-time = "2026-07-28T15:56:52.327Z" },
+]
