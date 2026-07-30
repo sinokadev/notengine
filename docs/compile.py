@@ -165,11 +165,13 @@ for page in pages_data:
                 content=content.content
             )
 
-            output_file = chapter_dist_dir / f"{content.name}.html"
+            content_dist_dir = chapter_dist_dir / content.name
+            content_dist_dir.mkdir(parents=True, exist_ok=True)
+            
+            output_file = content_dist_dir / "index.html"
             output_file.write_text(rendered_page, encoding="utf-8")
 
-            # URL 경로 생성
-            url_path = f"/{page.name}/{chapter.name}/{content.name}" if chapter.name else f"/{page.name}/{content.name}"
+            url_path = f"/{page.name}/{chapter.name}/{content.name}/" if chapter.name else f"/{page.name}/{content.name}/"
             
             link_tag = f'<a href="{url_path}">{content.title}</a><br>'
             chapter_index_html += link_tag
@@ -177,12 +179,12 @@ for page in pages_data:
 
         # 챕터 단위 index 생성 (이름있는 챕터만, 없을경우 페이지 단위 index만 존재)
         if chapter.name:
-            rendered_chapter_index = page.index.format(name=chapter.name,content=chapter_index_html)
+            rendered_chapter_index = page.index.format(name=chapter.name, content=chapter_index_html)
             chapter_index_file = chapter_dist_dir / "index.html"
             chapter_index_file.write_text(rendered_chapter_index, encoding="utf-8")
 
     # 페이지 단위 index 생성
-    rendered_page_index = page.index.format(name=page.name,content=page_index_html)
+    rendered_page_index = page.index.format(name=page.name, content=page_index_html)
     page_index_file = page_dist_dir / "index.html"
     page_index_file.write_text(rendered_page_index, encoding="utf-8")
 
