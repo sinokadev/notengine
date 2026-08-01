@@ -1,4 +1,4 @@
-# Not Engine Alpha 1.5
+# Not Engine Alpha 0.1.5
 
 > Everything as code!
 
@@ -36,57 +36,6 @@ Run the following scripts to build the library and the demos:
 # Build the demo executables
 ./script/demo_release_build.sh
 ```
-
-## 로드맵
-
-- Beta 1.0: 이벤트와 PBR, 그리고 인스턴싱과 콜리전 구현, 제대로된 게임을 만들 수 있을 수준에 다다랐을때 릴리즈
-- 정식 버전: 실제 제품에 사용 가능할때, 코드 정리도 해야함
-
-## Todo
-
-- [x] 마우스 입력받기
-
-- [x] 이벤트 시스템(SDL에 있는것과 비슷한)(엔진에 구현)
-
-- [x] 씬 만들기
-
-- [x] 포메터 셋팅
-
-- [x] 네이밍 케이스 정리
-
-- [x] OBJ 임포트
-
-- [x] camera.hpp를 구현과 헤더로 나누기
-
-- [ ] 오디오엔진
-
-- [ ] 인스턴싱
-
-- [ ] 직교 투영 카메라
-
-- [x] 퐁 셰이더 만들기
-- [x] 라이트(light) 오브젝트
-- [x] PBR 셰이더 만들기
-- [x] 스카이박스 구현하기
-- [x] IBL Diffuse
-- [ ] IBL Specular
-- [ ] 그림자 매핑 구현하기
-
-- [ ] EXR 확장자 지원 (TinyEXR 사용)
-
-- [ ] GUI 시스템
-
-- [x] 빌드시 셰이더를 소스코드에 자동으로 포함하도록 하기(Cmake)
-
-- [ ] resources.h 분리
-
-- [ ] Vulkan
-
-- [ ] USD 로드 (또는 자체 씬 확장자 개발)
-
-- [ ] 사용하는 라이브러리들 재작성
-
-- [ ] Docs
 
 ## 에셋 출처
 
