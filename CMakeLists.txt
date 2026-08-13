@@ -86,3 +86,40 @@ target_link_libraries(demo PRIVATE notengine)
 set_target_properties(demo PROPERTIES
     VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
 )
+
+include(GNUInstallDirs)
+
+# 1. 타겟 설치 (헤더 및 라이브러리 바이너리)
+install(TARGETS notengine
+    EXPORT notengineTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+# 2. 헤더 파일 설치
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES ${GENERATED_HEADER} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+# 3. notengineTargets.cmake 생성 및 설치 (notengine::notengine 네임스페이스 제공)
+install(EXPORT notengineTargets
+    FILE notengineTargets.cmake
+    NAMESPACE notengine::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/notengine
+)
+
+# 4. find_package를 위한 ConfigHelper 설정 및 설치
+include(CMakePackageConfigHelpers)
+
+# 패키지 설정 파일 자동 생성
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/notengineConfig.cmake" "
+include(CMakeFindDependencyMacro)
+find_dependency(glfw3 REQUIRED)
+find_dependency(OpenGL REQUIRED)
+include(\"\${CMAKE_CURRENT_LIST_DIR}/notengineTargets.cmake\")
+")
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/notengineConfig.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/notengine
+)
