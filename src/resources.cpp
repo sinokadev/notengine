@@ -318,6 +318,10 @@ glm::mat4 Object::getWorldMatrix() const {
 }
 
 bool Object::isVisible(const Frustum& frustum) const {
+    return isVisible(frustum, getWorldMatrix());
+}
+
+bool Object::isVisible(const Frustum& frustum, const glm::mat4& worldMatrix) const {
     if (!model)
         return false;
 
@@ -327,7 +331,7 @@ bool Object::isVisible(const Frustum& frustum) const {
 
     glm::vec3 center =
         glm::vec3(
-            getWorldMatrix() *
+            worldMatrix *
             glm::vec4(model->boundsCenter, 1.0f)
         );
 
