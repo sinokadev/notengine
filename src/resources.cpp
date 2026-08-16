@@ -1,4 +1,5 @@
 #include <knot/resources.h>
+#include <knot/camera.h>
 
 #include <fstream>
 #include <iostream>
@@ -276,6 +277,39 @@ void Mesh::setupInstanceAttributes(unsigned int instanceVBO) {
     glBindVertexArray(0);
 }
 
+Model::Model(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material)
+    : mesh(std::move(mesh)), material(std::move(material)) {
+    calculateBounds();
+}
+
+void Model::calculateBounds() {
+    if (!mesh || mesh->vertices.empty()) {
+        boundsCenter = glm::vec3(0.0f);
+        boundsRadius = 0.0f;
+        return;
+    }
+
+    glm::vec3 minPos = mesh->vertices[0].Position;
+    glm::vec3 maxPos = mesh->vertices[0].Position;
+
+    for (const auto& v : mesh->vertices) {
+        minPos = glm::min(minPos, v.Position);
+        maxPos = glm::max(maxPos, v.Position);
+    }
+
+    boundsCenter = (minPos + maxPos) * 0.5f;
+
+    float maxDistSq = 0.0f;
+    for (const auto& v : mesh->vertices) {
+        glm::vec3 diff = v.Position - boundsCenter;
+        float distSq = glm::dot(diff, diff);
+        if (distSq > maxDistSq) {
+            maxDistSq = distSq;
+        }
+    }
+    boundsRadius = std::sqrt(maxDistSq);
+}
+
 glm::mat4 Object::getWorldMatrix() const {
     const glm::mat4 translation = glm::translate(glm::mat4(1.0f), position);
     const glm::mat4 rotationMatrix = glm::mat4_cast(rotation);
@@ -283,4 +317,29 @@ glm::mat4 Object::getWorldMatrix() const {
     return translation * rotationMatrix * scaling;
 }
 
+bool Object::isVisible(const Frustum& frustum) const {
+    if (!model)
+        return false;
+
+    if (model->boundsRadius <= 0.0f && model->mesh && !model->mesh->vertices.empty()) {
+        model->calculateBounds();
+    }
+
+    glm::vec3 center =
+        glm::vec3(
+            getWorldMatrix() *
+            glm::vec4(model->boundsCenter, 1.0f)
+        );
+
+    glm::vec3 absScale = glm::abs(scale);
+    float maxScale = glm::max(
+        glm::max(absScale.x, absScale.y),
+        absScale.z
+    );
+
+    float radius =
+        model->boundsRadius * maxScale;
+
+    return frustum.intersectsSphere(center, radius);
+}
 } // namespace knot

@@ -18,6 +18,8 @@
 
 namespace knot {
 
+struct Frustum;
+
 unsigned int createSolidColorTexture(glm::vec3 color);
 
 void setAssetRoot(const std::string& root);
@@ -299,12 +301,17 @@ struct Model {
     std::shared_ptr<Mesh> mesh;
     std::shared_ptr<Material> material;
 
+    glm::vec3 boundsCenter = glm::vec3(0.0f);
+    float boundsRadius = 1.0f;
+
     Model() = default;
 
-    Model(std::shared_ptr<Mesh> m, std::shared_ptr<Material> mat)
-        : mesh(std::move(m)),
-          material(std::move(mat)) {
-    }
+    Model(
+        std::shared_ptr<Mesh> mesh,
+        std::shared_ptr<Material> material
+    );
+
+    void calculateBounds();
 };
 
 struct Object {
@@ -342,6 +349,7 @@ struct Object {
 
     virtual void rotate(float xOffset, float yOffset, bool constrainPitch = true) {
     }
+    bool isVisible(const Frustum& frustum) const;
 };
 
 class Light : public Object {
