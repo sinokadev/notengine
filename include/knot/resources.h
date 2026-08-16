@@ -44,6 +44,7 @@ struct Mesh {
     bool isReady() const {
         return vao != 0 && indexCount > 0;
     }
+    void setupInstanceAttributes(unsigned int instanceVBO);
 };
 
 class ShaderSource {
@@ -297,6 +298,13 @@ private:
 struct Model {
     std::shared_ptr<Mesh> mesh;
     std::shared_ptr<Material> material;
+
+    Model() = default;
+
+    Model(std::shared_ptr<Mesh> m, std::shared_ptr<Material> mat)
+        : mesh(std::move(m)),
+          material(std::move(mat)) {
+    }
 };
 
 struct Object {

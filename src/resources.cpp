@@ -252,6 +252,30 @@ void Mesh::setup() {
     indexCount = static_cast<unsigned int>(indices.size());
 }
 
+void Mesh::setupInstanceAttributes(unsigned int instanceVBO) {
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+
+    constexpr GLuint INSTANCE_LOCATION = 4;
+
+    for (GLuint i = 0; i < 4; ++i) {
+        glEnableVertexAttribArray(INSTANCE_LOCATION + i);
+
+        glVertexAttribPointer(
+            INSTANCE_LOCATION + i,
+            4,
+            GL_FLOAT,
+            GL_FALSE,
+            sizeof(glm::mat4),
+            reinterpret_cast<void*>(sizeof(glm::vec4) * i)
+        );
+
+        glVertexAttribDivisor(INSTANCE_LOCATION + i, 1);
+    }
+
+    glBindVertexArray(0);
+}
+
 glm::mat4 Object::getWorldMatrix() const {
     const glm::mat4 translation = glm::translate(glm::mat4(1.0f), position);
     const glm::mat4 rotationMatrix = glm::mat4_cast(rotation);

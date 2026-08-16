@@ -41,10 +41,27 @@ int main() {
                                                         1.0f                        // aoFactor
     );
 
-    auto cubeObject = std::make_shared<knot::Object>(mesh, material);
-    scene.getObjectManager().registerObject(cubeObject);
-    cubeObject->position = glm::vec3(0.0f, 0.0f, 0.0f);
-    cubeObject->scale = glm::vec3(0.5, 0.5, 0.5);
+    // 같은 Model을 공유하는 수많은 Object 생성
+    auto model = std::make_shared<knot::Model>(mesh, material);
+
+    constexpr int GRID_SIZE = 3000;
+    constexpr float SPACING = 1.0f;
+
+    for (int x = 0; x < GRID_SIZE; ++x) {
+        for (int z = 0; z < GRID_SIZE; ++z) {
+            auto object = std::make_shared<knot::Object>(model);
+
+            object->position = glm::vec3(
+                (x - GRID_SIZE / 2) * SPACING,
+                0.0f,
+                (z - GRID_SIZE / 2) * SPACING
+            );
+
+            object->scale = glm::vec3(0.5f);
+
+            scene.getObjectManager().registerObject(object);
+        }
+    }
 
     auto dirLightObj = std::make_shared<knot::DirLight>(glm::vec3(-0.2f, -1.0f, -0.3f), // direction
                                                         glm::vec3(0.1f),                // ambient
@@ -120,13 +137,24 @@ int main() {
     });
 
     scene.setUpdateCallback([&](knot::Scene& currentScene, float deltaTime) {
+        static float fpsTimer = 0.0f;
+        static int frameCount = 0;
+
+        fpsTimer += deltaTime;
+        frameCount++;
+
+        if (fpsTimer >= 1.0f) {
+            float fps = frameCount / fpsTimer;
+
+            std::cout << "FPS: " << fps << "\n";
+
+            fpsTimer = 0.0f;
+            frameCount = 0;
+        }
         if (stop)
             return;
 
         totalTime += deltaTime;
-
-        float speed = 0.5f;
-        cubeObject->rotation = glm::quat(glm::vec3(sin(totalTime * 0.5f) * 0.2f, totalTime * speed, 0.0f));
 
         auto& activeCamera = currentScene.getMainCameraObject();
         glm::vec3 moveDir(0.0f);

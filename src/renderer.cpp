@@ -20,6 +20,7 @@ bool Renderer::init(GLADloadfunc loadProc) {
     glCullFace(GL_BACK);
 
     glGenBuffers(1, &lightSSBO);
+    glGenBuffers(1, &instanceVBO);
 
     skyboxMesh = createCube();
     auto skyboxSource = std::make_shared<ShaderSource>(getAssetRoot() + "assets/shaders/skybox.vert", getAssetRoot() + "assets/shaders/skybox.frag");
@@ -76,26 +77,42 @@ void Renderer::processPointLights(const std::vector<const PbrPointLight*>& point
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-bool Renderer::renderObject(
-    const Object& object,
+void Renderer::renderInstanced(
+    const std::shared_ptr<Model>& model,
+    const std::vector<const Object*>& objects,
     const Camera& camera,
     float aspectRatio
 ) {
-    if (!initialized)
-        return false;
+    if (!model || !model->mesh || !model->material)
+        return;
 
-    if (!object.model)
-        return true;
+    if (!model->mesh->isReady() || objects.empty())
+        return;
 
-    if (!object.model->material)
-        return false;
-
-    const auto shader = object.model->material->getShader();
+    auto shader = model->material->getShader();
 
     if (!shader || !shader->isValid())
-        return false;
+        return;
 
-    object.model->material->bind();
+    std::vector<InstanceData> instances;
+    instances.reserve(objects.size());
+
+    for (const Object* object : objects) {
+        instances.push_back({
+            object->getWorldMatrix()
+        });
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        instances.size() * sizeof(InstanceData),
+        instances.data(),
+        GL_STREAM_DRAW
+    );
+
+    model->material->bind();
 
     shader->set("view", camera.getViewMatrix());
 
@@ -109,23 +126,38 @@ bool Renderer::renderObject(
         )
     );
 
-    shader->set("model", object.getWorldMatrix());
     shader->set("u_CameraPos", camera.position);
 
-    if (!object.model->mesh || !object.model->mesh->isReady())
-        return false;
+    model->mesh->setupInstanceAttributes(instanceVBO);
 
-    glBindVertexArray(object.model->mesh->vao);
+    glBindVertexArray(model->mesh->vao);
 
-    glDrawElements(
+    glDrawElementsInstanced(
         GL_TRIANGLES,
-        object.model->mesh->indexCount,
+        model->mesh->indexCount,
         GL_UNSIGNED_INT,
-        nullptr
+        nullptr,
+        static_cast<GLsizei>(instances.size())
     );
 
     glBindVertexArray(0);
+}
 
+bool Renderer::renderObject(
+    const Object& object,
+    const Camera& camera,
+    float aspectRatio
+) {
+    if (!initialized)
+        return false;
+
+    if (!object.model)
+        return true;
+
+    if (!object.model->material || !object.model->mesh)
+        return false;
+
+    renderInstanced(object.model, { &object }, camera, aspectRatio);
     return true;
 }
 
@@ -177,32 +209,66 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
 
     processPointLights(localPointLights);
 
+    std::unordered_map<
+        const Model*,
+        std::vector<const Object*>
+    > instanceGroups;
+
     for (const auto& object : objectManager.getObjects()) {
         if (!object->model)
             continue;
 
-        if (!object->model->material)
+        if (!object->model->mesh || !object->model->material)
             continue;
 
-        const auto shader = object->model->material->getShader();
+        instanceGroups[object->model.get()].push_back(object.get());
+    }
 
-        if (shader && shader->isValid()) {
-            shader->use();
+    for (const auto& [modelKey, objects] : instanceGroups) {
+        if (objects.empty())
+            continue;
 
-            processDirLights(shader, localDirLights);
-            shader->set(
-                "u_ActivePointLightCount",
-                static_cast<int>(localPointLights.size())
+        const auto& model = objects.front()->model;
+
+        auto shader = model->material->getShader();
+
+        if (!shader || !shader->isValid())
+            continue;
+
+        shader->use();
+
+        processDirLights(shader, localDirLights);
+
+        shader->set(
+            "u_ActivePointLightCount",
+            static_cast<int>(localPointLights.size())
+        );
+
+        glActiveTexture(GL_TEXTURE8);
+        glBindTexture(
+            GL_TEXTURE_CUBE_MAP,
+            scene.getIrradianceMap()
+        );
+
+        shader->set("irradianceMap", 8);
+        shader->set("u_AmbientIntensity", AMBIENT_INTENSITY);
+
+        if (objects.size() >= INSTANCE_THRESHOLD) {
+            renderInstanced(
+                model,
+                objects,
+                camera,
+                aspectRatio
             );
-
-            glActiveTexture(GL_TEXTURE8);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, scene.getIrradianceMap());
-            shader->set("irradianceMap", 8);
-
-            shader->set("u_AmbientIntensity", AMBIENT_INTENSITY);
+        } else {
+            for (const Object* object : objects) {
+                renderObject(
+                    *object,
+                    camera,
+                    aspectRatio
+                );
+            }
         }
-
-        renderObject(*object, camera, aspectRatio);
     }
 
     return true;
