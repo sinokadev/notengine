@@ -115,17 +115,7 @@ void Renderer::renderInstanced(
     model->material->bind();
 
     shader->set("view", camera.getViewMatrix());
-
-    shader->set(
-        "projection",
-        glm::perspective(
-            glm::radians(camera.fov),
-            aspectRatio,
-            kNearPlane,
-            kFarPlane
-        )
-    );
-
+    shader->set("projection", camera.getProjectionMatrix(aspectRatio));
     shader->set("u_CameraPos", camera.position);
 
     model->mesh->setupInstanceAttributes(instanceVBO);
@@ -168,7 +158,7 @@ void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float 
     skyboxShader->use();
 
     glm::mat4 view = glm::mat4(glm::mat3(camera.getViewMatrix()));
-    glm::mat4 projection = glm::perspective(glm::radians(camera.fov), aspectRatio, kNearPlane, kFarPlane);
+    glm::mat4 projection = camera.getProjectionMatrix(aspectRatio);
 
     skyboxShader->set("view", view);
     skyboxShader->set("projection", projection);
@@ -214,11 +204,16 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
         std::vector<const Object*>
     > instanceGroups;
 
+    const Frustum& frustum = camera.getFrustum(aspectRatio);
+
     for (const auto& object : objectManager.getObjects()) {
         if (!object->model)
             continue;
 
         if (!object->model->mesh || !object->model->material)
+            continue;
+
+        if (!object->isVisible(frustum))
             continue;
 
         instanceGroups[object->model.get()].push_back(object.get());
