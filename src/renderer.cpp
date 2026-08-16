@@ -76,24 +76,39 @@ void Renderer::processPointLights(const std::vector<const PbrPointLight*>& point
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-bool Renderer::renderObject(const Object& object, const Camera& camera, float aspectRatio) {
+bool Renderer::renderObject(
+    const Object& object,
+    const Camera& camera,
+    float aspectRatio
+) {
     if (!initialized)
         return false;
 
-    if (dynamic_cast<const Camera*>(&object) || dynamic_cast<const PbrPointLight*>(&object) || dynamic_cast<const DirLight*>(&object)) {
+    if (!object.model)
         return true;
-    }
 
     if (!object.model->material)
         return false;
+
     const auto shader = object.model->material->getShader();
+
     if (!shader || !shader->isValid())
         return false;
 
     object.model->material->bind();
 
     shader->set("view", camera.getViewMatrix());
-    shader->set("projection", glm::perspective(glm::radians(camera.fov), aspectRatio, kNearPlane, kFarPlane));
+
+    shader->set(
+        "projection",
+        glm::perspective(
+            glm::radians(camera.fov),
+            aspectRatio,
+            kNearPlane,
+            kFarPlane
+        )
+    );
+
     shader->set("model", object.getWorldMatrix());
     shader->set("u_CameraPos", camera.position);
 
@@ -101,7 +116,14 @@ bool Renderer::renderObject(const Object& object, const Camera& camera, float as
         return false;
 
     glBindVertexArray(object.model->mesh->vao);
-    glDrawElements(GL_TRIANGLES, object.model->mesh->indexCount, GL_UNSIGNED_INT, nullptr);
+
+    glDrawElements(
+        GL_TRIANGLES,
+        object.model->mesh->indexCount,
+        GL_UNSIGNED_INT,
+        nullptr
+    );
+
     glBindVertexArray(0);
 
     return true;
@@ -156,15 +178,22 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     processPointLights(localPointLights);
 
     for (const auto& object : objectManager.getObjects()) {
+        if (!object->model)
+            continue;
+
         if (!object->model->material)
             continue;
+
         const auto shader = object->model->material->getShader();
 
         if (shader && shader->isValid()) {
             shader->use();
 
             processDirLights(shader, localDirLights);
-            shader->set("u_ActivePointLightCount", static_cast<int>(localPointLights.size()));
+            shader->set(
+                "u_ActivePointLightCount",
+                static_cast<int>(localPointLights.size())
+            );
 
             glActiveTexture(GL_TEXTURE8);
             glBindTexture(GL_TEXTURE_CUBE_MAP, scene.getIrradianceMap());

@@ -315,6 +315,14 @@ struct Object {
         : model(std::move(m)) {
     }
 
+    Object(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material)
+        : model(std::make_shared<Model>(
+              Model{
+                  std::move(mesh),
+                  std::move(material)
+              })) {
+    }
+
     Object() = default;
 
     virtual ~Object() = default;
