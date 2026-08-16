@@ -294,9 +294,13 @@ private:
     bool isNormalAllocated = false;
 };
 
-struct Object {
-    std::shared_ptr<Material> material;
+struct Model {
     std::shared_ptr<Mesh> mesh;
+    std::shared_ptr<Material> material;
+};
+
+struct Object {
+    std::shared_ptr<Model> model;
     unsigned int id = 0;
 
     glm::vec3 position = glm::vec3(0.0f);
@@ -307,11 +311,11 @@ struct Object {
     glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
-    Object(std::shared_ptr<Mesh> m, std::shared_ptr<Material> mat) : mesh(std::move(m)), material(std::move(mat)) {
+    explicit Object(std::shared_ptr<Model> m)
+        : model(std::move(m)) {
     }
 
-    Object() : mesh(nullptr), material(nullptr) {
-    }
+    Object() = default;
 
     virtual ~Object() = default;
 
@@ -319,6 +323,7 @@ struct Object {
 
     virtual void move(glm::vec3 direction, float deltaTime) {
     }
+
     virtual void rotate(float xOffset, float yOffset, bool constrainPitch = true) {
     }
 };

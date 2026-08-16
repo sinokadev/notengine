@@ -84,24 +84,24 @@ bool Renderer::renderObject(const Object& object, const Camera& camera, float as
         return true;
     }
 
-    if (!object.material)
+    if (!object.model->material)
         return false;
-    const auto shader = object.material->getShader();
+    const auto shader = object.model->material->getShader();
     if (!shader || !shader->isValid())
         return false;
 
-    object.material->bind();
+    object.model->material->bind();
 
     shader->set("view", camera.getViewMatrix());
     shader->set("projection", glm::perspective(glm::radians(camera.fov), aspectRatio, kNearPlane, kFarPlane));
     shader->set("model", object.getWorldMatrix());
     shader->set("u_CameraPos", camera.position);
 
-    if (!object.mesh || !object.mesh->isReady())
+    if (!object.model->mesh || !object.model->mesh->isReady())
         return false;
 
-    glBindVertexArray(object.mesh->vao);
-    glDrawElements(GL_TRIANGLES, object.mesh->indexCount, GL_UNSIGNED_INT, nullptr);
+    glBindVertexArray(object.model->mesh->vao);
+    glDrawElements(GL_TRIANGLES, object.model->mesh->indexCount, GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
 
     return true;
@@ -156,9 +156,9 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     processPointLights(localPointLights);
 
     for (const auto& object : objectManager.getObjects()) {
-        if (!object->material)
+        if (!object->model->material)
             continue;
-        const auto shader = object->material->getShader();
+        const auto shader = object->model->material->getShader();
 
         if (shader && shader->isValid()) {
             shader->use();
