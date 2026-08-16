@@ -10,7 +10,7 @@ A code-first game engine built on OpenGL, empowering you to build everything fro
 >
 > **Now, rendering 250,000 Utah Teapots—each with 94,426 faces—yields 19 FPS!!!!!!!!!!!!!!!!!!**
 >
-> **Plus, you can compile this using just 179 lines of code and a library!!!!!!!!!!!!!!!!!!!!!!!**
+> **And the entire demo is built with just 179 lines of C++ code!!!!!!!!!!!!!!!!!!!!!!!**
 
 <img width="1282" height="749" alt="image" src="/images/image.png" /><br>
 <sub>demo/demo.cpp</sub>
