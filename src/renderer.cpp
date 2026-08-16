@@ -79,14 +79,14 @@ void Renderer::processPointLights(const std::vector<const PbrPointLight*>& point
 
 void Renderer::renderInstanced(
     const std::shared_ptr<Model>& model,
-    const std::vector<const Object*>& objects,
+    const std::vector<VisibleInstance>& instances,
     const Camera& camera,
     float aspectRatio
 ) {
     if (!model || !model->mesh || !model->material)
         return;
 
-    if (!model->mesh->isReady() || objects.empty())
+    if (!model->mesh->isReady() || instances.empty())
         return;
 
     auto shader = model->material->getShader();
@@ -94,12 +94,12 @@ void Renderer::renderInstanced(
     if (!shader || !shader->isValid())
         return;
 
-    std::vector<InstanceData> instances;
-    instances.reserve(objects.size());
+    std::vector<InstanceData> instanceData;
+    instanceData.reserve(instances.size());
 
-    for (const Object* object : objects) {
-        instances.push_back({
-            object->getWorldMatrix()
+    for (const auto& inst : instances) {
+        instanceData.push_back({
+            inst.worldMatrix
         });
     }
 
@@ -107,8 +107,8 @@ void Renderer::renderInstanced(
 
     glBufferData(
         GL_ARRAY_BUFFER,
-        instances.size() * sizeof(InstanceData),
-        instances.data(),
+        instanceData.size() * sizeof(InstanceData),
+        instanceData.data(),
         GL_STREAM_DRAW
     );
 
@@ -127,19 +127,21 @@ void Renderer::renderInstanced(
         model->mesh->indexCount,
         GL_UNSIGNED_INT,
         nullptr,
-        static_cast<GLsizei>(instances.size())
+        static_cast<GLsizei>(instanceData.size())
     );
 
     glBindVertexArray(0);
 }
 
 bool Renderer::renderObject(
-    const Object& object,
+    const VisibleInstance& instance,
     const Camera& camera,
     float aspectRatio
 ) {
-    if (!initialized)
+    if (!initialized || !instance.object)
         return false;
+
+    const auto& object = *instance.object;
 
     if (!object.model)
         return true;
@@ -147,8 +149,16 @@ bool Renderer::renderObject(
     if (!object.model->material || !object.model->mesh)
         return false;
 
-    renderInstanced(object.model, { &object }, camera, aspectRatio);
+    renderInstanced(object.model, { instance }, camera, aspectRatio);
     return true;
+}
+
+bool Renderer::renderObject(
+    const Object& object,
+    const Camera& camera,
+    float aspectRatio
+) {
+    return renderObject(VisibleInstance{ &object, object.getWorldMatrix() }, camera, aspectRatio);
 }
 
 void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio) {
@@ -201,7 +211,7 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
 
     std::unordered_map<
         const Model*,
-        std::vector<const Object*>
+        std::vector<VisibleInstance>
     > instanceGroups;
 
     const Frustum& frustum = camera.getFrustum(aspectRatio);
@@ -213,17 +223,21 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
         if (!object->model->mesh || !object->model->material)
             continue;
 
-        if (!object->isVisible(frustum))
+        glm::mat4 worldMatrix = object->getWorldMatrix();
+        if (!object->isVisible(frustum, worldMatrix))
             continue;
 
-        instanceGroups[object->model.get()].push_back(object.get());
+        instanceGroups[object->model.get()].push_back(VisibleInstance{
+            object.get(),
+            worldMatrix
+        });
     }
 
-    for (const auto& [modelKey, objects] : instanceGroups) {
-        if (objects.empty())
+    for (const auto& [modelKey, instances] : instanceGroups) {
+        if (instances.empty())
             continue;
 
-        const auto& model = objects.front()->model;
+        const auto& model = instances.front().object->model;
 
         auto shader = model->material->getShader();
 
@@ -248,17 +262,17 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
         shader->set("irradianceMap", 8);
         shader->set("u_AmbientIntensity", AMBIENT_INTENSITY);
 
-        if (objects.size() >= INSTANCE_THRESHOLD) {
+        if (instances.size() >= INSTANCE_THRESHOLD) {
             renderInstanced(
                 model,
-                objects,
+                instances,
                 camera,
                 aspectRatio
             );
         } else {
-            for (const Object* object : objects) {
+            for (const auto& inst : instances) {
                 renderObject(
-                    *object,
+                    inst,
                     camera,
                     aspectRatio
                 );
