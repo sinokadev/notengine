@@ -44,7 +44,7 @@ int main() {
     // 같은 Model을 공유하는 수많은 Object 생성
     auto model = std::make_shared<knot::Model>(mesh, material);
 
-    constexpr int GRID_SIZE = 3000;
+    constexpr int GRID_SIZE = 1000;
     constexpr float SPACING = 1.0f;
 
     for (int x = 0; x < GRID_SIZE; ++x) {
