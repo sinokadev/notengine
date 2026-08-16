@@ -4,7 +4,13 @@
 
 A code-first game engine built on OpenGL, empowering you to build everything from scratch with clean, simple code.
 
-<img width="1282" height="749" alt="image" src="https://github.com/user-attachments/assets/de731f10-f17b-42cb-a143-d4fbbff1a457" />
+### 🔥 Alpha 0.1.6 Release Highlight
+
+> **Renderer optimization has been applied!!!!!!!!!!!!**
+>
+> **Now, rendering 250,000 Utah Teapots—each with 94,426 faces—yields 19 FPS!!!!!!!!!!!!!!!!!!**
+
+<img width="1282" height="749" alt="image" src="/images/626650067-de731f10-f17b-42cb-a143-d4fbbff1a457.png" /><br>
 <sub>demo/demo.cpp</sub>
 
 # Supported Feature
