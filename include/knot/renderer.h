@@ -9,6 +9,9 @@
 #include <knot/scene.h>
 
 namespace knot {
+struct InstanceData {
+    glm::mat4 model;
+};
 struct GPUMovingPointLight {
     glm::vec4 position; // [x, y, z, w(Any data or Padding)]
     glm::vec4 color;    // [r, g, b, brightness]
@@ -31,10 +34,20 @@ public:
     void processDirLights(const std::shared_ptr<Shader>& shader, const std::vector<const DirLight*>& dirLights);
     void processPointLights(const std::vector<const PbrPointLight*>& pointLights);
     unsigned int bakeHDRMapToCubemap(unsigned int hdrTexture2D, int size);
+    void renderInstanced(
+        const std::shared_ptr<Model>& model,
+        const std::vector<const Object*>& objects,
+        const Camera& camera,
+        float aspectRatio
+    );
 
 private:
     bool initialized = false;
     GLuint lightSSBO = 0;
+
+    unsigned int instanceVBO = 0;
+    static constexpr std::size_t INSTANCE_THRESHOLD = 4;
+
     static constexpr unsigned int SKYBOX_SHADER_ID = 999999;
     std::shared_ptr<Mesh> skyboxMesh;
     std::shared_ptr<Shader> skyboxShader;
