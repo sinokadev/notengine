@@ -12,6 +12,10 @@ namespace knot {
 struct InstanceData {
     glm::mat4 model;
 };
+struct VisibleInstance {
+    const Object* object = nullptr;
+    glm::mat4 worldMatrix{1.0f};
+};
 struct GPUMovingPointLight {
     glm::vec4 position; // [x, y, z, w(Any data or Padding)]
     glm::vec4 color;    // [r, g, b, brightness]
@@ -28,6 +32,7 @@ public:
     bool init(GLADloadfunc loadProc);
     void beginFrame(int framebufferWidth, int framebufferHeight);
     bool renderObject(const Object& object, const Camera& camera, float aspectRatio);
+    bool renderObject(const VisibleInstance& instance, const Camera& camera, float aspectRatio);
     void renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio);
     bool renderScene(Scene& scene, float aspectRatio);
 
@@ -36,7 +41,7 @@ public:
     unsigned int bakeHDRMapToCubemap(unsigned int hdrTexture2D, int size);
     void renderInstanced(
         const std::shared_ptr<Model>& model,
-        const std::vector<const Object*>& objects,
+        const std::vector<VisibleInstance>& instances,
         const Camera& camera,
         float aspectRatio
     );

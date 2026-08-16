@@ -350,6 +350,7 @@ struct Object {
     virtual void rotate(float xOffset, float yOffset, bool constrainPitch = true) {
     }
     bool isVisible(const Frustum& frustum) const;
+    bool isVisible(const Frustum& frustum, const glm::mat4& worldMatrix) const;
 };
 
 class Light : public Object {
