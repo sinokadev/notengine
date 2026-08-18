@@ -10,7 +10,6 @@
 #include <unordered_map>
 #include <GLFW/glfw3.h>
 
-// 사용자가 정의하는 커스텀 이벤트 ID 목록
 enum UserEventType : uint32_t {
     PRINT_FPS
 };
@@ -75,7 +74,7 @@ int main() {
     );
 
     scene.getObjectManager().registerObject(cameraObj);
-    scene.setMainCameraObject(*cameraObj);
+    scene.setCamera(*cameraObj);
 
     std::unordered_map<knot::ScanCode, bool> keyStates;
 
@@ -128,7 +127,7 @@ int main() {
             lastX = static_cast<float>(event.x);
             lastY = static_cast<float>(event.y);
 
-            scene.getMainCameraObject().rotate(
+            scene.getCamera().rotate(
                 xOffset,
                 yOffset,
                 true
@@ -170,7 +169,7 @@ int main() {
             );
 
             auto& activeCamera =
-                currentScene.getMainCameraObject();
+                currentScene.getCamera();
 
             glm::vec3 moveDir(0.0f);
 
