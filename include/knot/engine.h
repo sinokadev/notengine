@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright 2026 SinokaDev
+#pragma once
 
 #include <functional>
 #include <string>
@@ -22,8 +21,12 @@ class Engine {
 public:
     using RenderLoopCallback = std::function<void(double)>;
 
+    Engine() = default;
+    ~Engine();
+
     bool init(int width, int height, const std::string& title, const std::string& assetRoot = "");
     int run();
+    void shutdown();
 
     void setRenderLoopCallback(RenderLoopCallback callback) {
         renderLoopCallback = std::move(callback);

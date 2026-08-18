@@ -29,6 +29,20 @@ bool ObjectManager::removeObject(unsigned int id) {
     return true;
 }
 
+ObjectManager::~ObjectManager() {
+    shutdown();
+}
+
+void ObjectManager::clear() {
+    objects.clear();
+    idToIterator.clear();
+    nextId = 1;
+}
+
+void ObjectManager::shutdown() {
+    clear();
+}
+
 Object* ObjectManager::getObject(unsigned int id) {
     auto it = idToIterator.find(id);
     if (it != idToIterator.end()) {
@@ -36,6 +50,22 @@ Object* ObjectManager::getObject(unsigned int id) {
     }
 
     return nullptr;
+}
+
+ResourceManager::~ResourceManager() {
+    shutdown();
+}
+
+void ResourceManager::clear() {
+    shaders.clear();
+    defaultShaderIds.clear();
+    idToIterator.clear();
+    nameToId.clear();
+    nextId = 1;
+}
+
+void ResourceManager::shutdown() {
+    clear();
 }
 
 bool ResourceManager::init() {

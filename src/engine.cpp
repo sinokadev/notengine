@@ -7,6 +7,10 @@
 
 namespace knot {
 
+Engine::~Engine() {
+    shutdown();
+}
+
 bool Engine::init(int width, int height, const std::string& title, const std::string& assetRoot) {
     this->width = width;
     this->height = height;
@@ -25,12 +29,12 @@ bool Engine::init(int width, int height, const std::string& title, const std::st
     }
 
     if (!window.active()) {
-        window.shutdown();
+        shutdown();
         return false;
     }
 
     if (!renderer.init(window.getProcAddress())) {
-        window.shutdown();
+        shutdown();
         return false;
     }
 
@@ -97,7 +101,35 @@ int Engine::run() {
         window.loop();
     }
 
+    shutdown();
+
     return 0;
+}
+
+void Engine::shutdown() {
+    if (!initialized) {
+        return;
+    }
+
+    // 1. Scene 자원 정리 (Scene 내 텍스처, 셰이더, 오브젝트 등 OpenGL 리소스 해제)
+    if (scene) {
+        scene->shutdown();
+        scene = nullptr;
+    }
+
+    // 2. Renderer 자원 정리 (SSBO, VBO, Skybox 등 OpenGL 리소스 해제)
+    renderer.shutdown();
+
+    // 3. 타이머 및 콜백 정리
+    eventCallback = nullptr;
+    renderLoopCallback = nullptr;
+    afterTimerTasks.clear();
+    repeatTimerTasks.clear();
+
+    // 4. 모든 GPU 리소스 해제 후 마지막으로 Window 및 OpenGL Context 셧다운
+    window.shutdown();
+
+    initialized = false;
 }
 
 void Engine::quit() {

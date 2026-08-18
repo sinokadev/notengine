@@ -275,6 +275,11 @@ bool Window::init(int width, int height, const std::string& title) {
 
 void Window::shutdown() {
     if (windowHandle) {
+        glfwSetWindowUserPointer(windowHandle, nullptr);
+        glfwSetFramebufferSizeCallback(windowHandle, nullptr);
+        glfwSetKeyCallback(windowHandle, nullptr);
+        glfwSetCursorPosCallback(windowHandle, nullptr);
+        glfwSetMouseButtonCallback(windowHandle, nullptr);
         glfwDestroyWindow(windowHandle);
         windowHandle = nullptr;
     }
@@ -283,6 +288,11 @@ void Window::shutdown() {
         glfwTerminate();
         initialized = false;
     }
+
+    resizeCallback = nullptr;
+    keyInputCallback = nullptr;
+    mousePositionCallback = nullptr;
+    mouseButtonCallback = nullptr;
 }
 
 bool Window::active() {

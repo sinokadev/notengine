@@ -14,11 +14,17 @@
 namespace knot {
 class ObjectManager {
 public:
+    ObjectManager() = default;
+    ~ObjectManager();
+
     unsigned int registerObject(std::shared_ptr<Object> newObject);
 
     bool removeObject(unsigned int id);
 
     Object* getObject(unsigned int id);
+
+    void clear();
+    void shutdown();
 
     const std::list<std::shared_ptr<Object>>& getObjects() const {
         return objects;
@@ -34,8 +40,11 @@ private:
 class ResourceManager {
 public:
     ResourceManager() = default;
+    ~ResourceManager();
 
     bool init();
+    void clear();
+    void shutdown();
 
     std::shared_ptr<Shader> createShader(std::shared_ptr<ShaderSource> ss, const std::string& name);
 

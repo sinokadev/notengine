@@ -1,5 +1,6 @@
 #include <knot/renderer.h>
 #include <glad/gl.h>
+#include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <cassert>
@@ -7,6 +8,10 @@
 #define AMBIENT_INTENSITY 5.0f
 
 namespace knot {
+
+Renderer::~Renderer() {
+    shutdown();
+}
 
 bool Renderer::init(GLADloadfunc loadProc) {
     if (!gladLoadGL(loadProc)) {
@@ -28,6 +33,32 @@ bool Renderer::init(GLADloadfunc loadProc) {
 
     initialized = true;
     return true;
+}
+
+void Renderer::shutdown() {
+    if (!initialized) {
+        return;
+    }
+
+    const bool hasContext = (glfwGetCurrentContext() != nullptr);
+    if (lightSSBO != 0) {
+        if (hasContext) {
+            glDeleteBuffers(1, &lightSSBO);
+        }
+        lightSSBO = 0;
+    }
+
+    if (instanceVBO != 0) {
+        if (hasContext) {
+            glDeleteBuffers(1, &instanceVBO);
+        }
+        instanceVBO = 0;
+    }
+
+    skyboxMesh.reset();
+    skyboxShader.reset();
+
+    initialized = false;
 }
 
 void Renderer::beginFrame(int framebufferWidth, int framebufferHeight) {
