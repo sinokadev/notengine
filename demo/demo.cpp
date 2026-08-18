@@ -12,12 +12,7 @@
 
 // 사용자가 정의하는 커스텀 이벤트 ID 목록
 enum UserEventType : uint32_t {
-    PRESS_E
-};
-
-// 이벤트와 함께 전달할 데이터
-struct EventData {
-    int number;
+    PRINT_FPS
 };
 
 int main() {
@@ -25,7 +20,12 @@ int main() {
     if (!engine.init(1280, 720, "Knot Demo")) {
         return 1;
     }
-    glfwSetInputMode(engine.getWindow().getHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    glfwSetInputMode(
+        engine.getWindow().getHandle(),
+        GLFW_CURSOR,
+        GLFW_CURSOR_DISABLED
+    );
 
     engine.setClearColor(0.12f, 0.14f, 0.18f, 1.0f);
 
@@ -33,36 +33,52 @@ int main() {
 
     scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
-    auto mesh = knot::loadModelOBJ(knot::getAssetRoot() + "assets/notbox.obj");
+    auto mesh = knot::loadModelOBJ(
+        knot::getAssetRoot() + "assets/notbox.obj"
+    );
+
     auto shader = scene.getResourceManager().getShader("pbrShader");
-    auto material = std::make_shared<knot::PbrMaterial>(shader, glm::vec3(1, 1, 1), // albedoColor
-                                                        0.2f,                       // metallicFactor
-                                                        0.0f,                       // roughnessFactor
-                                                        1.0f                        // aoFactor
+
+    auto material = std::make_shared<knot::PbrMaterial>(
+        shader,
+        glm::vec3(1, 1, 1),
+        0.2f,
+        0.0f,
+        1.0f
     );
 
     auto cubeObject = std::make_shared<knot::Object>(mesh, material);
     scene.getObjectManager().registerObject(cubeObject);
-    cubeObject->position = glm::vec3(0.0f, 0.0f, 0.0f);
-    cubeObject->scale = glm::vec3(0.5, 0.5, 0.5);
 
-    auto dirLightObj = std::make_shared<knot::DirLight>(glm::vec3(-0.2f, -1.0f, -0.3f), // direction
-                                                        glm::vec3(0.1f),                // ambient
-                                                        glm::vec3(1.0f, 1.0f, 1.0f),    // diffuse
-                                                        glm::vec3(1.0f, 1.0f, 1.0f)     // specular
+    cubeObject->position = glm::vec3(0.0f, 0.0f, 0.0f);
+    cubeObject->scale = glm::vec3(0.5f);
+
+    auto dirLightObj = std::make_shared<knot::DirLight>(
+        glm::vec3(-0.2f, -1.0f, -0.3f),
+        glm::vec3(0.1f),
+        glm::vec3(1.0f),
+        glm::vec3(1.0f)
     );
+
     scene.getObjectManager().registerObject(dirLightObj);
 
-    auto pointLightObj = std::make_shared<knot::PbrPointLight>(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), 2.0f);
+    auto pointLightObj = std::make_shared<knot::PbrPointLight>(
+        glm::vec3(1.0f),
+        glm::vec3(1.0f),
+        2.0f
+    );
+
     scene.getObjectManager().registerObject(pointLightObj);
 
-    auto cameraObj = std::make_shared<knot::MovingCamera>(glm::vec3(0.0f, 0.0f, 5.0f));
+    auto cameraObj = std::make_shared<knot::MovingCamera>(
+        glm::vec3(0.0f, 0.0f, 5.0f)
+    );
+
     scene.getObjectManager().registerObject(cameraObj);
     scene.setMainCameraObject(*cameraObj);
 
     std::unordered_map<knot::ScanCode, bool> keyStates;
 
-    bool firstMouse = true;
     float lastX = 1280.0f / 2.0f;
     float lastY = 720.0f / 2.0f;
 
@@ -70,22 +86,34 @@ int main() {
 
     bool stop = false;
 
+    int frameCount = 0;
+
+    engine.repeat(1000, PRINT_FPS);
+
     engine.setEventCallback([&](knot::Event& event) {
         if (event.type == knot::KeyInput) {
             if (event.action == knot::KeyState::PRESS) {
                 if (event.key == knot::ScanCode::ESCAPE) {
                     if (!stop)
-                        glfwSetInputMode(engine.getWindow().getHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                        glfwSetInputMode(
+                            engine.getWindow().getHandle(),
+                            GLFW_CURSOR,
+                            GLFW_CURSOR_NORMAL
+                        );
                     else
-                        glfwSetInputMode(engine.getWindow().getHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                        glfwSetInputMode(
+                            engine.getWindow().getHandle(),
+                            GLFW_CURSOR,
+                            GLFW_CURSOR_DISABLED
+                        );
+
                     stop = !stop;
                     event.handled = true;
-                } else if (event.key == knot::ScanCode::E) {
-                    engine.pushUserEvent(PRESS_E, EventData{50});
                 }
 
                 keyStates[event.key] = true;
-            } else if (event.action == knot::KeyState::RELEASE) {
+            }
+            else if (event.action == knot::KeyState::RELEASE) {
                 keyStates[event.key] = false;
             }
         }
@@ -100,18 +128,21 @@ int main() {
             lastX = static_cast<float>(event.x);
             lastY = static_cast<float>(event.y);
 
-            scene.getMainCameraObject().rotate(xOffset, yOffset, true);
+            scene.getMainCameraObject().rotate(
+                xOffset,
+                yOffset,
+                true
+            );
+
             event.handled = true;
         }
 
         if (event.type == knot::EventType::User) {
             switch (event.userCode) {
-                case PRESS_E: {
-                    // std::any_cast를 사용해 데이터 안전하게 추출
-                    if (event.userData.has_value()) {
-                        auto data = std::any_cast<EventData>(event.userData);
-                        std::cout << data.number << "\n";
-                    }
+                case PRINT_FPS: {
+                    std::cout << "FPS: " << frameCount << "\n";
+                    frameCount = 0;
+
                     event.handled = true;
                     break;
                 }
@@ -119,31 +150,50 @@ int main() {
         }
     });
 
-    scene.setUpdateCallback([&](knot::Scene& currentScene, float deltaTime) {
-        if (stop)
-            return;
+    scene.setUpdateCallback(
+        [&](knot::Scene& currentScene, float deltaTime) {
+            frameCount++;
 
-        totalTime += deltaTime;
+            if (stop)
+                return;
 
-        float speed = 0.5f;
-        cubeObject->rotation = glm::quat(glm::vec3(sin(totalTime * 0.5f) * 0.2f, totalTime * speed, 0.0f));
+            totalTime += deltaTime;
 
-        auto& activeCamera = currentScene.getMainCameraObject();
-        glm::vec3 moveDir(0.0f);
+            float speed = 0.5f;
 
-        if (keyStates[knot::ScanCode::W])
-            moveDir += activeCamera.front;
-        if (keyStates[knot::ScanCode::S])
-            moveDir -= activeCamera.front;
-        if (keyStates[knot::ScanCode::A])
-            moveDir -= activeCamera.right;
-        if (keyStates[knot::ScanCode::D])
-            moveDir += activeCamera.right;
+            cubeObject->rotation = glm::quat(
+                glm::vec3(
+                    sin(totalTime * 0.5f) * 0.2f,
+                    totalTime * speed,
+                    0.0f
+                )
+            );
 
-        if (glm::length(moveDir) > 0.0f) {
-            activeCamera.move(glm::normalize(moveDir), deltaTime);
+            auto& activeCamera =
+                currentScene.getMainCameraObject();
+
+            glm::vec3 moveDir(0.0f);
+
+            if (keyStates[knot::ScanCode::W])
+                moveDir += activeCamera.front;
+
+            if (keyStates[knot::ScanCode::S])
+                moveDir -= activeCamera.front;
+
+            if (keyStates[knot::ScanCode::A])
+                moveDir -= activeCamera.right;
+
+            if (keyStates[knot::ScanCode::D])
+                moveDir += activeCamera.right;
+
+            if (glm::length(moveDir) > 0.0f) {
+                activeCamera.move(
+                    glm::normalize(moveDir),
+                    deltaTime
+                );
+            }
         }
-    });
+    );
 
     engine.setScene(scene);
 
