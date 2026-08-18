@@ -24,7 +24,7 @@ public:
     ResourceManager& getResourceManager();
     Camera& getCamera();
     const Camera& getCamera() const;
-    void setCamera(const Camera& camera);
+    void setCamera(Camera& cam);
 
     void setUpdateCallback(UpdateCallback callback);
 
@@ -44,7 +44,7 @@ private:
 
     UpdateCallback updateCallback;
 
-    Camera camera;
+    Camera* camera = nullptr;
 
     unsigned int cubeMap = 0;
     unsigned int irradianceMap = 0;
