@@ -88,7 +88,7 @@ int Engine::run() {
     }
 
     while (!window.isClose()) {
-        const float currentFrame = static_cast<float>(glfwGetTime());
+        const double currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         update();
@@ -155,7 +155,7 @@ bool Engine::setScene(Scene& s) {
     return true;
 }
 
-int Engine::after(float delay, std::function<void()> callback) {
+int Engine::after(double delay, std::function<void()> callback) {
     TimerTask afterTimerTask;
     afterTimerTask.time = delay;
     afterTimerTask.interval = delay;
@@ -166,7 +166,7 @@ int Engine::after(float delay, std::function<void()> callback) {
     return afterTimerTask.id;
 }
 
-int Engine::repeat(float interval, std::function<void()> callback) {
+int Engine::repeat(double interval, std::function<void()> callback) {
     TimerTask repeatTimerTask;
     repeatTimerTask.time = interval;
     repeatTimerTask.interval = interval;
