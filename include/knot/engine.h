@@ -12,14 +12,14 @@
 namespace knot {
 struct TimerTask {
     std::function<void()> callback;
-    float time;
-    float interval; // ms
+    double time;
+    double interval; // ms
     int id;
 };
 
 class Engine {
 public:
-    using RenderLoopCallback = std::function<void(float)>;
+    using RenderLoopCallback = std::function<void(double)>;
 
     bool init(int width, int height, const std::string& title, const std::string& assetRoot = "");
     int run();
@@ -55,8 +55,8 @@ public:
         }
     }
 
-    int after(float time, std::function<void()> callback);
-    int repeat(float time, std::function<void()> callback);
+    int after(double time, std::function<void()> callback);
+    int repeat(double time, std::function<void()> callback);
 
 private:
     Window window;
@@ -69,8 +69,8 @@ private:
     std::string title;
 
     bool initialized = false;
-    float deltaTime = 0.0f;
-    float lastFrame = 0.0f;
+    double deltaTime = 0.0f;
+    double lastFrame = 0.0f;
 
     Scene* scene = nullptr;
 
