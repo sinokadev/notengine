@@ -15,6 +15,10 @@ public:
     using UpdateCallback = std::function<void(Scene&, float)>;
 
     Scene();
+    ~Scene();
+
+    void clear();
+    void shutdown();
 
     ObjectManager& getObjectManager();
     ResourceManager& getResourceManager();

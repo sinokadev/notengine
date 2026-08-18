@@ -128,9 +128,13 @@ Shader::Shader(std::shared_ptr<ShaderSource> ss, unsigned int shaderId) : id(sha
 
 Shader::~Shader() {
     if (shaderProgram != 0) {
-        glDeleteProgram(shaderProgram);
+        if (glfwGetCurrentContext() != nullptr) {
+            glDeleteProgram(shaderProgram);
+        }
+        shaderProgram = 0;
     }
 }
+
 
 void Shader::use() {
     if (valid) {
@@ -208,15 +212,20 @@ ShaderSource PbrShader::GetSource() {
 }
 
 Mesh::~Mesh() {
-    if (vao != 0) {
-        glDeleteVertexArrays(1, &vao);
+    if (glfwGetCurrentContext() != nullptr) {
+        if (vao != 0) {
+            glDeleteVertexArrays(1, &vao);
+        }
+        if (vbo != 0) {
+            glDeleteBuffers(1, &vbo);
+        }
+        if (ebo != 0) {
+            glDeleteBuffers(1, &ebo);
+        }
     }
-    if (vbo != 0) {
-        glDeleteBuffers(1, &vbo);
-    }
-    if (ebo != 0) {
-        glDeleteBuffers(1, &ebo);
-    }
+    vao = 0;
+    vbo = 0;
+    ebo = 0;
 }
 
 void Mesh::setup() {

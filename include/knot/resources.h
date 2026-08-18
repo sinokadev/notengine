@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <glad/gl.h>
+#include <GLFW/glfw3.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -108,6 +109,8 @@ public:
     explicit Material(std::shared_ptr<Shader> shader) : shader(std::move(shader)) {
     }
 
+    virtual ~Material() = default;
+
     virtual void bind() {
         if (shader) {
             shader->use();
@@ -124,7 +127,17 @@ protected:
 
 class TextureMaterial : public Material {
 public:
-    TextureMaterial(std::shared_ptr<Shader> s, unsigned int textureId) : Material(s), textureId(textureId) {
+    TextureMaterial(std::shared_ptr<Shader> s, unsigned int textureId, bool ownsTexture = false)
+        : Material(std::move(s)), textureId(textureId), ownsTexture(ownsTexture) {
+    }
+
+    ~TextureMaterial() override {
+        if (ownsTexture && textureId != 0) {
+            if (glfwGetCurrentContext() != nullptr) {
+                glDeleteTextures(1, &textureId);
+            }
+            textureId = 0;
+        }
     }
 
     void bind() override {
@@ -141,11 +154,13 @@ public:
 
 private:
     unsigned int textureId;
+    bool ownsTexture = false;
 };
 
 class AlphaMaterial : public TextureMaterial {
 public:
-    AlphaMaterial(std::shared_ptr<Shader> s, glm::vec3 color) : TextureMaterial(s, createSolidColorTexture(color)), color(color) {
+    AlphaMaterial(std::shared_ptr<Shader> s, glm::vec3 color)
+        : TextureMaterial(std::move(s), createSolidColorTexture(color), true), color(color) {
     }
 
 private:
@@ -157,7 +172,7 @@ public:
     PbrMaterial(std::shared_ptr<Shader> s, glm::vec3 albedoColor = glm::vec3(1.0f), float metallicFactor = 0.0f, float roughnessFactor = 0.5f,
                 float aoFactor = 1.0f, unsigned int albedoM = 0, unsigned int metallicM = 0, unsigned int roughnessM = 0, unsigned int aoM = 0,
                 unsigned int normalM = 0)
-        : Material(s), albedoMap(0), metallicMap(0), roughnessMap(0), aoMap(0), normalMap(0), isAlbedoAllocated(false), isMetallicAllocated(false),
+        : Material(std::move(s)), albedoMap(0), metallicMap(0), roughnessMap(0), aoMap(0), normalMap(0), isAlbedoAllocated(false), isMetallicAllocated(false),
           isRoughnessAllocated(false), isAoAllocated(false), isNormalAllocated(false), baseAlbedo(albedoColor), baseMetallic(metallicFactor),
           baseRoughness(roughnessFactor), baseAo(aoFactor) {
 
@@ -197,17 +212,43 @@ public:
         }
     }
 
-    ~PbrMaterial() {
-        if (isAlbedoAllocated && albedoMap != 0)
-            glDeleteTextures(1, &albedoMap);
-        if (isMetallicAllocated && metallicMap != 0)
-            glDeleteTextures(1, &metallicMap);
-        if (isRoughnessAllocated && roughnessMap != 0)
-            glDeleteTextures(1, &roughnessMap);
-        if (isAoAllocated && aoMap != 0)
-            glDeleteTextures(1, &aoMap);
-        if (isNormalAllocated && normalMap != 0)
-            glDeleteTextures(1, &normalMap);
+    ~PbrMaterial() override {
+        const bool hasContext = (glfwGetCurrentContext() != nullptr);
+        if (isAlbedoAllocated && albedoMap != 0) {
+            if (hasContext) {
+                glDeleteTextures(1, &albedoMap);
+            }
+            albedoMap = 0;
+            isAlbedoAllocated = false;
+        }
+        if (isMetallicAllocated && metallicMap != 0) {
+            if (hasContext) {
+                glDeleteTextures(1, &metallicMap);
+            }
+            metallicMap = 0;
+            isMetallicAllocated = false;
+        }
+        if (isRoughnessAllocated && roughnessMap != 0) {
+            if (hasContext) {
+                glDeleteTextures(1, &roughnessMap);
+            }
+            roughnessMap = 0;
+            isRoughnessAllocated = false;
+        }
+        if (isAoAllocated && aoMap != 0) {
+            if (hasContext) {
+                glDeleteTextures(1, &aoMap);
+            }
+            aoMap = 0;
+            isAoAllocated = false;
+        }
+        if (isNormalAllocated && normalMap != 0) {
+            if (hasContext) {
+                glDeleteTextures(1, &normalMap);
+            }
+            normalMap = 0;
+            isNormalAllocated = false;
+        }
     }
 
     void setAlbedoMap(unsigned int texID) {

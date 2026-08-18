@@ -1,5 +1,6 @@
 #include <knot/scene.h>
 #include <glad/gl.h>
+#include <GLFW/glfw3.h>
 
 #include <knot/utility.h>
 
@@ -8,6 +9,34 @@ Scene::Scene() {
     if (glad_glCreateShader != nullptr) {
         resourceManager.init();
     }
+}
+
+Scene::~Scene() {
+    shutdown();
+}
+
+void Scene::clear() {
+    shutdown();
+}
+
+void Scene::shutdown() {
+    const bool hasContext = (glfwGetCurrentContext() != nullptr);
+    if (cubeMap != 0) {
+        if (hasContext) {
+            glDeleteTextures(1, &cubeMap);
+        }
+        cubeMap = 0;
+    }
+    if (irradianceMap != 0) {
+        if (hasContext) {
+            glDeleteTextures(1, &irradianceMap);
+        }
+        irradianceMap = 0;
+    }
+
+    objectManager.shutdown();
+    resourceManager.shutdown();
+    updateCallback = nullptr;
 }
 
 void Scene::loadHDRMap(const std::string& path) {
