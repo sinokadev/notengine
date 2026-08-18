@@ -58,6 +58,7 @@ public:
 
     int after(double interval, uint32_t eventCode, std::any eventData = {});
     int repeat(double interval, uint32_t eventCode, std::any eventData = {});
+    void quit();
 
 private:
     Window window;
@@ -68,6 +69,7 @@ private:
     int width = 0;
     int height = 0;
     std::string title;
+    bool shouldQuit = false;
 
     bool initialized = false;
     double deltaTime = 0.0f;
