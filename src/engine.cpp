@@ -117,7 +117,7 @@ void Engine::render() {
 void Engine::processTimer() {
     // after
     for (int i=0; i < afterTimerTasks.size();) {
-        afterTimerTasks[i].time-=deltaTime;
+        afterTimerTasks[i].time-=deltaTime*1000;
         if (afterTimerTasks[i].time <= 0.0f) {
             afterTimerTasks[i].callback();
             afterTimerTasks.erase(afterTimerTasks.begin() + i);
@@ -128,7 +128,7 @@ void Engine::processTimer() {
 
     // repeat
     for (int i=0; i < repeatTimerTasks.size(); i++) {
-        repeatTimerTasks[i].time-=deltaTime;
+        repeatTimerTasks[i].time-=deltaTime*1000;
         if (repeatTimerTasks[i].time <= 0.0f) {
             repeatTimerTasks[i].callback();
             repeatTimerTasks[i].time += repeatTimerTasks[i].interval;
