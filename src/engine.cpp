@@ -119,7 +119,7 @@ void Engine::processTimer() {
     for (int i=0; i < afterTimerTasks.size();) {
         afterTimerTasks[i].time-=deltaTime*1000;
         if (afterTimerTasks[i].time <= 0.0f) {
-            afterTimerTasks[i].callback();
+            pushUserEvent(afterTimerTasks[i].eventCode, afterTimerTasks[i].eventData);
             afterTimerTasks.erase(afterTimerTasks.begin() + i);
         } else {
             i++;
@@ -130,7 +130,7 @@ void Engine::processTimer() {
     for (int i=0; i < repeatTimerTasks.size(); i++) {
         repeatTimerTasks[i].time-=deltaTime*1000;
         if (repeatTimerTasks[i].time <= 0.0f) {
-            repeatTimerTasks[i].callback();
+            pushUserEvent(repeatTimerTasks[i].eventCode, repeatTimerTasks[i].eventData);
             repeatTimerTasks[i].time += repeatTimerTasks[i].interval;
         }
     }
@@ -155,22 +155,24 @@ bool Engine::setScene(Scene& s) {
     return true;
 }
 
-int Engine::after(double delay, std::function<void()> callback) {
+int Engine::after(double interval, uint32_t eventCode, std::any eventData) {
     TimerTask afterTimerTask;
-    afterTimerTask.time = delay;
-    afterTimerTask.interval = delay;
-    afterTimerTask.callback = callback;
+    afterTimerTask.time = interval;
+    afterTimerTask.interval = interval;
+    afterTimerTask.eventCode = eventCode;
+    afterTimerTask.eventData = eventData;
     afterTimerTask.id = nextTimerTaskId++;
     afterTimerTasks.push_back(afterTimerTask);
 
     return afterTimerTask.id;
 }
 
-int Engine::repeat(double interval, std::function<void()> callback) {
+int Engine::repeat(double interval, uint32_t eventCode, std::any eventData) {
     TimerTask repeatTimerTask;
     repeatTimerTask.time = interval;
     repeatTimerTask.interval = interval;
-    repeatTimerTask.callback = callback;
+    repeatTimerTask.eventCode = eventCode;
+    repeatTimerTask.eventData = eventData;
     repeatTimerTask.id = nextTimerTaskId++;
     repeatTimerTasks.push_back(repeatTimerTask);
 

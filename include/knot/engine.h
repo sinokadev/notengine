@@ -11,7 +11,8 @@
 
 namespace knot {
 struct TimerTask {
-    std::function<void()> callback;
+    uint32_t eventCode;
+    std::any eventData;
     double time;
     double interval; // ms
     int id;
@@ -55,8 +56,8 @@ public:
         }
     }
 
-    int after(double time, std::function<void()> callback);
-    int repeat(double time, std::function<void()> callback);
+    int after(double interval, uint32_t eventCode, std::any eventData = {});
+    int repeat(double interval, uint32_t eventCode, std::any eventData = {});
 
 private:
     Window window;
