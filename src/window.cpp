@@ -308,6 +308,10 @@ void Window::enableVsync() {
     glfwSwapInterval(1);
 }
 
+void Window::disableVsync() {
+    glfwSwapInterval(0);
+}
+
 GLADloadfunc Window::getProcAddress() const {
     return reinterpret_cast<GLADloadfunc>(glfwGetProcAddress);
 }

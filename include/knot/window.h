@@ -31,6 +31,7 @@ public:
 
     bool isClose() const;
     void enableVsync();
+    void disableVsync();
 
     GLADloadfunc getProcAddress() const;
 
