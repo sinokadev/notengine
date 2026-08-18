@@ -19,13 +19,12 @@ public:
     ObjectManager& getObjectManager();
     ResourceManager& getResourceManager();
     Camera& getCamera();
+    const Camera& getCamera() const;
+    void setCamera(const Camera& camera);
 
     void setUpdateCallback(UpdateCallback callback);
 
     void update(float dt);
-
-    Object& getMainCameraObject();
-    void setMainCameraObject(Object& obj);
 
     void loadHDRMap(const std::string& path);
     unsigned int getCubeMap() const {
@@ -41,12 +40,9 @@ private:
 
     UpdateCallback updateCallback;
 
-    Camera* camera = nullptr;
-    Object* mainCameraObj = nullptr;
+    Camera camera;
 
-    unsigned int cubeMap;
-    unsigned int irradianceMap;
-
-    void setupCamera();
+    unsigned int cubeMap = 0;
+    unsigned int irradianceMap = 0;
 };
 } // namespace knot
