@@ -12,7 +12,7 @@ Versions 0.1.6 and earlier have a critical issue where resources are not automat
 <img width="1282" height="749" alt="image" src="/images/626650067-de731f10-f17b-42cb-a143-d4fbbff1a457.png" /><br>
 <sub>demo/demo.cpp</sub>
 
-## Supported Feature
+## Supported Features
 
 - Skymap
 - PBR shader
@@ -32,7 +32,7 @@ Renderer optimization improved performance from **1 FPS to 30 FPS** — approxim
 
 > Note: Version 0.1.6 also achieved approximately 30 FPS with VSync disabled, confirming that the performance improvement was not caused by VSync.
 
-### Test environment
+### Test Environment
 
 - CPU: AMD Ryzen 7 7800X3D (16) @ 5.05 GHz
 - GPU: AMD Radeon RX 9070 XT [Discrete]
