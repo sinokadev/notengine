@@ -67,15 +67,15 @@ ResourceManager& Scene::getResourceManager() {
 }
 
 Camera& Scene::getCamera() {
-    return camera;
+    return *camera;
 }
 
 const Camera& Scene::getCamera() const {
-    return camera;
+    return *camera;
 }
 
-void Scene::setCamera(const Camera& cam) {
-    camera = cam;
+void Scene::setCamera(Camera& cam) {
+    camera = &cam;
 }
 
 void Scene::update(float dt) {
