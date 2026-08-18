@@ -87,7 +87,7 @@ int Engine::run() {
         return 1;
     }
 
-    while (!window.isClose()) {
+    while (!window.isClose() && !shouldQuit) {
         const double currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
@@ -98,6 +98,10 @@ int Engine::run() {
     }
 
     return 0;
+}
+
+void Engine::quit() {
+    shouldQuit = true;
 }
 
 void Engine::update() {
