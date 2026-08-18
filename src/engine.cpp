@@ -88,7 +88,11 @@ int Engine::run() {
     }
 
     while (!window.isClose()) {
+        const float currentFrame = static_cast<float>(glfwGetTime());
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
         update();
+        processTimer();
         render();
         window.loop();
     }
@@ -97,10 +101,6 @@ int Engine::run() {
 }
 
 void Engine::update() {
-    const float currentFrame = static_cast<float>(glfwGetTime());
-    deltaTime = currentFrame - lastFrame;
-    lastFrame = currentFrame;
-
     scene->update(deltaTime);
 }
 
@@ -111,6 +111,28 @@ void Engine::render() {
     renderer.renderScene(*scene, getAspectRatio());
     if (renderLoopCallback) {
         renderLoopCallback(deltaTime); 
+    }
+}
+
+void Engine::processTimer() {
+    // after
+    for (int i=0; i < afterTimerTasks.size();) {
+        afterTimerTasks[i].time-=deltaTime;
+        if (afterTimerTasks[i].time <= 0.0f) {
+            afterTimerTasks[i].callback();
+            afterTimerTasks.erase(afterTimerTasks.begin() + i);
+        } else {
+            i++;
+        }
+    }
+
+    // repeat
+    for (int i=0; i < repeatTimerTasks.size(); i++) {
+        repeatTimerTasks[i].time-=deltaTime;
+        if (repeatTimerTasks[i].time <= 0.0f) {
+            repeatTimerTasks[i].callback();
+            repeatTimerTasks[i].time += repeatTimerTasks[i].interval;
+        }
     }
 }
 
@@ -132,4 +154,27 @@ bool Engine::setScene(Scene& s) {
     scene = &s;
     return true;
 }
+
+int Engine::after(float delay, std::function<void()> callback) {
+    TimerTask afterTimerTask;
+    afterTimerTask.time = delay;
+    afterTimerTask.interval = delay;
+    afterTimerTask.callback = callback;
+    afterTimerTask.id = nextTimerTaskId++;
+    afterTimerTasks.push_back(afterTimerTask);
+
+    return afterTimerTask.id;
+}
+
+int Engine::repeat(float interval, std::function<void()> callback) {
+    TimerTask repeatTimerTask;
+    repeatTimerTask.time = interval;
+    repeatTimerTask.interval = interval;
+    repeatTimerTask.callback = callback;
+    repeatTimerTask.id = nextTimerTaskId++;
+    repeatTimerTasks.push_back(repeatTimerTask);
+
+    return repeatTimerTask.id;
+}
+
 } // namespace knot

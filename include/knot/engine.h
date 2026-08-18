@@ -10,6 +10,13 @@
 #include <knot/event.h>
 
 namespace knot {
+struct TimerTask {
+    std::function<void()> callback;
+    float time;
+    float interval; // ms
+    int id;
+};
+
 class Engine {
 public:
     using RenderLoopCallback = std::function<void(float)>;
@@ -48,6 +55,9 @@ public:
         }
     }
 
+    int after(float time, std::function<void()> callback);
+    int repeat(float time, std::function<void()> callback);
+
 private:
     Window window;
     Renderer renderer;
@@ -66,9 +76,14 @@ private:
 
     void update();
     void render();
+    void processTimer();
 
     std::function<void(Event&)> eventCallback = nullptr;
     
     RenderLoopCallback renderLoopCallback;
+
+    std::vector<TimerTask> afterTimerTasks;
+    std::vector<TimerTask> repeatTimerTasks;
+    int nextTimerTaskId;
 };
 } // namespace knot
