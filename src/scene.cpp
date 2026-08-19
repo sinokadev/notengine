@@ -62,6 +62,10 @@ ObjectManager& Scene::getObjectManager() {
     return objectManager;
 }
 
+LightManager& Scene::getLightManager() {
+    return lightManager;
+}
+
 ResourceManager& Scene::getResourceManager() {
     return resourceManager;
 }

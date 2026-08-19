@@ -1,17 +1,17 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <knot/camera.h>
 
 namespace knot {
-Camera::Camera(glm::vec3 position, glm::vec3 worldUp, float yaw, float pitch, float fov, float nearPlane, float farPlane)
+Camera::Camera(glm::vec3 startPos, glm::vec3 worldUp, float yaw, float pitch, float fov, float nearPlane, float farPlane)
     : worldUp(worldUp), yaw(yaw), pitch(pitch), fov(fov), nearPlane(nearPlane), farPlane(farPlane) {
-    this->position = position;
-    this->front = glm::vec3(0.0f, 0.0f, -1.0f);
+    this->position = startPos;
     updateCameraVector();
 }
 
 glm::mat4 Camera::getViewMatrix() const {
-    return glm::lookAt(position, position + front, up);
+    return glm::lookAt(position, position + getFront(), getUp());
 }
 
 glm::mat4 Camera::getProjectionMatrix(float aspectRatio) const {
@@ -24,15 +24,17 @@ void Camera::updateCameraVector() {
     newFront.y = sin(glm::radians(pitch));
     newFront.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 
-    front = glm::normalize(newFront);
-    right = glm::normalize(glm::cross(front, worldUp));
-    up = glm::normalize(glm::cross(right, front));
+    glm::vec3 front = glm::normalize(newFront);
+    glm::vec3 right = glm::normalize(glm::cross(front, worldUp));
+    glm::vec3 up = glm::normalize(glm::cross(right, front));
+
+    rotation = glm::quatLookAt(front, up);
 }
 
 void Camera::lookAtTarget(glm::vec3 targetPos) {
     const glm::vec3 direction = glm::normalize(targetPos - position);
 
-    pitch = glm::degrees(asin(direction.y));
+    pitch = glm::degrees(asin(glm::clamp(direction.y, -1.0f, 1.0f)));
     yaw = glm::degrees(atan2(direction.z, direction.x));
 
     updateCameraVector();
@@ -133,7 +135,7 @@ const Frustum& Camera::getFrustum(float aspectRatio) const {
     return frustum;
 }
 
-MovingCamera::MovingCamera(glm::vec3 startPos) : Camera(startPos, glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f), speed(2.5f), sensitivity(0.1f) {
+MovingCamera::MovingCamera(glm::vec3 startPos) : Camera(startPos), speed(5.0f), sensitivity(0.1f) {
 }
 
 void MovingCamera::move(glm::vec3 direction, float deltaTime) {

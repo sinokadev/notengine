@@ -319,7 +319,7 @@ void Model::calculateBounds() {
     boundsRadius = std::sqrt(maxDistSq);
 }
 
-glm::mat4 Object::getWorldMatrix() const {
+glm::mat4 Transform::getWorldMatrix() const {
     const glm::mat4 translation = glm::translate(glm::mat4(1.0f), position);
     const glm::mat4 rotationMatrix = glm::mat4_cast(rotation);
     const glm::mat4 scaling = glm::scale(glm::mat4(1.0f), scale);
@@ -354,5 +354,17 @@ bool Object::isVisible(const Frustum& frustum, const glm::mat4& worldMatrix) con
         model->boundsRadius * maxScale;
 
     return frustum.intersectsSphere(center, radius);
+}
+
+glm::vec3 Transform::getFront() const {
+    return glm::normalize(rotation * glm::vec3(0.0f, 0.0f, -1.0f));
+}
+
+glm::vec3 Transform::getRight() const {
+    return glm::normalize(rotation * glm::vec3(1.0f, 0.0f, 0.0f));
+}
+
+glm::vec3 Transform::getUp() const {
+    return glm::normalize(rotation * glm::vec3(0.0f, 1.0f, 0.0f));
 }
 } // namespace knot
