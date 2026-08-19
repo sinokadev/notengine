@@ -194,6 +194,48 @@ void Renderer::renderInstanced(
     glBindVertexArray(0);
 }
 
+void Renderer::renderSingle(
+    const std::shared_ptr<Model>& model,
+    const glm::mat4& worldMatrix,
+    const Camera& camera,
+    float aspectRatio
+) {
+    if (!model || !model->mesh || !model->material)
+        return;
+
+    if (!model->mesh->isReady())
+        return;
+
+    auto shader = model->material->getShader();
+    if (!shader || !shader->isValid())
+        return;
+
+    shader->use();
+    model->material->bind();
+
+    shader->set("u_IsInstanced", false);
+
+    shader->set("model", worldMatrix);
+    shader->set("view", camera.getViewMatrix());
+    shader->set("projection", camera.getProjectionMatrix(aspectRatio));
+    shader->set("u_CameraPos", camera.position);
+
+    glBindVertexArray(model->mesh->vao);
+
+    for (GLuint i = 0; i < 4; ++i) {
+        glDisableVertexAttribArray(4 + i);
+    }
+
+    glDrawElements(
+        GL_TRIANGLES,
+        model->mesh->indexCount,
+        GL_UNSIGNED_INT,
+        nullptr
+    );
+
+    glBindVertexArray(0);
+}
+
 bool Renderer::renderObject(
     const VisibleInstance& instance,
     const Camera& camera,
@@ -209,8 +251,8 @@ bool Renderer::renderObject(
 
     if (!object.model->material || !object.model->mesh)
         return false;
-
-    renderInstanced(object.model, { instance }, camera, aspectRatio);
+    
+    renderSingle(object.model, instance.worldMatrix, camera, aspectRatio);
     return true;
 }
 

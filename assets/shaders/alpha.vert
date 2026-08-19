@@ -8,8 +8,10 @@ layout (location = 3) in vec3 aTangent;
 // Instance transform
 layout (location = 4) in mat4 instanceModel;
 
+uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
+uniform bool u_IsInstanced;
 
 out vec3 FragPos;
 out vec2 TexCoords;
@@ -18,11 +20,13 @@ out mat3 TBN;
 
 void main()
 {
-    mat3 normalMatrix =
-        mat3(transpose(inverse(instanceModel)));
+    // u_IsInstanced 플래그에 따라 적용할 modelMatrix 결정
+    mat4 modelMatrix = u_IsInstanced ? instanceModel : model;
+
+    mat3 normalMatrix = mat3(transpose(inverse(modelMatrix)));
 
     // World-space position
-    FragPos = vec3(instanceModel * vec4(aPos, 1.0));
+    FragPos = vec3(modelMatrix * vec4(aPos, 1.0));
 
     // World-space normal
     vec3 N = normalize(normalMatrix * aNormal);
@@ -41,9 +45,5 @@ void main()
 
     TexCoords = aTexCoords;
 
-    gl_Position =
-        projection *
-        view *
-        instanceModel *
-        vec4(aPos, 1.0);
+    gl_Position = projection * view * modelMatrix * vec4(aPos, 1.0);
 }

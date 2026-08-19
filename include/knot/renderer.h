@@ -35,6 +35,7 @@ public:
     bool init(GLADloadfunc loadProc);
     void shutdown();
     void beginFrame(int framebufferWidth, int framebufferHeight);
+    void renderSingle(const std::shared_ptr<Model>& model, const glm::mat4& worldMatrix, const Camera& camera, float aspectRatio) ;
     bool renderObject(const Object& object, const Camera& camera, float aspectRatio);
     bool renderObject(const VisibleInstance& instance, const Camera& camera, float aspectRatio);
     void renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio);
