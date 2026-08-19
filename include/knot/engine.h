@@ -85,7 +85,7 @@ private:
     void processTimer();
 
     std::function<void(Event&)> eventCallback = nullptr;
-    
+
     RenderLoopCallback renderLoopCallback;
 
     std::vector<TimerTask> afterTimerTasks;
