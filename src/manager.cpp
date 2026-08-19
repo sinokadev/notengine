@@ -108,8 +108,7 @@ std::vector<const DirLight*> LightManager::getDirLights() const {
     std::vector<const DirLight*> result;
 
     for (const auto& light : lights) {
-        if (const auto* dirLight =
-                dynamic_cast<const DirLight*>(light.get())) {
+        if (const auto* dirLight = dynamic_cast<const DirLight*>(light.get())) {
             result.push_back(dirLight);
         }
     }
@@ -121,8 +120,7 @@ std::vector<const PbrPointLight*> LightManager::getPointLights() const {
     std::vector<const PbrPointLight*> result;
 
     for (const auto& light : lights) {
-        if (const auto* pointLight =
-                dynamic_cast<const PbrPointLight*>(light.get())) {
+        if (const auto* pointLight = dynamic_cast<const PbrPointLight*>(light.get())) {
             result.push_back(pointLight);
         }
     }

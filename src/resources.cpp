@@ -135,7 +135,6 @@ Shader::~Shader() {
     }
 }
 
-
 void Shader::use() {
     if (valid) {
         glUseProgram(shaderProgram);
@@ -271,14 +270,7 @@ void Mesh::setupInstanceAttributes(unsigned int instanceVBO) {
     for (GLuint i = 0; i < 4; ++i) {
         glEnableVertexAttribArray(INSTANCE_LOCATION + i);
 
-        glVertexAttribPointer(
-            INSTANCE_LOCATION + i,
-            4,
-            GL_FLOAT,
-            GL_FALSE,
-            sizeof(glm::mat4),
-            reinterpret_cast<void*>(sizeof(glm::vec4) * i)
-        );
+        glVertexAttribPointer(INSTANCE_LOCATION + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), reinterpret_cast<void*>(sizeof(glm::vec4) * i));
 
         glVertexAttribDivisor(INSTANCE_LOCATION + i, 1);
     }
@@ -286,8 +278,7 @@ void Mesh::setupInstanceAttributes(unsigned int instanceVBO) {
     glBindVertexArray(0);
 }
 
-Model::Model(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material)
-    : mesh(std::move(mesh)), material(std::move(material)) {
+Model::Model(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material) : mesh(std::move(mesh)), material(std::move(material)) {
     calculateBounds();
 }
 
@@ -338,20 +329,12 @@ bool Object::isVisible(const Frustum& frustum, const glm::mat4& worldMatrix) con
         model->calculateBounds();
     }
 
-    glm::vec3 center =
-        glm::vec3(
-            worldMatrix *
-            glm::vec4(model->boundsCenter, 1.0f)
-        );
+    glm::vec3 center = glm::vec3(worldMatrix * glm::vec4(model->boundsCenter, 1.0f));
 
     glm::vec3 absScale = glm::abs(scale);
-    float maxScale = glm::max(
-        glm::max(absScale.x, absScale.y),
-        absScale.z
-    );
+    float maxScale = glm::max(glm::max(absScale.x, absScale.y), absScale.z);
 
-    float radius =
-        model->boundsRadius * maxScale;
+    float radius = model->boundsRadius * maxScale;
 
     return frustum.intersectsSphere(center, radius);
 }

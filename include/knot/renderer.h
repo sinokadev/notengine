@@ -35,7 +35,7 @@ public:
     bool init(GLADloadfunc loadProc);
     void shutdown();
     void beginFrame(int framebufferWidth, int framebufferHeight);
-    void renderSingle(const std::shared_ptr<Model>& model, const glm::mat4& worldMatrix, const Camera& camera, float aspectRatio) ;
+    void renderSingle(const std::shared_ptr<Model>& model, const glm::mat4& worldMatrix, const Camera& camera, float aspectRatio);
     bool renderObject(const Object& object, const Camera& camera, float aspectRatio);
     bool renderObject(const VisibleInstance& instance, const Camera& camera, float aspectRatio);
     void renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio);
@@ -44,12 +44,7 @@ public:
     void processDirLights(const std::shared_ptr<Shader>& shader, const std::vector<const DirLight*>& dirLights);
     void processPointLights(const std::vector<const PbrPointLight*>& pointLights);
     unsigned int bakeHDRMapToCubemap(unsigned int hdrTexture2D, int size);
-    void renderInstanced(
-        const std::shared_ptr<Model>& model,
-        const std::vector<VisibleInstance>& instances,
-        const Camera& camera,
-        float aspectRatio
-    );
+    void renderInstanced(const std::shared_ptr<Model>& model, const std::vector<VisibleInstance>& instances, const Camera& camera, float aspectRatio);
 
 private:
     bool initialized = false;

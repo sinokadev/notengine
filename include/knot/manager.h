@@ -59,10 +59,7 @@ public:
 
 private:
     std::list<std::shared_ptr<Light>> lights;
-    std::unordered_map<
-        unsigned int,
-        std::list<std::shared_ptr<Light>>::iterator
-    > idToIterator;
+    std::unordered_map<unsigned int, std::list<std::shared_ptr<Light>>::iterator> idToIterator;
 
     unsigned int nextId = 1;
 };

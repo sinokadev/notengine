@@ -67,10 +67,7 @@ void Renderer::beginFrame(int framebufferWidth, int framebufferHeight) {
     glViewport(0, 0, framebufferWidth, framebufferHeight);
 }
 
-void Renderer::processDirLights(
-    const std::shared_ptr<Shader>& shader,
-    const std::vector<const DirLight*>& dirLights
-) {
+void Renderer::processDirLights(const std::shared_ptr<Shader>& shader, const std::vector<const DirLight*>& dirLights) {
     if (!shader)
         return;
 
@@ -82,10 +79,7 @@ void Renderer::processDirLights(
         shader->set("dirLight.diffuse", dirLight->diffuse);
         shader->set("dirLight.specular", dirLight->specular);
     } else {
-        shader->set(
-            "dirLight.direction",
-            glm::vec3(0.0f, -1.0f, 0.0f)
-        );
+        shader->set("dirLight.direction", glm::vec3(0.0f, -1.0f, 0.0f));
 
         shader->set("dirLight.ambient", glm::vec3(0.0f));
         shader->set("dirLight.diffuse", glm::vec3(0.0f));
@@ -93,23 +87,18 @@ void Renderer::processDirLights(
     }
 }
 
-void Renderer::processPointLights(
-    const std::vector<const PbrPointLight*>& pointLights
-) {
+void Renderer::processPointLights(const std::vector<const PbrPointLight*>& pointLights) {
     std::vector<GPUMovingPointLight> gpuLights;
     gpuLights.reserve(pointLights.size());
 
     for (const auto* light : pointLights) {
         GPUMovingPointLight gpuLight;
 
-        gpuLight.position =
-            glm::vec4(light->position, 1.0f);
+        gpuLight.position = glm::vec4(light->position, 1.0f);
 
-        gpuLight.color =
-            glm::vec4(light->color, light->intensity);
+        gpuLight.color = glm::vec4(light->color, light->intensity);
 
-        gpuLight.radius =
-            5.0f * std::sqrt(light->intensity);
+        gpuLight.radius = 5.0f * std::sqrt(light->intensity);
 
         gpuLight.constant = 1.0f;
         gpuLight.linear = 0.09f;
@@ -121,29 +110,16 @@ void Renderer::processPointLights(
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
 
     if (!gpuLights.empty()) {
-        glBufferData(
-            GL_SHADER_STORAGE_BUFFER,
-            gpuLights.size() * sizeof(GPUMovingPointLight),
-            gpuLights.data(),
-            GL_DYNAMIC_DRAW
-        );
+        glBufferData(GL_SHADER_STORAGE_BUFFER, gpuLights.size() * sizeof(GPUMovingPointLight), gpuLights.data(), GL_DYNAMIC_DRAW);
     }
 
-    glBindBufferBase(
-        GL_SHADER_STORAGE_BUFFER,
-        0,
-        lightSSBO
-    );
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightSSBO);
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-void Renderer::renderInstanced(
-    const std::shared_ptr<Model>& model,
-    const std::vector<VisibleInstance>& instances,
-    const Camera& camera,
-    float aspectRatio
-) {
+void Renderer::renderInstanced(const std::shared_ptr<Model>& model, const std::vector<VisibleInstance>& instances, const Camera& camera,
+                               float aspectRatio) {
     if (!model || !model->mesh || !model->material)
         return;
 
@@ -159,19 +135,12 @@ void Renderer::renderInstanced(
     instanceData.reserve(instances.size());
 
     for (const auto& inst : instances) {
-        instanceData.push_back({
-            inst.worldMatrix
-        });
+        instanceData.push_back({inst.worldMatrix});
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
 
-    glBufferData(
-        GL_ARRAY_BUFFER,
-        instanceData.size() * sizeof(InstanceData),
-        instanceData.data(),
-        GL_STREAM_DRAW
-    );
+    glBufferData(GL_ARRAY_BUFFER, instanceData.size() * sizeof(InstanceData), instanceData.data(), GL_STREAM_DRAW);
 
     model->material->bind();
 
@@ -183,23 +152,12 @@ void Renderer::renderInstanced(
 
     glBindVertexArray(model->mesh->vao);
 
-    glDrawElementsInstanced(
-        GL_TRIANGLES,
-        model->mesh->indexCount,
-        GL_UNSIGNED_INT,
-        nullptr,
-        static_cast<GLsizei>(instanceData.size())
-    );
+    glDrawElementsInstanced(GL_TRIANGLES, model->mesh->indexCount, GL_UNSIGNED_INT, nullptr, static_cast<GLsizei>(instanceData.size()));
 
     glBindVertexArray(0);
 }
 
-void Renderer::renderSingle(
-    const std::shared_ptr<Model>& model,
-    const glm::mat4& worldMatrix,
-    const Camera& camera,
-    float aspectRatio
-) {
+void Renderer::renderSingle(const std::shared_ptr<Model>& model, const glm::mat4& worldMatrix, const Camera& camera, float aspectRatio) {
     if (!model || !model->mesh || !model->material)
         return;
 
@@ -226,21 +184,12 @@ void Renderer::renderSingle(
         glDisableVertexAttribArray(4 + i);
     }
 
-    glDrawElements(
-        GL_TRIANGLES,
-        model->mesh->indexCount,
-        GL_UNSIGNED_INT,
-        nullptr
-    );
+    glDrawElements(GL_TRIANGLES, model->mesh->indexCount, GL_UNSIGNED_INT, nullptr);
 
     glBindVertexArray(0);
 }
 
-bool Renderer::renderObject(
-    const VisibleInstance& instance,
-    const Camera& camera,
-    float aspectRatio
-) {
+bool Renderer::renderObject(const VisibleInstance& instance, const Camera& camera, float aspectRatio) {
     if (!initialized || !instance.object)
         return false;
 
@@ -251,17 +200,13 @@ bool Renderer::renderObject(
 
     if (!object.model->material || !object.model->mesh)
         return false;
-    
+
     renderSingle(object.model, instance.worldMatrix, camera, aspectRatio);
     return true;
 }
 
-bool Renderer::renderObject(
-    const Object& object,
-    const Camera& camera,
-    float aspectRatio
-) {
-    return renderObject(VisibleInstance{ &object, object.getWorldMatrix() }, camera, aspectRatio);
+bool Renderer::renderObject(const Object& object, const Camera& camera, float aspectRatio) {
+    return renderObject(VisibleInstance{&object, object.getWorldMatrix()}, camera, aspectRatio);
 }
 
 void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio) {
@@ -305,10 +250,7 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
 
     processPointLights(pointLights);
 
-    std::unordered_map<
-        const Model*,
-        std::vector<VisibleInstance>
-    > instanceGroups;
+    std::unordered_map<const Model*, std::vector<VisibleInstance>> instanceGroups;
 
     const Frustum& frustum = camera.getFrustum(aspectRatio);
 
@@ -324,20 +266,14 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
         if (!object->isVisible(frustum, worldMatrix))
             continue;
 
-        instanceGroups[object->model.get()].push_back(
-            VisibleInstance{
-                object.get(),
-                worldMatrix
-            }
-        );
+        instanceGroups[object->model.get()].push_back(VisibleInstance{object.get(), worldMatrix});
     }
 
     for (const auto& [modelKey, instances] : instanceGroups) {
         if (instances.empty())
             continue;
 
-        const auto& model =
-            instances.front().object->model;
+        const auto& model = instances.front().object->model;
 
         auto shader = model->material->getShader();
 
@@ -348,37 +284,19 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
 
         processDirLights(shader, dirLights);
 
-        shader->set(
-            "u_ActivePointLightCount",
-            static_cast<int>(pointLights.size())
-        );
+        shader->set("u_ActivePointLightCount", static_cast<int>(pointLights.size()));
 
         glActiveTexture(GL_TEXTURE8);
-        glBindTexture(
-            GL_TEXTURE_CUBE_MAP,
-            scene.getIrradianceMap()
-        );
+        glBindTexture(GL_TEXTURE_CUBE_MAP, scene.getIrradianceMap());
 
         shader->set("irradianceMap", 8);
-        shader->set(
-            "u_AmbientIntensity",
-            AMBIENT_INTENSITY
-        );
+        shader->set("u_AmbientIntensity", AMBIENT_INTENSITY);
 
         if (instances.size() >= INSTANCE_THRESHOLD) {
-            renderInstanced(
-                model,
-                instances,
-                camera,
-                aspectRatio
-            );
+            renderInstanced(model, instances, camera, aspectRatio);
         } else {
             for (const auto& inst : instances) {
-                renderObject(
-                    inst,
-                    camera,
-                    aspectRatio
-                );
+                renderObject(inst, camera, aspectRatio);
             }
         }
     }

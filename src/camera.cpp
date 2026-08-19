@@ -46,82 +46,58 @@ const Frustum& Camera::getFrustum(float aspectRatio) const {
     glm::mat4 clip = projection * view;
 
     // Left
-    frustum.planes[Frustum::Left].normal.x =
-        clip[0][3] + clip[0][0];
+    frustum.planes[Frustum::Left].normal.x = clip[0][3] + clip[0][0];
 
-    frustum.planes[Frustum::Left].normal.y =
-        clip[1][3] + clip[1][0];
+    frustum.planes[Frustum::Left].normal.y = clip[1][3] + clip[1][0];
 
-    frustum.planes[Frustum::Left].normal.z =
-        clip[2][3] + clip[2][0];
+    frustum.planes[Frustum::Left].normal.z = clip[2][3] + clip[2][0];
 
-    frustum.planes[Frustum::Left].distance =
-        clip[3][3] + clip[3][0];
+    frustum.planes[Frustum::Left].distance = clip[3][3] + clip[3][0];
 
     // Right
-    frustum.planes[Frustum::Right].normal.x =
-        clip[0][3] - clip[0][0];
+    frustum.planes[Frustum::Right].normal.x = clip[0][3] - clip[0][0];
 
-    frustum.planes[Frustum::Right].normal.y =
-        clip[1][3] - clip[1][0];
+    frustum.planes[Frustum::Right].normal.y = clip[1][3] - clip[1][0];
 
-    frustum.planes[Frustum::Right].normal.z =
-        clip[2][3] - clip[2][0];
+    frustum.planes[Frustum::Right].normal.z = clip[2][3] - clip[2][0];
 
-    frustum.planes[Frustum::Right].distance =
-        clip[3][3] - clip[3][0];
+    frustum.planes[Frustum::Right].distance = clip[3][3] - clip[3][0];
 
     // Bottom
-    frustum.planes[Frustum::Bottom].normal.x =
-        clip[0][3] + clip[0][1];
+    frustum.planes[Frustum::Bottom].normal.x = clip[0][3] + clip[0][1];
 
-    frustum.planes[Frustum::Bottom].normal.y =
-        clip[1][3] + clip[1][1];
+    frustum.planes[Frustum::Bottom].normal.y = clip[1][3] + clip[1][1];
 
-    frustum.planes[Frustum::Bottom].normal.z =
-        clip[2][3] + clip[2][1];
+    frustum.planes[Frustum::Bottom].normal.z = clip[2][3] + clip[2][1];
 
-    frustum.planes[Frustum::Bottom].distance =
-        clip[3][3] + clip[3][1];
+    frustum.planes[Frustum::Bottom].distance = clip[3][3] + clip[3][1];
 
     // Top
-    frustum.planes[Frustum::Top].normal.x =
-        clip[0][3] - clip[0][1];
+    frustum.planes[Frustum::Top].normal.x = clip[0][3] - clip[0][1];
 
-    frustum.planes[Frustum::Top].normal.y =
-        clip[1][3] - clip[1][1];
+    frustum.planes[Frustum::Top].normal.y = clip[1][3] - clip[1][1];
 
-    frustum.planes[Frustum::Top].normal.z =
-        clip[2][3] - clip[2][1];
+    frustum.planes[Frustum::Top].normal.z = clip[2][3] - clip[2][1];
 
-    frustum.planes[Frustum::Top].distance =
-        clip[3][3] - clip[3][1];
+    frustum.planes[Frustum::Top].distance = clip[3][3] - clip[3][1];
 
     // Near
-    frustum.planes[Frustum::Near].normal.x =
-        clip[0][3] + clip[0][2];
+    frustum.planes[Frustum::Near].normal.x = clip[0][3] + clip[0][2];
 
-    frustum.planes[Frustum::Near].normal.y =
-        clip[1][3] + clip[1][2];
+    frustum.planes[Frustum::Near].normal.y = clip[1][3] + clip[1][2];
 
-    frustum.planes[Frustum::Near].normal.z =
-        clip[2][3] + clip[2][2];
+    frustum.planes[Frustum::Near].normal.z = clip[2][3] + clip[2][2];
 
-    frustum.planes[Frustum::Near].distance =
-        clip[3][3] + clip[3][2];
+    frustum.planes[Frustum::Near].distance = clip[3][3] + clip[3][2];
 
     // Far
-    frustum.planes[Frustum::Far].normal.x =
-        clip[0][3] - clip[0][2];
+    frustum.planes[Frustum::Far].normal.x = clip[0][3] - clip[0][2];
 
-    frustum.planes[Frustum::Far].normal.y =
-        clip[1][3] - clip[1][2];
+    frustum.planes[Frustum::Far].normal.y = clip[1][3] - clip[1][2];
 
-    frustum.planes[Frustum::Far].normal.z =
-        clip[2][3] - clip[2][2];
+    frustum.planes[Frustum::Far].normal.z = clip[2][3] - clip[2][2];
 
-    frustum.planes[Frustum::Far].distance =
-        clip[3][3] - clip[3][2];
+    frustum.planes[Frustum::Far].distance = clip[3][3] - clip[3][2];
 
     // Normalize
     for (auto& plane : frustum.planes) {

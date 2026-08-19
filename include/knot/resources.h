@@ -159,8 +159,7 @@ private:
 
 class AlphaMaterial : public TextureMaterial {
 public:
-    AlphaMaterial(std::shared_ptr<Shader> s, glm::vec3 color)
-        : TextureMaterial(std::move(s), createSolidColorTexture(color), true), color(color) {
+    AlphaMaterial(std::shared_ptr<Shader> s, glm::vec3 color) : TextureMaterial(std::move(s), createSolidColorTexture(color), true), color(color) {
     }
 
 private:
@@ -172,9 +171,9 @@ public:
     PbrMaterial(std::shared_ptr<Shader> s, glm::vec3 albedoColor = glm::vec3(1.0f), float metallicFactor = 0.0f, float roughnessFactor = 0.5f,
                 float aoFactor = 1.0f, unsigned int albedoM = 0, unsigned int metallicM = 0, unsigned int roughnessM = 0, unsigned int aoM = 0,
                 unsigned int normalM = 0)
-        : Material(std::move(s)), albedoMap(0), metallicMap(0), roughnessMap(0), aoMap(0), normalMap(0), isAlbedoAllocated(false), isMetallicAllocated(false),
-          isRoughnessAllocated(false), isAoAllocated(false), isNormalAllocated(false), baseAlbedo(albedoColor), baseMetallic(metallicFactor),
-          baseRoughness(roughnessFactor), baseAo(aoFactor) {
+        : Material(std::move(s)), albedoMap(0), metallicMap(0), roughnessMap(0), aoMap(0), normalMap(0), isAlbedoAllocated(false),
+          isMetallicAllocated(false), isRoughnessAllocated(false), isAoAllocated(false), isNormalAllocated(false), baseAlbedo(albedoColor),
+          baseMetallic(metallicFactor), baseRoughness(roughnessFactor), baseAo(aoFactor) {
 
         if (albedoM != 0) {
             albedoMap = albedoM;
@@ -347,10 +346,7 @@ struct Model {
 
     Model() = default;
 
-    Model(
-        std::shared_ptr<Mesh> mesh,
-        std::shared_ptr<Material> material
-    );
+    Model(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material);
 
     void calculateBounds();
 };
@@ -376,27 +372,16 @@ public:
 
     Object() = default;
 
-    explicit Object(std::shared_ptr<Model> model)
-        : model(std::move(model)) {
+    explicit Object(std::shared_ptr<Model> model) : model(std::move(model)) {
     }
 
-    Object(
-        std::shared_ptr<Mesh> mesh,
-        std::shared_ptr<Material> material
-    )
-        : model(std::make_shared<Model>(
-              std::move(mesh),
-              std::move(material)
-          )) {
+    Object(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material) : model(std::make_shared<Model>(std::move(mesh), std::move(material))) {
     }
 
     virtual ~Object() = default;
 
     bool isVisible(const Frustum& frustum) const;
-    bool isVisible(
-        const Frustum& frustum,
-        const glm::mat4& worldMatrix
-    ) const;
+    bool isVisible(const Frustum& frustum, const glm::mat4& worldMatrix) const;
 };
 
 class Light : public Transform {
@@ -408,13 +393,7 @@ public:
 
     Light() = default;
 
-    Light(
-        glm::vec3 lightColor,
-        float lightIntensity,
-        glm::vec3 position = glm::vec3(0.0f)
-    )
-        : color(lightColor),
-          intensity(lightIntensity) {
+    Light(glm::vec3 lightColor, float lightIntensity, glm::vec3 position = glm::vec3(0.0f)) : color(lightColor), intensity(lightIntensity) {
         this->position = position;
     }
 
@@ -423,12 +402,7 @@ public:
 
 class PbrPointLight : public Light {
 public:
-    PbrPointLight(
-        glm::vec3 pos = glm::vec3(0.0f),
-        glm::vec3 col = glm::vec3(1.0f),
-        float bright = 1.0f
-    )
-        : Light(col, bright, pos) {
+    PbrPointLight(glm::vec3 pos = glm::vec3(0.0f), glm::vec3 col = glm::vec3(1.0f), float bright = 1.0f) : Light(col, bright, pos) {
     }
 };
 
