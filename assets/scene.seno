@@ -1,0 +1,63 @@
+// Seno - ScEne format for NOt engine
+
+{
+    "version": 1,
+
+    "objects": [
+        {
+            "position": [0,0,0],
+            "scale": [1,1,1],
+            "rotation": [1,0,0,0],
+            "model": 0
+        }
+    ],
+
+    "lights": [
+        {
+            "type": "DirLight",
+            "rotation": [1,0,0,0],
+            "color": [1,1,1],
+            "intensity": 1.0,
+            "ambient": [0.05,0.05,0.05],
+            "diffuse": [0.8,0.8,0.8],
+            "specular": [1,1,1]
+        },
+        {
+            "type": "PbrPointLight",
+            "position": [1,1,1],
+            "color": [1,1,1],
+            "intensity": 2.0
+        }
+    ],
+
+    "models": [
+        {
+            "mesh": 0,
+            "material": 0
+        }
+    ],
+
+    "meshs": [
+        "notbox.obj"
+    ],
+
+    "materials": [
+        {
+            "shader": "pbrShader",
+            "albedo": [1,1,1],
+            "metallic": 0.2,
+            "roughness": 0.0,
+            "ao": 1.0
+        }
+    ],
+
+    "camera": {
+        "type": "MovingCamera",
+        "position": [0,0,5],
+        "yaw": -90,
+        "pitch": 0,
+        "fov": 45,
+        "near": 0.1,
+        "far": 100
+    }
+}
