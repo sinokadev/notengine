@@ -37,6 +37,36 @@ private:
     unsigned int nextId = 1;
 };
 
+class LightManager {
+public:
+    LightManager() = default;
+    ~LightManager();
+
+    unsigned int registerLight(std::shared_ptr<Light> newLight);
+
+    bool removeLight(unsigned int id);
+
+    Light* getLight(unsigned int id);
+    std::vector<const DirLight*> getDirLights() const;
+    std::vector<const PbrPointLight*> getPointLights() const;
+
+    void clear();
+    void shutdown();
+
+    const std::list<std::shared_ptr<Light>>& getLights() const {
+        return lights;
+    }
+
+private:
+    std::list<std::shared_ptr<Light>> lights;
+    std::unordered_map<
+        unsigned int,
+        std::list<std::shared_ptr<Light>>::iterator
+    > idToIterator;
+
+    unsigned int nextId = 1;
+};
+
 class ResourceManager {
 public:
     ResourceManager() = default;

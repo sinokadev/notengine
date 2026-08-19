@@ -16,6 +16,7 @@ enum UserEventType : uint32_t {
 
 int main() {
     knot::Engine engine;
+
     if (!engine.init(1280, 720, "Knot Demo")) {
         return 1;
     }
@@ -30,53 +31,84 @@ int main() {
 
     knot::Scene scene;
 
-    scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
-
-    auto mesh = knot::loadModelOBJ(
-        knot::getAssetRoot() + "assets/notbox.obj"
+    scene.loadHDRMap(
+        knot::getAssetRoot() +
+        "assets/DaySkyHDRI015A_2K_HDR.hdr"
     );
 
-    auto shader = scene.getResourceManager().getShader("pbrShader");
+    auto mesh = knot::loadModelOBJ(
+        knot::getAssetRoot() +
+        "assets/notbox.obj"
+    );
+
+    auto shader =
+        scene.getResourceManager().getShader("pbrShader");
 
     auto material = std::make_shared<knot::PbrMaterial>(
         shader,
-        glm::vec3(1, 1, 1),
+        glm::vec3(1.0f),
         0.2f,
         0.0f,
         1.0f
     );
 
-    auto cubeObject = std::make_shared<knot::Object>(mesh, material);
+    auto cubeObject =
+        std::make_shared<knot::Object>(mesh, material);
+
     scene.getObjectManager().registerObject(cubeObject);
 
-    cubeObject->position = glm::vec3(0.0f, 0.0f, 0.0f);
-    cubeObject->scale = glm::vec3(0.5f);
+    cubeObject->position =
+        glm::vec3(0.0f, 0.0f, 0.0f);
 
-    auto dirLightObj = std::make_shared<knot::DirLight>(
-        glm::vec3(-0.2f, -1.0f, -0.3f),
-        glm::vec3(0.1f),
-        glm::vec3(1.0f),
-        glm::vec3(1.0f)
+    cubeObject->scale =
+        glm::vec3(0.5f);
+
+    auto dirLight =
+        std::make_shared<knot::DirLight>();
+
+    dirLight->rotation = glm::quat(
+        glm::vec3(
+            glm::radians(45.0f),
+            glm::radians(-20.0f),
+            0.0f
+        )
     );
 
-    scene.getObjectManager().registerObject(dirLightObj);
+    dirLight->ambient =
+        glm::vec3(0.1f);
 
-    auto pointLightObj = std::make_shared<knot::PbrPointLight>(
-        glm::vec3(1.0f),
-        glm::vec3(1.0f),
-        2.0f
+    dirLight->diffuse =
+        glm::vec3(1.0f);
+
+    dirLight->specular =
+        glm::vec3(1.0f);
+
+    scene.getLightManager().registerLight(
+        dirLight
     );
 
-    scene.getObjectManager().registerObject(pointLightObj);
+    auto pointLight =
+        std::make_shared<knot::PbrPointLight>(
+            glm::vec3(1.5f, 1.5f, 2.0f),
+            glm::vec3(1.0f),
+            2.0f
+        );
 
-    auto cameraObj = std::make_shared<knot::MovingCamera>(
-        glm::vec3(0.0f, 0.0f, 5.0f)
+    scene.getLightManager().registerLight(
+        pointLight
     );
 
-    scene.getObjectManager().registerObject(cameraObj);
-    scene.setCamera(*cameraObj);
+    auto camera =
+        std::make_shared<knot::MovingCamera>(
+            glm::vec3(0.0f, 0.0f, 5.0f)
+        );
 
-    std::unordered_map<knot::ScanCode, bool> keyStates;
+    scene.setCamera(*camera);
+
+    std::unordered_map<
+        knot::ScanCode,
+        bool
+    > keyStates;
 
     float lastX = 1280.0f / 2.0f;
     float lastY = 720.0f / 2.0f;
@@ -89,68 +121,89 @@ int main() {
 
     engine.repeat(1000, PRINT_FPS);
 
-    engine.setEventCallback([&](knot::Event& event) {
-        if (event.type == knot::KeyInput) {
-            if (event.action == knot::KeyState::PRESS) {
-                if (event.key == knot::ScanCode::ESCAPE) {
-                    if (!stop)
-                        glfwSetInputMode(
-                            engine.getWindow().getHandle(),
-                            GLFW_CURSOR,
-                            GLFW_CURSOR_NORMAL
-                        );
-                    else
-                        glfwSetInputMode(
-                            engine.getWindow().getHandle(),
-                            GLFW_CURSOR,
-                            GLFW_CURSOR_DISABLED
-                        );
+    engine.setEventCallback(
+        [&](knot::Event& event) {
+            if (event.type == knot::KeyInput) {
+                if (event.action ==
+                    knot::KeyState::PRESS) {
 
-                    stop = !stop;
-                    event.handled = true;
+                    if (event.key ==
+                        knot::ScanCode::ESCAPE) {
+
+                        if (!stop) {
+                            glfwSetInputMode(
+                                engine.getWindow().getHandle(),
+                                GLFW_CURSOR,
+                                GLFW_CURSOR_NORMAL
+                            );
+                        } else {
+                            glfwSetInputMode(
+                                engine.getWindow().getHandle(),
+                                GLFW_CURSOR,
+                                GLFW_CURSOR_DISABLED
+                            );
+                        }
+
+                        stop = !stop;
+                        event.handled = true;
+                    }
+
+                    keyStates[event.key] = true;
                 }
-
-                keyStates[event.key] = true;
-            }
-            else if (event.action == knot::KeyState::RELEASE) {
-                keyStates[event.key] = false;
-            }
-        }
-
-        if (event.type == knot::MouseMoved) {
-            if (stop)
-                return;
-
-            float xOffset = static_cast<float>(event.x) - lastX;
-            float yOffset = lastY - static_cast<float>(event.y);
-
-            lastX = static_cast<float>(event.x);
-            lastY = static_cast<float>(event.y);
-
-            scene.getCamera().rotate(
-                xOffset,
-                yOffset,
-                true
-            );
-
-            event.handled = true;
-        }
-
-        if (event.type == knot::EventType::User) {
-            switch (event.userCode) {
-                case PRINT_FPS: {
-                    std::cout << "FPS: " << frameCount << "\n";
-                    frameCount = 0;
-
-                    event.handled = true;
-                    break;
+                else if (
+                    event.action ==
+                    knot::KeyState::RELEASE
+                ) {
+                    keyStates[event.key] = false;
                 }
             }
+
+            if (event.type == knot::MouseMoved) {
+                if (stop)
+                    return;
+
+                float xOffset =
+                    static_cast<float>(event.x) - lastX;
+
+                float yOffset =
+                    lastY - static_cast<float>(event.y);
+
+                lastX =
+                    static_cast<float>(event.x);
+
+                lastY =
+                    static_cast<float>(event.y);
+
+                camera->rotate(
+                    xOffset,
+                    yOffset,
+                    true
+                );
+
+                event.handled = true;
+            }
+
+            if (event.type == knot::EventType::User) {
+                switch (event.userCode) {
+                    case PRINT_FPS: {
+                        std::cout
+                            << "FPS: "
+                            << frameCount
+                            << "\n";
+
+                        frameCount = 0;
+                        event.handled = true;
+                        break;
+                    }
+                }
+            }
         }
-    });
+    );
 
     scene.setUpdateCallback(
-        [&](knot::Scene& currentScene, float deltaTime) {
+        [&](knot::Scene& currentScene,
+            float deltaTime) {
+
             frameCount++;
 
             if (stop)
@@ -160,33 +213,36 @@ int main() {
 
             float speed = 0.5f;
 
-            cubeObject->rotation = glm::quat(
-                glm::vec3(
-                    sin(totalTime * 0.5f) * 0.2f,
-                    totalTime * speed,
-                    0.0f
-                )
-            );
-
-            auto& activeCamera =
-                currentScene.getCamera();
+            cubeObject->rotation =
+                glm::quat(
+                    glm::vec3(
+                        sin(totalTime * 0.5f) * 0.2f,
+                        totalTime * speed,
+                        0.0f
+                    )
+                );
 
             glm::vec3 moveDir(0.0f);
 
+            const glm::vec3 front = camera->getFront();
+            const glm::vec3 right = glm::normalize(
+                glm::cross(front, camera->worldUp)
+            );
+
             if (keyStates[knot::ScanCode::W])
-                moveDir += activeCamera.front;
+                moveDir += front;
 
             if (keyStates[knot::ScanCode::S])
-                moveDir -= activeCamera.front;
+                moveDir -= front;
 
             if (keyStates[knot::ScanCode::A])
-                moveDir -= activeCamera.right;
+                moveDir -= right;
 
             if (keyStates[knot::ScanCode::D])
-                moveDir += activeCamera.right;
+                moveDir += right;
 
             if (glm::length(moveDir) > 0.0f) {
-                activeCamera.move(
+                camera->move(
                     glm::normalize(moveDir),
                     deltaTime
                 );

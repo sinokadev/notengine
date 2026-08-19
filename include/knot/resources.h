@@ -355,51 +355,67 @@ struct Model {
     void calculateBounds();
 };
 
-struct Object {
-    std::shared_ptr<Model> model;
-    unsigned int id = 0;
-
-    glm::vec3 position = glm::vec3(0.0f);
-    glm::vec3 scale = glm::vec3(1.0f);
-    glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-
-    glm::vec3 front = glm::vec3(0.0f, 0.0f, -1.0f);
-    glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0f);
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-
-    explicit Object(std::shared_ptr<Model> m)
-        : model(std::move(m)) {
-    }
-
-    Object(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material)
-        : model(std::make_shared<Model>(
-              Model{
-                  std::move(mesh),
-                  std::move(material)
-              })) {
-    }
-
-    Object() = default;
-
-    virtual ~Object() = default;
+class Transform {
+public:
+    glm::vec3 position{0.0f};
+    glm::quat rotation{1.0f, 0.0f, 0.0f, 0.0f};
+    glm::vec3 scale{1.0f};
 
     glm::mat4 getWorldMatrix() const;
 
-    virtual void move(glm::vec3 direction, float deltaTime) {
-    }
-
-    virtual void rotate(float xOffset, float yOffset, bool constrainPitch = true) {
-    }
-    bool isVisible(const Frustum& frustum) const;
-    bool isVisible(const Frustum& frustum, const glm::mat4& worldMatrix) const;
+    glm::vec3 getFront() const;
+    glm::vec3 getRight() const;
+    glm::vec3 getUp() const;
 };
 
-class Light : public Object {
+class Object : public Transform {
 public:
-    glm::vec3 color;
-    float intensity;
+    unsigned int id = 0;
 
-    Light(glm::vec3 lightColor = glm::vec3(1.0f), float lightIntensity = 1.0f) : Object(), color(lightColor), intensity(lightIntensity) {
+    std::shared_ptr<Model> model;
+
+    Object() = default;
+
+    explicit Object(std::shared_ptr<Model> model)
+        : model(std::move(model)) {
+    }
+
+    Object(
+        std::shared_ptr<Mesh> mesh,
+        std::shared_ptr<Material> material
+    )
+        : model(std::make_shared<Model>(
+              std::move(mesh),
+              std::move(material)
+          )) {
+    }
+
+    virtual ~Object() = default;
+
+    bool isVisible(const Frustum& frustum) const;
+    bool isVisible(
+        const Frustum& frustum,
+        const glm::mat4& worldMatrix
+    ) const;
+};
+
+class Light : public Transform {
+public:
+    unsigned int id = 0;
+
+    glm::vec3 color{1.0f};
+    float intensity = 1.0f;
+
+    Light() = default;
+
+    Light(
+        glm::vec3 lightColor,
+        float lightIntensity,
+        glm::vec3 position = glm::vec3(0.0f)
+    )
+        : color(lightColor),
+          intensity(lightIntensity) {
+        this->position = position;
     }
 
     virtual ~Light() = default;
@@ -407,26 +423,24 @@ public:
 
 class PbrPointLight : public Light {
 public:
-    PbrPointLight(glm::vec3 pos = glm::vec3(0.0f), glm::vec3 col = glm::vec3(1.0f), float bright = 1.0f) : Light(col, bright) {
-        this->position = pos;
+    PbrPointLight(
+        glm::vec3 pos = glm::vec3(0.0f),
+        glm::vec3 col = glm::vec3(1.0f),
+        float bright = 1.0f
+    )
+        : Light(col, bright, pos) {
     }
-
-    virtual ~PbrPointLight() = default;
 };
+
 class DirLight : public Light {
 public:
-    glm::vec3 direction;
+    glm::vec3 ambient{0.05f};
+    glm::vec3 diffuse{0.8f};
+    glm::vec3 specular{1.0f};
 
-    glm::vec3 ambient;
-    glm::vec3 diffuse;
-    glm::vec3 specular;
-
-    DirLight(glm::vec3 dir = glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3 amb = glm::vec3(0.05f), glm::vec3 diff = glm::vec3(0.8f),
-             glm::vec3 spec = glm::vec3(1.0f))
-        : direction(dir), ambient(amb), diffuse(diff), specular(spec) {
-        this->color = diff;
+    glm::vec3 getDirection() const {
+        return getFront();
     }
-
-    virtual ~DirLight() = default;
 };
+
 } // namespace knot

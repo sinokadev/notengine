@@ -52,6 +52,84 @@ Object* ObjectManager::getObject(unsigned int id) {
     return nullptr;
 }
 
+LightManager::~LightManager() {
+    shutdown();
+}
+
+unsigned int LightManager::registerLight(std::shared_ptr<Light> newLight) {
+    if (!newLight)
+        return 0;
+
+    if (newLight->id == 0) {
+        newLight->id = nextId++;
+    }
+
+    lights.push_back(newLight);
+    auto it = --lights.end();
+    idToIterator[newLight->id] = it;
+
+    return newLight->id;
+}
+
+bool LightManager::removeLight(unsigned int id) {
+    auto it = idToIterator.find(id);
+
+    if (it == idToIterator.end()) {
+        return false;
+    }
+
+    lights.erase(it->second);
+    idToIterator.erase(it);
+
+    return true;
+}
+
+void LightManager::clear() {
+    lights.clear();
+    idToIterator.clear();
+    nextId = 1;
+}
+
+void LightManager::shutdown() {
+    clear();
+}
+
+Light* LightManager::getLight(unsigned int id) {
+    auto it = idToIterator.find(id);
+
+    if (it != idToIterator.end()) {
+        return it->second->get();
+    }
+
+    return nullptr;
+}
+
+std::vector<const DirLight*> LightManager::getDirLights() const {
+    std::vector<const DirLight*> result;
+
+    for (const auto& light : lights) {
+        if (const auto* dirLight =
+                dynamic_cast<const DirLight*>(light.get())) {
+            result.push_back(dirLight);
+        }
+    }
+
+    return result;
+}
+
+std::vector<const PbrPointLight*> LightManager::getPointLights() const {
+    std::vector<const PbrPointLight*> result;
+
+    for (const auto& light : lights) {
+        if (const auto* pointLight =
+                dynamic_cast<const PbrPointLight*>(light.get())) {
+            result.push_back(pointLight);
+        }
+    }
+
+    return result;
+}
+
 ResourceManager::~ResourceManager() {
     shutdown();
 }

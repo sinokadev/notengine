@@ -53,18 +53,18 @@ struct Frustum {
     }
 };
 
-class Camera : public Object {
+class Camera : public Transform {
 public:
     static constexpr float kNearPlane = 0.1f;
     static constexpr float kFarPlane = 100.0f;
 
-    glm::vec3 worldUp;
+    glm::vec3 worldUp{0.0f, 1.0f, 0.0f};
 
-    float yaw;
-    float pitch;
-    float fov;
-    float nearPlane;
-    float farPlane;
+    float yaw = -90.0f;
+    float pitch = 0.0f;
+    float fov = 45.0f;
+    float nearPlane = kNearPlane;
+    float farPlane = kFarPlane;
 
     Camera(
         glm::vec3 startPos = glm::vec3(0.0f, 0.0f, 3.0f),
@@ -90,20 +90,20 @@ private:
 
 class MovingCamera : public Camera {
 public:
-    float speed;
-    float sensitivity;
+    float speed = 5.0f;
+    float sensitivity = 0.1f;
 
     MovingCamera(
         glm::vec3 startPos = glm::vec3(0.0f, 0.0f, 5.0f)
     );
 
-    void move(glm::vec3 direction, float deltaTime) override;
+    void move(glm::vec3 direction, float deltaTime);
 
     void rotate(
         float xOffset,
         float yOffset,
         bool constrainPitch = true
-    ) override;
+    );
 };
 
 } // namespace knot
