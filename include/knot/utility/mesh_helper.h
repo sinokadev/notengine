@@ -5,10 +5,12 @@
 
 #include <glad/gl.h>
 #include <knot/resources.h>
+#include <knot/mesh.h>
 
 namespace knot {
 class Mesh;
 
+void calculateMeshTangents(std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
 std::shared_ptr<Mesh> createCube();
 std::shared_ptr<Mesh> createSphere(int sectors, int stacks);
 std::shared_ptr<Mesh> createPlane(float width, float height);

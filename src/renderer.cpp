@@ -4,6 +4,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <cassert>
+#include <knot/mesh.h>
 
 #define AMBIENT_INTENSITY 5.0f
 
