@@ -1,5 +1,5 @@
 {
-    "version": 1,
+    "version": 2,
 
     "sky": {
         "type": "HDR",
@@ -40,7 +40,7 @@
         }
     ],
 
-    "meshs": [
+    "meshes": [
         "{assetRoot}/assets/notbox.obj"
     ],
 
