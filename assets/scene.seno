@@ -51,7 +51,7 @@
     ],
 
 "meshes": [
-    "{assetRoot}/assets/utah_teapot.obj",
+    "{assetRoot}/assets/notbox.obj",
 
     {
         "type": "embedded",
