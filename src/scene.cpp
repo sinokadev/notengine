@@ -6,6 +6,7 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
+#include <knot/mesh.h>
 #include <knot/utility.h>
 
 namespace knot {
@@ -20,27 +21,29 @@ Scene::~Scene() {
 }
 
 void Scene::clear() {
-    shutdown();
-}
+    objectManager.clear();
+    lightManager.clear();
 
-void Scene::shutdown() {
-    const bool hasContext = (glfwGetCurrentContext() != nullptr);
     if (cubeMap != 0) {
-        if (hasContext) {
+        if (glfwGetCurrentContext() != nullptr)
             glDeleteTextures(1, &cubeMap);
-        }
+
         cubeMap = 0;
     }
+
     if (irradianceMap != 0) {
-        if (hasContext) {
+        if (glfwGetCurrentContext() != nullptr)
             glDeleteTextures(1, &irradianceMap);
-        }
+
         irradianceMap = 0;
     }
 
-    objectManager.shutdown();
-    resourceManager.shutdown();
     updateCallback = nullptr;
+}
+
+void Scene::shutdown() {
+    clear();
+    resourceManager.shutdown();
 }
 
 void Scene::loadHDRMap(const std::string& path) {
@@ -113,59 +116,184 @@ bool Scene::loadSeno(const std::string& path) {
         return false;
     }
 
-    nlohmann::json root;
-
     try {
-        file >> root;
-    } catch (const nlohmann::json::parse_error& e) {
-        std::cerr << "[Error] Failed to parse Seno scene: "
-                  << e.what() << std::endl;
-        return false;
-    }
+        nlohmann::json scene;
+        file >> scene;
 
-    try {
-        const int version = root.at("version").get<int>();
+        clear();
 
-        if (version != 2) {
-            std::cerr << "[Error] Failed to load Seno scene: "
-                      << "unsupported version " << version << std::endl;
-            return false;
+        const int version = scene.value("version", 1);
+
+        // ------------------------------------------------------------
+        // Sky
+        // ------------------------------------------------------------
+
+        if (scene.contains("sky")) {
+            const auto& sky = scene["sky"];
+
+            const std::string type = sky.value("type", "");
+
+            if (type == "HDR") {
+                std::string skyPath = sky.value("path", "");
+
+                skyPath = resolveAssetPath(skyPath);
+
+                loadHDRMap(skyPath);
+            }
         }
 
-        auto readVec3 = [](const nlohmann::json& value) {
-            return glm::vec3(
-                value.at(0).get<float>(),
-                value.at(1).get<float>(),
-                value.at(2).get<float>()
-            );
-        };
-
-        auto readQuat = [](const nlohmann::json& value) {
-            // Seno rotation format: [w, x, y, z]
-            return glm::quat(
-                value.at(0).get<float>(),
-                value.at(1).get<float>(),
-                value.at(2).get<float>(),
-                value.at(3).get<float>()
-            );
-        };
-
-        /*
-         * Meshes
-         */
+        // ------------------------------------------------------------
+        // Meshes
+        // ------------------------------------------------------------
 
         std::vector<std::shared_ptr<Mesh>> meshes;
 
-        if (root.contains("meshes")) {
-            for (const auto& meshValue : root["meshes"]) {
-                const std::string meshPath =
-                    resolveAssetPath(meshValue.get<std::string>());
+        if (scene.contains("meshes")) {
+            const auto& meshArray = scene["meshes"];
 
-                auto mesh = loadModelOBJ(meshPath);
+            if (!meshArray.is_array()) {
+                std::cerr << "[Error] 'meshes' must be an array"
+                          << std::endl;
+                return false;
+            }
 
-                if (!mesh || !mesh->isReady()) {
-                    std::cerr << "[Error] Failed to load mesh: "
-                              << meshPath << std::endl;
+            for (const auto& meshData : meshArray) {
+                std::shared_ptr<Mesh> mesh;
+
+                // External mesh
+                if (meshData.is_string()) {
+                    std::string meshPath = meshData.get<std::string>();
+                    meshPath = resolveAssetPath(meshPath);
+
+                    mesh = loadModelOBJ(meshPath);
+
+                    if (!mesh) {
+                        std::cerr << "[Error] Failed to load mesh: "
+                                  << meshPath << std::endl;
+                        return false;
+                    }
+                }
+
+                // Embedded mesh
+                else if (meshData.is_object()) {
+                    const std::string type =
+                        meshData.value("type", "embedded");
+
+                    if (type != "embedded") {
+                        std::cerr << "[Error] Unknown embedded mesh type: "
+                                  << type << std::endl;
+                        return false;
+                    }
+
+                    if (!meshData.contains("vertices") ||
+                        !meshData.contains("indices")) {
+                        std::cerr << "[Error] Embedded mesh is missing "
+                                     "'vertices' or 'indices'"
+                                  << std::endl;
+                        return false;
+                    }
+
+                    mesh = std::make_shared<Mesh>();
+
+                    for (const auto& vertexData :
+                         meshData["vertices"]) {
+                        Vertex vertex{};
+
+                        const auto& position =
+                            vertexData["position"];
+
+                        vertex.Position = glm::vec3(
+                            position[0].get<float>(),
+                            position[1].get<float>(),
+                            position[2].get<float>()
+                        );
+
+                        if (vertexData.contains("normal")) {
+                            const auto& normal =
+                                vertexData["normal"];
+
+                            vertex.Normal = glm::vec3(
+                                normal[0].get<float>(),
+                                normal[1].get<float>(),
+                                normal[2].get<float>()
+                            );
+                        } else {
+                            vertex.Normal =
+                                glm::vec3(0.0f, 1.0f, 0.0f);
+                        }
+
+                        if (vertexData.contains("texcoord")) {
+                            const auto& uv =
+                                vertexData["texcoord"];
+
+                            vertex.TexCoords = glm::vec2(
+                                uv[0].get<float>(),
+                                uv[1].get<float>()
+                            );
+                        } else {
+                            vertex.TexCoords =
+                                glm::vec2(0.0f);
+                        }
+
+                        if (vertexData.contains("tangent")) {
+                            const auto& tangent =
+                                vertexData["tangent"];
+
+                            vertex.Tangent = glm::vec3(
+                                tangent[0].get<float>(),
+                                tangent[1].get<float>(),
+                                tangent[2].get<float>()
+                            );
+                        } else {
+                            vertex.Tangent =
+                                glm::vec3(0.0f);
+                        }
+
+                        mesh->vertices.push_back(vertex);
+                    }
+
+                    for (const auto& index :
+                         meshData["indices"]) {
+                        mesh->indices.push_back(
+                            index.get<unsigned int>()
+                        );
+                    }
+
+                    if (mesh->vertices.empty() ||
+                        mesh->indices.empty()) {
+                        std::cerr << "[Error] Embedded mesh is empty"
+                                  << std::endl;
+                        return false;
+                    }
+
+                    // Tangent가 없는 경우 계산
+                    bool hasTangent = false;
+
+                    for (const auto& vertex : mesh->vertices) {
+                        if (glm::length(vertex.Tangent) > 0.0001f) {
+                            hasTangent = true;
+                            break;
+                        }
+                    }
+
+                    if (!hasTangent) {
+                        calculateMeshTangents(
+                            mesh->vertices,
+                            mesh->indices
+                        );
+                    }
+
+                    mesh->indexCount =
+                        static_cast<unsigned int>(
+                            mesh->indices.size()
+                        );
+
+                    mesh->setup();
+                }
+
+                else {
+                    std::cerr << "[Error] Invalid mesh entry"
+                              << std::endl;
                     return false;
                 }
 
@@ -173,86 +301,103 @@ bool Scene::loadSeno(const std::string& path) {
             }
         }
 
-        /*
-         * Materials
-         */
+        // ------------------------------------------------------------
+        // Materials
+        // ------------------------------------------------------------
 
         std::vector<std::shared_ptr<Material>> materials;
 
-        if (root.contains("materials")) {
-            for (const auto& materialData : root["materials"]) {
+        if (scene.contains("materials")) {
+            for (const auto& materialData :
+                 scene["materials"]) {
+
                 const std::string shaderName =
-                    materialData.at("shader").get<std::string>();
+                    materialData.value("shader", "");
 
-                auto shader =
-                    resourceManager.getShader(shaderName);
+                    if (shaderName == "pbrShader") {
+                        auto shader = resourceManager.getShader("pbrShader");
 
-                if (!shader || !shader->isValid()) {
-                    std::cerr << "[Error] Failed to find shader: "
-                              << shaderName << std::endl;
-                    return false;
-                }
+                        if (!shader) {
+                            std::cerr << "[Error] Failed to find shader: "
+                                    << shaderName << std::endl;
+                            return false;
+                        }
 
-                if (shaderName == "pbrShader") {
-                    const glm::vec3 albedo =
-                        materialData.contains("albedo")
-                            ? readVec3(materialData["albedo"])
-                            : glm::vec3(1.0f);
+                        glm::vec3 albedo(1.0f);
 
-                    const float metallic =
-                        materialData.value("metallic", 0.0f);
+                        if (materialData.contains("albedo")) {
+                            const auto& c = materialData["albedo"];
 
-                    const float roughness =
-                        materialData.value("roughness", 0.5f);
+                            if (!c.is_array() || c.size() != 3) {
+                                std::cerr << "[Error] Invalid albedo value"
+                                        << std::endl;
+                                return false;
+                            }
 
-                    const float ao =
-                        materialData.value("ao", 1.0f);
+                            albedo = glm::vec3(
+                                c[0].get<float>(),
+                                c[1].get<float>(),
+                                c[2].get<float>()
+                            );
+                        }
 
-                    auto material =
-                        std::make_shared<PbrMaterial>(
-                            shader,
-                            albedo,
-                            metallic,
-                            roughness,
-                            ao
+                        const float metallic =
+                            materialData.value("metallic", 0.0f);
+
+                        const float roughness =
+                            materialData.value("roughness", 0.5f);
+
+                        const float ao =
+                            materialData.value("ao", 1.0f);
+
+                        materials.push_back(
+                            std::make_shared<PbrMaterial>(
+                                shader,
+                                albedo,
+                                metallic,
+                                roughness,
+                                ao
+                            )
                         );
-
-                    materials.push_back(material);
-                } else {
-                    std::cerr << "[Error] Failed to create material: "
-                              << "unsupported shader '"
-                              << shaderName << "'"
-                              << std::endl;
+                    }
+                else {
+                    std::cerr << "[Error] Unknown shader: "
+                              << shaderName << std::endl;
                     return false;
                 }
             }
         }
 
-        /*
-         * Models
-         */
+        // ------------------------------------------------------------
+        // Models
+        // ------------------------------------------------------------
 
         std::vector<std::shared_ptr<Model>> models;
 
-        if (root.contains("models")) {
-            for (const auto& modelData : root["models"]) {
-                const size_t meshIndex =
-                    modelData.at("mesh").get<size_t>();
+        if (scene.contains("models")) {
+            for (const auto& modelData :
+                 scene["models"]) {
 
-                const size_t materialIndex =
-                    modelData.at("material").get<size_t>();
+                const int meshIndex =
+                    modelData.value("mesh", -1);
 
-                if (meshIndex >= meshes.size()) {
-                    std::cerr << "[Error] Failed to create model: "
-                              << "mesh index " << meshIndex
+                const int materialIndex =
+                    modelData.value("material", -1);
+
+                if (meshIndex < 0 ||
+                    meshIndex >= static_cast<int>(meshes.size())) {
+                    std::cerr << "[Error] Model mesh index "
+                              << meshIndex
                               << " is out of range"
                               << std::endl;
                     return false;
                 }
 
-                if (materialIndex >= materials.size()) {
-                    std::cerr << "[Error] Failed to create model: "
-                              << "material index " << materialIndex
+                if (materialIndex < 0 ||
+                    materialIndex >=
+                        static_cast<int>(materials.size())) {
+                    std::cerr << "[Error] Model material index "
+                              << materialIndex
                               << " is out of range"
                               << std::endl;
                     return false;
@@ -267,193 +412,246 @@ bool Scene::loadSeno(const std::string& path) {
             }
         }
 
-        /*
-         * Objects
-         */
+        // ------------------------------------------------------------
+        // Objects
+        // ------------------------------------------------------------
 
-        if (root.contains("objects")) {
-            for (const auto& objectData : root["objects"]) {
-                const size_t modelIndex =
-                    objectData.at("model").get<size_t>();
+        if (scene.contains("objects")) {
+            for (const auto& objectData :
+                 scene["objects"]) {
 
-                if (modelIndex >= models.size()) {
-                    std::cerr << "[Error] Failed to create object: "
-                              << "model index " << modelIndex
+                const int modelIndex =
+                    objectData.value("model", -1);
+
+                if (modelIndex < 0 ||
+                    modelIndex >=
+                        static_cast<int>(models.size())) {
+                    std::cerr << "[Error] Object model index "
+                              << modelIndex
                               << " is out of range"
                               << std::endl;
                     return false;
                 }
 
                 auto object =
-                    std::make_shared<Object>(models[modelIndex]);
+                    std::make_shared<Object>();
+
+                object->model = models[modelIndex];
 
                 if (objectData.contains("position")) {
-                    object->position =
-                        readVec3(objectData["position"]);
-                }
+                    const auto& p =
+                        objectData["position"];
 
-                if (objectData.contains("rotation")) {
-                    object->rotation =
-                        readQuat(objectData["rotation"]);
+                    object->position = glm::vec3(
+                        p[0].get<float>(),
+                        p[1].get<float>(),
+                        p[2].get<float>()
+                    );
                 }
 
                 if (objectData.contains("scale")) {
-                    object->scale =
-                        readVec3(objectData["scale"]);
+                    const auto& s =
+                        objectData["scale"];
+
+                    object->scale = glm::vec3(
+                        s[0].get<float>(),
+                        s[1].get<float>(),
+                        s[2].get<float>()
+                    );
+                }
+
+                if (objectData.contains("rotation")) {
+                    const auto& r =
+                        objectData["rotation"];
+
+                    object->rotation = glm::quat(
+                        r[0].get<float>(),
+                        r[1].get<float>(),
+                        r[2].get<float>(),
+                        r[3].get<float>()
+                    );
                 }
 
                 objectManager.registerObject(object);
             }
         }
 
-        /*
-         * Lights
-         */
+        // ------------------------------------------------------------
+        // Lights
+        // ------------------------------------------------------------
 
-        if (root.contains("lights")) {
-            for (const auto& lightData : root["lights"]) {
+        if (scene.contains("lights")) {
+            for (const auto& lightData :
+                 scene["lights"]) {
+
                 const std::string type =
-                    lightData.at("type").get<std::string>();
+                    lightData.value("type", "");
 
-                std::shared_ptr<Light> light;
+                if (type == "PbrPointLight") {
+                    glm::vec3 position(0.0f);
+                    glm::vec3 color(1.0f);
+                    float intensity = 1.0f;
 
-                if (type == "DirLight") {
-                    auto dirLight =
-                        std::make_shared<DirLight>();
+                    if (lightData.contains("position")) {
+                        const auto& p =
+                            lightData["position"];
 
-                    if (lightData.contains("rotation")) {
-                        dirLight->rotation =
-                            readQuat(lightData["rotation"]);
+                        position = glm::vec3(
+                            p[0].get<float>(),
+                            p[1].get<float>(),
+                            p[2].get<float>()
+                        );
                     }
 
                     if (lightData.contains("color")) {
-                        dirLight->color =
-                            readVec3(lightData["color"]);
+                        const auto& c =
+                            lightData["color"];
+
+                        color = glm::vec3(
+                            c[0].get<float>(),
+                            c[1].get<float>(),
+                            c[2].get<float>()
+                        );
                     }
 
-                    if (lightData.contains("intensity")) {
-                        dirLight->intensity =
-                            lightData["intensity"].get<float>();
+                    intensity =
+                        lightData.value(
+                            "intensity", 1.0f);
+
+                    auto light =
+                        std::make_shared<PbrPointLight>(
+                            position,
+                            color,
+                            intensity
+                        );
+
+                    lightManager.registerLight(light);
+                }
+
+                else if (type == "DirLight") {
+                    auto light =
+                        std::make_shared<DirLight>();
+
+                    if (lightData.contains("color")) {
+                        const auto& c =
+                            lightData["color"];
+
+                        light->color = glm::vec3(
+                            c[0].get<float>(),
+                            c[1].get<float>(),
+                            c[2].get<float>()
+                        );
                     }
+
+                    light->intensity =
+                        lightData.value(
+                            "intensity", 1.0f);
 
                     if (lightData.contains("ambient")) {
-                        dirLight->ambient =
-                            readVec3(lightData["ambient"]);
+                        const auto& c =
+                            lightData["ambient"];
+
+                        light->ambient = glm::vec3(
+                            c[0].get<float>(),
+                            c[1].get<float>(),
+                            c[2].get<float>()
+                        );
                     }
 
                     if (lightData.contains("diffuse")) {
-                        dirLight->diffuse =
-                            readVec3(lightData["diffuse"]);
+                        const auto& c =
+                            lightData["diffuse"];
+
+                        light->diffuse = glm::vec3(
+                            c[0].get<float>(),
+                            c[1].get<float>(),
+                            c[2].get<float>()
+                        );
                     }
 
                     if (lightData.contains("specular")) {
-                        dirLight->specular =
-                            readVec3(lightData["specular"]);
+                        const auto& c =
+                            lightData["specular"];
+
+                        light->specular = glm::vec3(
+                            c[0].get<float>(),
+                            c[1].get<float>(),
+                            c[2].get<float>()
+                        );
                     }
 
-                    light = dirLight;
-                } else if (type == "PbrPointLight") {
-                    auto pointLight =
-                        std::make_shared<PbrPointLight>();
+                    if (lightData.contains("rotation")) {
+                        const auto& r =
+                            lightData["rotation"];
 
-                    if (lightData.contains("position")) {
-                        pointLight->position =
-                            readVec3(lightData["position"]);
+                        light->rotation = glm::quat(
+                            r[0].get<float>(),
+                            r[1].get<float>(),
+                            r[2].get<float>(),
+                            r[3].get<float>()
+                        );
                     }
 
-                    if (lightData.contains("color")) {
-                        pointLight->color =
-                            readVec3(lightData["color"]);
-                    }
-
-                    if (lightData.contains("intensity")) {
-                        pointLight->intensity =
-                            lightData["intensity"].get<float>();
-                    }
-
-                    light = pointLight;
-                } else {
-                    std::cerr << "[Error] Failed to create light: "
-                              << "unknown type '" << type << "'"
-                              << std::endl;
-                    return false;
+                    lightManager.registerLight(light);
                 }
-
-                lightManager.registerLight(light);
             }
         }
 
-        /*
-         * Camera
-         */
+        // ------------------------------------------------------------
+        // Camera
+        // ------------------------------------------------------------
 
-        if (root.contains("camera")) {
-            const auto& cameraData = root.at("camera");
+        if (scene.contains("camera")) {
+            const auto& cameraData =
+                scene["camera"];
 
             const std::string type =
-                cameraData.at("type").get<std::string>();
+                cameraData.value("type", "Camera");
+
+            glm::vec3 position(0.0f, 0.0f, 5.0f);
+
+            if (cameraData.contains("position")) {
+                const auto& p =
+                    cameraData["position"];
+
+                position = glm::vec3(
+                    p[0].get<float>(),
+                    p[1].get<float>(),
+                    p[2].get<float>()
+                );
+            }
 
             if (type == "MovingCamera") {
-                const glm::vec3 position =
-                    readVec3(cameraData.value(
-                        "position",
-                        nlohmann::json::array({0.0f, 0.0f, 0.0f})
-                    ));
+                auto cam =
+                    std::make_shared<MovingCamera>(
+                        position
+                    );
 
-                const float yaw =
+                cam->yaw =
                     cameraData.value("yaw", -90.0f);
 
-                const float pitch =
+                cam->pitch =
                     cameraData.value("pitch", 0.0f);
 
-                const float fov =
+                cam->fov =
                     cameraData.value("fov", 45.0f);
 
-                const float nearPlane =
+                cam->nearPlane =
                     cameraData.value("near", 0.1f);
 
-                const float farPlane =
+                cam->farPlane =
                     cameraData.value("far", 100.0f);
 
-                auto camera = std::make_shared<MovingCamera>(
-                    position,
-                    glm::vec3(0.0f, 1.0f, 0.0f),
-                    yaw,
-                    pitch,
-                    fov,
-                    nearPlane,
-                    farPlane
-                );
-
-                setCamera(camera);
-            } else {
-                std::cerr << "[Error] Failed to create camera: "
-                        << "unknown type '" << type << "'"
-                        << std::endl;
-                return false;
+                setCamera(cam);
             }
         }
 
-        if (root.contains("sky")) {
-            const auto& sky = root["sky"];
-
-            if (sky.value("type", "") == "HDR") {
-                std::string path = sky.value("path", "");
-
-                path = resolveAssetPath(path);
-
-                if (!path.empty()) {
-                    loadHDRMap(path);
-                }
-            }
-        }
-
-    } catch (const nlohmann::json::exception& e) {
-        std::cerr << "[Error] Failed to load Seno scene: "
+        return true;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "[Error] Failed to parse Seno scene: "
                   << e.what() << std::endl;
         return false;
     }
-
-    return true;
 }
 } // namespace knot

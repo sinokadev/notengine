@@ -1,5 +1,5 @@
 {
-    "version": 2,
+    "version": 3,
 
     "sky": {
         "type": "HDR",
@@ -50,11 +50,43 @@
         }
     ],
 
-    "meshes": [
-        "{assetRoot}/assets/utah_teapot.obj",
-        "{assetRoot}/assets/ground.obj"
-    ],
+"meshes": [
+    "{assetRoot}/assets/utah_teapot.obj",
 
+    {
+        "type": "embedded",
+        "vertices": [
+            {
+                "position": [-1.0, 0.0, 1.0],
+                "normal": [0.0, 1.0, 0.0],
+                "texcoord": [0.0, 0.0],
+                "tangent": [1.0, 0.0, 0.0]
+            },
+            {
+                "position": [1.0, 0.0, 1.0],
+                "normal": [0.0, 1.0, 0.0],
+                "texcoord": [1.0, 0.0],
+                "tangent": [1.0, 0.0, 0.0]
+            },
+            {
+                "position": [-1.0, 0.0, -1.0],
+                "normal": [0.0, 1.0, 0.0],
+                "texcoord": [1.0, 1.0],
+                "tangent": [1.0, 0.0, 0.0]
+            },
+            {
+                "position": [1.0, 0.0, -1.0],
+                "normal": [0.0, 1.0, 0.0],
+                "texcoord": [0.0, 1.0],
+                "tangent": [1.0, 0.0, 0.0]
+            }
+        ],
+        "indices": [
+            0, 1, 3,
+            3, 2, 0
+        ]
+    }
+],
     "materials": [
         {
             "shader": "pbrShader",
