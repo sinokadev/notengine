@@ -156,8 +156,8 @@ bool Scene::loadSeno(const std::string& path) {
 
         std::vector<std::shared_ptr<Mesh>> meshes;
 
-        if (root.contains("meshs")) {
-            for (const auto& meshValue : root["meshs"]) {
+        if (root.contains("meshes")) {
+            for (const auto& meshValue : root["meshes"]) {
                 const std::string meshPath =
                     resolveAssetPath(meshValue.get<std::string>());
 
