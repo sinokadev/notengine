@@ -27,7 +27,7 @@ public:
 
     Camera& getCamera();
     const Camera& getCamera() const;
-    void setCamera(Camera& cam);
+    void setCamera(std::shared_ptr<Camera> cam);
 
     void setUpdateCallback(UpdateCallback callback);
 
@@ -43,6 +43,8 @@ public:
         return irradianceMap;
     }
 
+    bool loadSeno(const std::string& path);
+
 private:
     ObjectManager objectManager;
     LightManager lightManager;
@@ -50,7 +52,7 @@ private:
 
     UpdateCallback updateCallback;
 
-    Camera* camera = nullptr;
+    std::shared_ptr<Camera> camera;
 
     unsigned int cubeMap = 0;
     unsigned int irradianceMap = 0;
