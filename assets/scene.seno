@@ -1,7 +1,10 @@
-// Seno - ScEne format for NOt engine
-
 {
     "version": 1,
+
+    "sky": {
+        "type": "HDR",
+        "path": "{assetRoot}/assets/DaySkyHDRI015A_2K_HDR.hdr"
+    },
 
     "objects": [
         {
@@ -38,7 +41,7 @@
     ],
 
     "meshs": [
-        "notbox.obj"
+        "{assetRoot}/assets/notbox.obj"
     ],
 
     "materials": [
