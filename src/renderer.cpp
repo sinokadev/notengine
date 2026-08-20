@@ -6,7 +6,7 @@
 #include <cassert>
 #include <knot/mesh.h>
 
-#define AMBIENT_INTENSITY 1.0f
+#define AMBIENT_INTENSITY 10.0f
 
 namespace knot {
 
