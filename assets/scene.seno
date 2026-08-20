@@ -8,28 +8,34 @@
 
     "objects": [
         {
-            "position": [0,0,0],
-            "scale": [1,1,1],
-            "rotation": [1,0,0,0],
+            "position": [0, 0.5, 0],
+            "scale": [1, 1, 1],
+            "rotation": [1, 0, 0, 0],
             "model": 0
+        },
+        {
+            "position": [0, 0, 0],
+            "scale": [5, 0.1, 5],
+            "rotation": [1, 0, 0, 0],
+            "model": 1
         }
     ],
 
     "lights": [
         {
             "type": "DirLight",
-            "rotation": [1,0,0,0],
-            "color": [1,1,1],
-            "intensity": 1.0,
-            "ambient": [0.05,0.05,0.05],
-            "diffuse": [0.8,0.8,0.8],
-            "specular": [1,1,1]
+            "rotation": [0.92, 0.15, 0.35, 0],
+            "color": [1, 0.9, 0.8],
+            "intensity": 0.7,
+            "ambient": [0.03, 0.03, 0.04],
+            "diffuse": [0.8, 0.75, 0.7],
+            "specular": [1, 1, 1]
         },
         {
             "type": "PbrPointLight",
-            "position": [1,1,1],
-            "color": [1,1,1],
-            "intensity": 2.0
+            "position": [2, 2.5, 1],
+            "color": [1, 0.65, 0.3],
+            "intensity": 5.0
         }
     ],
 
@@ -37,28 +43,40 @@
         {
             "mesh": 0,
             "material": 0
+        },
+        {
+            "mesh": 1,
+            "material": 1
         }
     ],
 
     "meshes": [
-        "{assetRoot}/assets/notbox.obj"
+        "{assetRoot}/assets/utah_teapot.obj",
+        "{assetRoot}/assets/ground.obj"
     ],
 
     "materials": [
         {
             "shader": "pbrShader",
-            "albedo": [1,1,1],
-            "metallic": 0.2,
-            "roughness": 0.0,
+            "albedo": [0.72, 0.18, 0.08],
+            "metallic": 0.75,
+            "roughness": 0.18,
+            "ao": 1.0
+        },
+        {
+            "shader": "pbrShader",
+            "albedo": [0.12, 0.13, 0.15],
+            "metallic": 0.0,
+            "roughness": 0.85,
             "ao": 1.0
         }
     ],
 
     "camera": {
         "type": "MovingCamera",
-        "position": [0,0,5],
-        "yaw": -90,
-        "pitch": 0,
+        "position": [3.5, 2.2, 5.5],
+        "yaw": -125,
+        "pitch": -12,
         "fov": 45,
         "near": 0.1,
         "far": 100
