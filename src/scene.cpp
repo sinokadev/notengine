@@ -126,7 +126,7 @@ bool Scene::loadSeno(const std::string& path) {
     try {
         const int version = root.at("version").get<int>();
 
-        if (version != 1) {
+        if (version != 2) {
             std::cerr << "[Error] Failed to load Seno scene: "
                       << "unsupported version " << version << std::endl;
             return false;
