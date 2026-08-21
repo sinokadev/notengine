@@ -1,2 +1,6 @@
 .venv/**
 .venv
+latex/**
+latex
+html/**
+html
