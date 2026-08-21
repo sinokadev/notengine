@@ -1,4 +1,0 @@
-var dir_d44c64559bbebec7f509842c48db8b23 =
-[
-    [ "knot", "dir_f66901c6350b9c476124687438b8c4c3.html", "dir_f66901c6350b9c476124687438b8c4c3" ]
-];
