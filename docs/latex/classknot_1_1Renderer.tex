@@ -1,0 +1,55 @@
+\doxysection{knot\+::Renderer Class Reference}
+\hypertarget{classknot_1_1Renderer}{}\label{classknot_1_1Renderer}\index{knot::Renderer@{knot::Renderer}}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classknot_1_1Renderer_aed9d0fa320aa33bb692489d39154700c}\label{classknot_1_1Renderer_aed9d0fa320aa33bb692489d39154700c} 
+bool {\bfseries init} (GLADloadfunc load\+Proc)
+\item 
+\Hypertarget{classknot_1_1Renderer_ab0a40099734421b897c74d6f283f1f82}\label{classknot_1_1Renderer_ab0a40099734421b897c74d6f283f1f82} 
+void {\bfseries shutdown} ()
+\item 
+\Hypertarget{classknot_1_1Renderer_a793da30b5a6be1a4316261a645ddeb55}\label{classknot_1_1Renderer_a793da30b5a6be1a4316261a645ddeb55} 
+void {\bfseries begin\+Frame} (int framebuffer\+Width, int framebuffer\+Height)
+\item 
+\Hypertarget{classknot_1_1Renderer_a8c64bdf2259fb7f9871fe71a919175b9}\label{classknot_1_1Renderer_a8c64bdf2259fb7f9871fe71a919175b9} 
+void {\bfseries render\+Single} (const std\+::shared\+\_\+ptr$<$ \mbox{\hyperlink{structknot_1_1Model}{Model}} $>$ \&model, const glm\+::mat4 \&world\+Matrix, const \mbox{\hyperlink{classknot_1_1Camera}{Camera}} \&camera, float aspect\+Ratio)
+\item 
+\Hypertarget{classknot_1_1Renderer_af6db77502b60be94f8212d5fe6966e78}\label{classknot_1_1Renderer_af6db77502b60be94f8212d5fe6966e78} 
+bool {\bfseries render\+Object} (const \mbox{\hyperlink{classknot_1_1Object}{Object}} \&object, const \mbox{\hyperlink{classknot_1_1Camera}{Camera}} \&camera, float aspect\+Ratio)
+\item 
+\Hypertarget{classknot_1_1Renderer_a0692d9fffade888e08777c1044eac646}\label{classknot_1_1Renderer_a0692d9fffade888e08777c1044eac646} 
+bool {\bfseries render\+Object} (const \mbox{\hyperlink{structknot_1_1VisibleInstance}{Visible\+Instance}} \&instance, const \mbox{\hyperlink{classknot_1_1Camera}{Camera}} \&camera, float aspect\+Ratio)
+\item 
+\Hypertarget{classknot_1_1Renderer_aeee7b8d9691f4829093d90cdeab8ddd4}\label{classknot_1_1Renderer_aeee7b8d9691f4829093d90cdeab8ddd4} 
+void {\bfseries render\+Skybox} (unsigned int cubemap\+ID, const \mbox{\hyperlink{classknot_1_1Camera}{Camera}} \&camera, float aspect\+Ratio)
+\item 
+\Hypertarget{classknot_1_1Renderer_a96d2794d80487c2af783614df9c396d4}\label{classknot_1_1Renderer_a96d2794d80487c2af783614df9c396d4} 
+bool {\bfseries render\+Scene} (\mbox{\hyperlink{classknot_1_1Scene}{Scene}} \&scene, float aspect\+Ratio)
+\item 
+\Hypertarget{classknot_1_1Renderer_a7b08c3beaf21843cb834f1fff9a0aced}\label{classknot_1_1Renderer_a7b08c3beaf21843cb834f1fff9a0aced} 
+void {\bfseries process\+Dir\+Lights} (const std\+::shared\+\_\+ptr$<$ \mbox{\hyperlink{classknot_1_1Shader}{Shader}} $>$ \&shader, const std\+::vector$<$ const \mbox{\hyperlink{classknot_1_1DirLight}{Dir\+Light}} \texorpdfstring{$\ast$}{*} $>$ \&dir\+Lights)
+\item 
+\Hypertarget{classknot_1_1Renderer_a8a8a3f9295af51d730c9fc628bc04880}\label{classknot_1_1Renderer_a8a8a3f9295af51d730c9fc628bc04880} 
+void {\bfseries process\+Point\+Lights} (const std\+::vector$<$ const \mbox{\hyperlink{classknot_1_1PbrPointLight}{Pbr\+Point\+Light}} \texorpdfstring{$\ast$}{*} $>$ \&point\+Lights)
+\item 
+\Hypertarget{classknot_1_1Renderer_a499eb80644c961cb8c4e4a47de53ea42}\label{classknot_1_1Renderer_a499eb80644c961cb8c4e4a47de53ea42} 
+unsigned int {\bfseries bake\+HDRMap\+To\+Cubemap} (unsigned int hdr\+Texture2D, int size)
+\item 
+\Hypertarget{classknot_1_1Renderer_af2e80c1568431a18b87bc9e358ada4f6}\label{classknot_1_1Renderer_af2e80c1568431a18b87bc9e358ada4f6} 
+void {\bfseries render\+Instanced} (const std\+::shared\+\_\+ptr$<$ \mbox{\hyperlink{structknot_1_1Model}{Model}} $>$ \&model, const std\+::vector$<$ \mbox{\hyperlink{structknot_1_1VisibleInstance}{Visible\+Instance}} $>$ \&instances, const \mbox{\hyperlink{classknot_1_1Camera}{Camera}} \&camera, float aspect\+Ratio)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classknot_1_1Renderer_a21bc9eb230bbd3eb29ece80d10fabd47}\label{classknot_1_1Renderer_a21bc9eb230bbd3eb29ece80d10fabd47} 
+static constexpr float {\bfseries k\+Near\+Plane} = 0.\+1f
+\item 
+\Hypertarget{classknot_1_1Renderer_a4bf50cad04b0c2a24e1877eb463b5197}\label{classknot_1_1Renderer_a4bf50cad04b0c2a24e1877eb463b5197} 
+static constexpr float {\bfseries k\+Far\+Plane} = 100.\+0f
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/home/sinokadev/knot/include/knot/renderer.\+h\end{DoxyCompactItemize}

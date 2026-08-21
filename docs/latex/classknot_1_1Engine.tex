@@ -1,0 +1,58 @@
+\doxysection{knot\+::Engine Class Reference}
+\hypertarget{classknot_1_1Engine}{}\label{classknot_1_1Engine}\index{knot::Engine@{knot::Engine}}
+\doxysubsubsection*{Public Types}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classknot_1_1Engine_aa58537ea26c656296c7023fba18c0af0}\label{classknot_1_1Engine_aa58537ea26c656296c7023fba18c0af0} 
+using {\bfseries Render\+Loop\+Callback} = std\+::function$<$void(double)$>$
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classknot_1_1Engine_ad3fa7d553f83f9fb9257b1a1a6b1d250}\label{classknot_1_1Engine_ad3fa7d553f83f9fb9257b1a1a6b1d250} 
+bool {\bfseries init} (int width, int height, const std\+::string \&title, const std\+::string \&asset\+Root="{}"{})
+\item 
+\Hypertarget{classknot_1_1Engine_ae19c18f651bef782fae3ff6b73fd2173}\label{classknot_1_1Engine_ae19c18f651bef782fae3ff6b73fd2173} 
+int {\bfseries run} ()
+\item 
+\Hypertarget{classknot_1_1Engine_a052fe14302d90b6d034d0f501464ed73}\label{classknot_1_1Engine_a052fe14302d90b6d034d0f501464ed73} 
+void {\bfseries shutdown} ()
+\item 
+\Hypertarget{classknot_1_1Engine_ae47451ace8e208e5988dc1c3d6294fbb}\label{classknot_1_1Engine_ae47451ace8e208e5988dc1c3d6294fbb} 
+void {\bfseries set\+Render\+Loop\+Callback} (Render\+Loop\+Callback callback)
+\item 
+\Hypertarget{classknot_1_1Engine_a44486fb0d3cfe6768f8602c1b9c71562}\label{classknot_1_1Engine_a44486fb0d3cfe6768f8602c1b9c71562} 
+\mbox{\hyperlink{classknot_1_1Window}{Window}} \& {\bfseries get\+Window} ()
+\item 
+\Hypertarget{classknot_1_1Engine_a19e78998234ce5b891070cd6352f6447}\label{classknot_1_1Engine_a19e78998234ce5b891070cd6352f6447} 
+float {\bfseries get\+Delta\+Time} () const
+\item 
+\Hypertarget{classknot_1_1Engine_a589f55413f16b72a8532580d428fc9e4}\label{classknot_1_1Engine_a589f55413f16b72a8532580d428fc9e4} 
+float {\bfseries get\+Aspect\+Ratio} () const
+\item 
+\Hypertarget{classknot_1_1Engine_ad4102991417fa823f1833779d4d9df1e}\label{classknot_1_1Engine_ad4102991417fa823f1833779d4d9df1e} 
+bool {\bfseries set\+Scene} (\mbox{\hyperlink{classknot_1_1Scene}{Scene}} \&s)
+\item 
+\Hypertarget{classknot_1_1Engine_a206790f9f2f7b6b9e954e79110c73b58}\label{classknot_1_1Engine_a206790f9f2f7b6b9e954e79110c73b58} 
+void {\bfseries set\+Clear\+Color} (float r, float g, float b, float a)
+\item 
+\Hypertarget{classknot_1_1Engine_a779438f9110d934d8bdf8c2d34399324}\label{classknot_1_1Engine_a779438f9110d934d8bdf8c2d34399324} 
+void {\bfseries set\+Event\+Callback} (std\+::function$<$ void(\mbox{\hyperlink{structknot_1_1Event}{Event}} \&)$>$ callback)
+\item 
+\Hypertarget{classknot_1_1Engine_a6cb6082d7bc306c82e0a879aaec10571}\label{classknot_1_1Engine_a6cb6082d7bc306c82e0a879aaec10571} 
+void {\bfseries push\+User\+Event} (uint32\+\_\+t user\+Code, std\+::any data=\{\})
+\item 
+\Hypertarget{classknot_1_1Engine_ac1973bed0b4602cae64a21493aa85087}\label{classknot_1_1Engine_ac1973bed0b4602cae64a21493aa85087} 
+int {\bfseries after} (double interval, uint32\+\_\+t event\+Code, std\+::any event\+Data=\{\})
+\item 
+\Hypertarget{classknot_1_1Engine_aa300e696992e09b26ab49e916372b000}\label{classknot_1_1Engine_aa300e696992e09b26ab49e916372b000} 
+int {\bfseries repeat} (double interval, uint32\+\_\+t event\+Code, std\+::any event\+Data=\{\})
+\item 
+\Hypertarget{classknot_1_1Engine_a6356cbf5b724fb6d0c927bf345c7117b}\label{classknot_1_1Engine_a6356cbf5b724fb6d0c927bf345c7117b} 
+void {\bfseries quit} ()
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/home/sinokadev/knot/include/knot/engine.\+h\end{DoxyCompactItemize}
