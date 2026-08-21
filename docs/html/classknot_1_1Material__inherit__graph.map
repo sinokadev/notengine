@@ -1,9 +1,0 @@
-<map id="knot::Material" name="knot::Material">
-<area shape="rect" id="Node000001" title=" " alt="" coords="101,5,214,33"/>
-<area shape="rect" id="Node000002" href="$classknot_1_1PbrMaterial.html" title=" " alt="" coords="5,81,139,109"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="129,46,89,82,85,79,132,41"/>
-<area shape="rect" id="Node000003" href="$classknot_1_1TextureMaterial.html" title=" " alt="" coords="162,81,323,109"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="185,41,230,80,225,81,184,46"/>
-<area shape="rect" id="Node000004" href="$classknot_1_1AlphaMaterial.html" title=" " alt="" coords="168,157,317,184"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="245,123,245,158,240,155,241,126"/>
-</map>
