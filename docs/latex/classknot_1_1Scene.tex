@@ -1,0 +1,58 @@
+\doxysection{knot\+::Scene Class Reference}
+\hypertarget{classknot_1_1Scene}{}\label{classknot_1_1Scene}\index{knot::Scene@{knot::Scene}}
+\doxysubsubsection*{Public Types}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classknot_1_1Scene_aeb6d9315e11b7b1d0e63fd979e3ea5da}\label{classknot_1_1Scene_aeb6d9315e11b7b1d0e63fd979e3ea5da} 
+using {\bfseries Update\+Callback} = std\+::function$<$void(Scene\&, float)$>$
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classknot_1_1Scene_ae34f7566e960b6097d5c87de680f280b}\label{classknot_1_1Scene_ae34f7566e960b6097d5c87de680f280b} 
+void {\bfseries clear} ()
+\item 
+\Hypertarget{classknot_1_1Scene_a9cb2d5ea182f3de54a58d90c519eb3ca}\label{classknot_1_1Scene_a9cb2d5ea182f3de54a58d90c519eb3ca} 
+void {\bfseries shutdown} ()
+\item 
+\Hypertarget{classknot_1_1Scene_a848c07f55eaecab22df48c41df3a8267}\label{classknot_1_1Scene_a848c07f55eaecab22df48c41df3a8267} 
+\mbox{\hyperlink{classknot_1_1ObjectManager}{Object\+Manager}} \& {\bfseries get\+Object\+Manager} ()
+\item 
+\Hypertarget{classknot_1_1Scene_a4225b5facf3674768a6e1ec03576dbb9}\label{classknot_1_1Scene_a4225b5facf3674768a6e1ec03576dbb9} 
+\mbox{\hyperlink{classknot_1_1LightManager}{Light\+Manager}} \& {\bfseries get\+Light\+Manager} ()
+\item 
+\Hypertarget{classknot_1_1Scene_a9b120c8fad27f46d15afd5ed9eecc0dc}\label{classknot_1_1Scene_a9b120c8fad27f46d15afd5ed9eecc0dc} 
+\mbox{\hyperlink{classknot_1_1ResourceManager}{Resource\+Manager}} \& {\bfseries get\+Resource\+Manager} ()
+\item 
+\Hypertarget{classknot_1_1Scene_a489511b1a34060332657fcfeca8fe51c}\label{classknot_1_1Scene_a489511b1a34060332657fcfeca8fe51c} 
+\mbox{\hyperlink{classknot_1_1Camera}{Camera}} \& {\bfseries get\+Camera} ()
+\item 
+\Hypertarget{classknot_1_1Scene_ac858db2c13082e813ed85a75f76fb2ee}\label{classknot_1_1Scene_ac858db2c13082e813ed85a75f76fb2ee} 
+const \mbox{\hyperlink{classknot_1_1Camera}{Camera}} \& {\bfseries get\+Camera} () const
+\item 
+\Hypertarget{classknot_1_1Scene_a263455f6f9adc55bb06acd9047a06aaf}\label{classknot_1_1Scene_a263455f6f9adc55bb06acd9047a06aaf} 
+void {\bfseries set\+Camera} (std\+::shared\+\_\+ptr$<$ \mbox{\hyperlink{classknot_1_1Camera}{Camera}} $>$ cam)
+\item 
+\Hypertarget{classknot_1_1Scene_a037a278a64b686efd1a079aaaab14de7}\label{classknot_1_1Scene_a037a278a64b686efd1a079aaaab14de7} 
+void {\bfseries set\+Update\+Callback} (Update\+Callback callback)
+\item 
+\Hypertarget{classknot_1_1Scene_ad2c745c87d7ec7a6365cc19b2a84b34d}\label{classknot_1_1Scene_ad2c745c87d7ec7a6365cc19b2a84b34d} 
+void {\bfseries update} (float dt)
+\item 
+\Hypertarget{classknot_1_1Scene_ad8acc97ffde04483f5b6db99ac87f37e}\label{classknot_1_1Scene_ad8acc97ffde04483f5b6db99ac87f37e} 
+void {\bfseries load\+HDRMap} (const std\+::string \&path)
+\item 
+\Hypertarget{classknot_1_1Scene_a405225ab7f7ae9738af8e6f94b219193}\label{classknot_1_1Scene_a405225ab7f7ae9738af8e6f94b219193} 
+unsigned int {\bfseries get\+Cube\+Map} () const
+\item 
+\Hypertarget{classknot_1_1Scene_a980ea4a7f8de25fb2d41e04f6aa3f8b4}\label{classknot_1_1Scene_a980ea4a7f8de25fb2d41e04f6aa3f8b4} 
+unsigned int {\bfseries get\+Irradiance\+Map} () const
+\item 
+\Hypertarget{classknot_1_1Scene_a8ed3bb7af1649fdd9f2bc912bc407b19}\label{classknot_1_1Scene_a8ed3bb7af1649fdd9f2bc912bc407b19} 
+bool {\bfseries load\+Seno} (const std\+::string \&path)
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/home/sinokadev/knot/include/knot/scene.\+h\end{DoxyCompactItemize}

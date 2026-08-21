@@ -14,12 +14,20 @@ release = '0.1.5'
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = []
+extensions = [
+    "breathe",
+]
+
+breathe_projects = {
+    "knot": "../build/doxygen/xml",
+}
+
+breathe_default_project = "knot"
 
 templates_path = ['_templates']
 exclude_patterns = []
 
-language = 'ko'
+language = 'en'
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output

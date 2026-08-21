@@ -1,0 +1,37 @@
+var annotated_dup =
+[
+    [ "knot", null, [
+      [ "FrustumPlane", "structknot_1_1FrustumPlane.html", null ],
+      [ "Frustum", "structknot_1_1Frustum.html", null ],
+      [ "Camera", "classknot_1_1Camera.html", "classknot_1_1Camera" ],
+      [ "MovingCamera", "classknot_1_1MovingCamera.html", null ],
+      [ "TimerTask", "structknot_1_1TimerTask.html", null ],
+      [ "Engine", "classknot_1_1Engine.html", null ],
+      [ "Event", "structknot_1_1Event.html", null ],
+      [ "ObjectManager", "classknot_1_1ObjectManager.html", null ],
+      [ "LightManager", "classknot_1_1LightManager.html", null ],
+      [ "ResourceManager", "classknot_1_1ResourceManager.html", null ],
+      [ "Vertex", "structknot_1_1Vertex.html", null ],
+      [ "Mesh", "structknot_1_1Mesh.html", null ],
+      [ "InstanceData", "structknot_1_1InstanceData.html", null ],
+      [ "VisibleInstance", "structknot_1_1VisibleInstance.html", null ],
+      [ "GPUMovingPointLight", "structknot_1_1GPUMovingPointLight.html", null ],
+      [ "Renderer", "classknot_1_1Renderer.html", null ],
+      [ "ShaderSource", "classknot_1_1ShaderSource.html", null ],
+      [ "Shader", "classknot_1_1Shader.html", null ],
+      [ "PbrShader", "classknot_1_1PbrShader.html", null ],
+      [ "AlphaShader", "classknot_1_1AlphaShader.html", null ],
+      [ "Material", "classknot_1_1Material.html", null ],
+      [ "TextureMaterial", "classknot_1_1TextureMaterial.html", null ],
+      [ "AlphaMaterial", "classknot_1_1AlphaMaterial.html", null ],
+      [ "PbrMaterial", "classknot_1_1PbrMaterial.html", null ],
+      [ "Model", "structknot_1_1Model.html", null ],
+      [ "Transform", "classknot_1_1Transform.html", null ],
+      [ "Object", "classknot_1_1Object.html", null ],
+      [ "Light", "classknot_1_1Light.html", null ],
+      [ "PbrPointLight", "classknot_1_1PbrPointLight.html", null ],
+      [ "DirLight", "classknot_1_1DirLight.html", null ],
+      [ "Scene", "classknot_1_1Scene.html", null ],
+      [ "Window", "classknot_1_1Window.html", null ]
+    ] ]
+];

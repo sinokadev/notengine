@@ -1,0 +1,7 @@
+<map id="knot::VisibleInstance" name="knot::VisibleInstance">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,183,163,211"/>
+<area shape="rect" id="Node000002" href="$classknot_1_1Object.html" title=" " alt="" coords="34,82,134,110"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="86,124,87,183,81,182,82,127"/>
+<area shape="rect" id="Node000003" href="$classknot_1_1Transform.html" title=" " alt="" coords="22,5,146,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="85,46,87,83,81,82,83,51"/>
+</map>

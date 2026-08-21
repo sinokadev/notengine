@@ -15,3 +15,4 @@ documentation for details.
    :maxdepth: 2
 
    getting-started
+   api/index

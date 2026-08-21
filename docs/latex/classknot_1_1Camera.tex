@@ -1,0 +1,136 @@
+\doxysection{knot\+::Camera Class Reference}
+\hypertarget{classknot_1_1Camera}{}\label{classknot_1_1Camera}\index{knot::Camera@{knot::Camera}}
+
+
+Inheritance diagram for knot\+::Camera\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=198pt]{classknot_1_1Camera__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for knot\+::Camera\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=173pt]{classknot_1_1Camera__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classknot_1_1Camera_a99f112efca454ff88a4ee67b5bd9ee27}\label{classknot_1_1Camera_a99f112efca454ff88a4ee67b5bd9ee27} 
+{\bfseries Camera} (glm\+::vec3 start\+Pos=glm\+::vec3(0.\+0f, 0.\+0f, 3.\+0f), glm\+::vec3 world\+Up=glm\+::vec3(0.\+0f, 1.\+0f, 0.\+0f), float yaw=-\/90.\+0f, float pitch=0.\+0f, float fov=45.\+0f, float near\+Plane=k\+Near\+Plane, float far\+Plane=k\+Far\+Plane)
+\item 
+glm\+::mat4 \mbox{\hyperlink{classknot_1_1Camera_a13ddd2bcb4728a13e07ac26522ce97f2}{get\+View\+Matrix}} () const
+\begin{DoxyCompactList}\small\item\em Gets the view matrix. \end{DoxyCompactList}\item 
+glm\+::mat4 \mbox{\hyperlink{classknot_1_1Camera_a73af58964f56ad86a5182afa126905f7}{get\+Projection\+Matrix}} (float aspect\+Ratio) const
+\begin{DoxyCompactList}\small\item\em Gets the perspective projection matrix. \end{DoxyCompactList}\item 
+\Hypertarget{classknot_1_1Camera_ac863ee87153354d342ad23617237ebe2}\label{classknot_1_1Camera_ac863ee87153354d342ad23617237ebe2} 
+void {\bfseries update\+Camera\+Vector} ()
+\item 
+\Hypertarget{classknot_1_1Camera_a5da0aceb9186347491760f5794716761}\label{classknot_1_1Camera_a5da0aceb9186347491760f5794716761} 
+void {\bfseries look\+At\+Target} (glm\+::vec3 target\+Pos)
+\item 
+\Hypertarget{classknot_1_1Camera_a2c6afcf3b1549408ff11e540bb09b570}\label{classknot_1_1Camera_a2c6afcf3b1549408ff11e540bb09b570} 
+const \mbox{\hyperlink{structknot_1_1Frustum}{Frustum}} \& {\bfseries get\+Frustum} (float aspect\+Ratio) const
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Member Functions inherited from \mbox{\hyperlink{classknot_1_1Transform}{knot\+::\+Transform}}}
+\begin{DoxyCompactItemize}
+\item 
+glm\+::mat4 {\bfseries get\+World\+Matrix} () const
+\item 
+glm\+::vec3 {\bfseries get\+Front} () const
+\item 
+glm\+::vec3 {\bfseries get\+Right} () const
+\item 
+glm\+::vec3 {\bfseries get\+Up} () const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classknot_1_1Camera_aec9353d49c0fd57e7ffbf5854fa73375}\label{classknot_1_1Camera_aec9353d49c0fd57e7ffbf5854fa73375} 
+glm\+::vec3 {\bfseries world\+Up} \{0.\+0f, 1.\+0f, 0.\+0f\}
+\item 
+\Hypertarget{classknot_1_1Camera_af51d87a48ec14e85aa44cfcb1986f22e}\label{classknot_1_1Camera_af51d87a48ec14e85aa44cfcb1986f22e} 
+float {\bfseries yaw} = -\/90.\+0f
+\item 
+\Hypertarget{classknot_1_1Camera_a6b1150dbc54adc6390864c002a9cfa5c}\label{classknot_1_1Camera_a6b1150dbc54adc6390864c002a9cfa5c} 
+float {\bfseries pitch} = 0.\+0f
+\item 
+\Hypertarget{classknot_1_1Camera_a1811152f001d1b2efd9d46d40770101c}\label{classknot_1_1Camera_a1811152f001d1b2efd9d46d40770101c} 
+float {\bfseries fov} = 45.\+0f
+\item 
+\Hypertarget{classknot_1_1Camera_a0640e0be7ef7d52f9a9c9767be4df14a}\label{classknot_1_1Camera_a0640e0be7ef7d52f9a9c9767be4df14a} 
+float {\bfseries near\+Plane} = k\+Near\+Plane
+\item 
+\Hypertarget{classknot_1_1Camera_a5b1cf8c53e1da105fe72fcb9a63185e3}\label{classknot_1_1Camera_a5b1cf8c53e1da105fe72fcb9a63185e3} 
+float {\bfseries far\+Plane} = k\+Far\+Plane
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes inherited from \mbox{\hyperlink{classknot_1_1Transform}{knot\+::\+Transform}}}
+\begin{DoxyCompactItemize}
+\item 
+glm\+::vec3 {\bfseries position} \{0.\+0f\}
+\item 
+glm\+::quat {\bfseries rotation} \{1.\+0f, 0.\+0f, 0.\+0f, 0.\+0f\}
+\item 
+glm\+::vec3 {\bfseries scale} \{1.\+0f\}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classknot_1_1Camera_a8d5a947d648dc6a589d7111578d0f1ba}\label{classknot_1_1Camera_a8d5a947d648dc6a589d7111578d0f1ba} 
+static constexpr float {\bfseries k\+Near\+Plane} = 0.\+1f
+\item 
+\Hypertarget{classknot_1_1Camera_a9d3f87f421ce4067cc8612d39d0db65d}\label{classknot_1_1Camera_a9d3f87f421ce4067cc8612d39d0db65d} 
+static constexpr float {\bfseries k\+Far\+Plane} = 100.\+0f
+\end{DoxyCompactItemize}
+
+
+\label{doc-func-members}
+\Hypertarget{classknot_1_1Camera_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{classknot_1_1Camera_a73af58964f56ad86a5182afa126905f7}\index{knot::Camera@{knot::Camera}!getProjectionMatrix@{getProjectionMatrix}}
+\index{getProjectionMatrix@{getProjectionMatrix}!knot::Camera@{knot::Camera}}
+\doxysubsubsection{\texorpdfstring{getProjectionMatrix()}{getProjectionMatrix()}}
+{\footnotesize\ttfamily \label{classknot_1_1Camera_a73af58964f56ad86a5182afa126905f7} 
+glm\+::mat4 knot\+::\+Camera\+::get\+Projection\+Matrix (\begin{DoxyParamCaption}\item[{float}]{aspect\+Ratio}{}\end{DoxyParamCaption}) const}
+
+
+
+Gets the perspective projection matrix. 
+
+Creates a perspective projection matrix using the camera\textquotesingle{}s field of view, the specified aspect ratio, and the near and far clipping planes.
+
+
+\begin{DoxyParams}{Parameters}
+{\em aspect\+Ratio} & The viewport width-\/to-\/height ratio. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The perspective projection matrix. 
+\end{DoxyReturn}
+\Hypertarget{classknot_1_1Camera_a13ddd2bcb4728a13e07ac26522ce97f2}\index{knot::Camera@{knot::Camera}!getViewMatrix@{getViewMatrix}}
+\index{getViewMatrix@{getViewMatrix}!knot::Camera@{knot::Camera}}
+\doxysubsubsection{\texorpdfstring{getViewMatrix()}{getViewMatrix()}}
+{\footnotesize\ttfamily \label{classknot_1_1Camera_a13ddd2bcb4728a13e07ac26522ce97f2} 
+glm\+::mat4 knot\+::\+Camera\+::get\+View\+Matrix (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+
+
+Gets the view matrix. 
+
+The view matrix transforms world-\/space coordinates into view-\/space coordinates.
+
+\begin{DoxyReturn}{Returns}
+The view matrix. 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/home/sinokadev/knot/include/knot/camera.\+h\end{DoxyCompactItemize}
