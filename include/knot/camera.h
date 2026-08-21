@@ -58,7 +58,24 @@ public:
     Camera(glm::vec3 startPos = glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = -90.0f, float pitch = 0.0f,
            float fov = 45.0f, float nearPlane = kNearPlane, float farPlane = kFarPlane);
 
+    /**
+     * @brief Gets the view matrix.
+     *
+     * The view matrix transforms world-space coordinates
+     * into view-space coordinates.
+     *
+     * @return The view matrix.
+     */
     glm::mat4 getViewMatrix() const;
+    /**
+     * @brief Gets the perspective projection matrix.
+     *
+     * Creates a perspective projection matrix using the camera's
+     * field of view, the specified aspect ratio, and the near and far clipping planes.
+     *
+     * @param aspectRatio The viewport width-to-height ratio.
+     * @return The perspective projection matrix.
+     */
     glm::mat4 getProjectionMatrix(float aspectRatio) const;
 
     void updateCameraVector();
