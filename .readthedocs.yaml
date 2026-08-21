@@ -11,10 +11,7 @@ build:
     python: "3.13"
   jobs:
     pre_build:
-      - cd docs
-      - mkdir -p build/doxygen/xml
-      - doxygen Doxyfile
-
+      - cd docs && mkdir -p build/doxygen/xml && doxygen Doxyfile
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
