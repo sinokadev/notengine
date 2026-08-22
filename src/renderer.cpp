@@ -15,6 +15,10 @@ Renderer::~Renderer() {
 }
 
 bool Renderer::init(GLADloadfunc loadProc) {
+    std::cout << "[Info] Not Engine Renderer Init"
+        << std::endl;
+
+
     if (!gladLoadGL(loadProc)) {
         std::cerr << "[Error] Failed to load OpenGL functions" << std::endl;
         return false;

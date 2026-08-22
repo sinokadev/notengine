@@ -6,6 +6,20 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(GAME_VERSION_MAJOR 0)
+set(GAME_VERSION_MINOR 1)
+set(GAME_VERSION_PATCH 9)
+
+set(GAME_VERSION_STRING
+    "${GAME_VERSION_MAJOR}.${GAME_VERSION_MINOR}.${GAME_VERSION_PATCH}"
+)
+
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/knot/version.h"
+    "${CMAKE_CURRENT_BINARY_DIR}/knot/version.h"
+    @ONLY
+)
+
 # Find dependencies
 find_package(glfw3 CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
@@ -62,8 +76,8 @@ embed_shaders_to_header("${SHADER_FILES}" "${GENERATED_HEADER}")
 
 # Set include directories
 target_include_directories(notengine PUBLIC 
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
 # Link dependencies to the library

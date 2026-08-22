@@ -244,6 +244,9 @@ Window::~Window() {
 }
 
 bool Window::init(int width, int height, const std::string& title) {
+    std::cout << "[Info] Not Engine Window Init"
+          << std::endl;
+
     if (!glfwInit()) {
         std::cerr << "[Error] Failed to initialize GLFW" << std::endl;
         return false;
