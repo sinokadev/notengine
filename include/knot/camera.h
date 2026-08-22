@@ -11,7 +11,9 @@ namespace knot {
  * @brief Represents a plane of a view frustum.
  */
 struct FrustumPlane {
+    /** @brief Unit-length plane normal pointing into the frustum. */
     glm::vec3 normal{0.0f};
+    /** @brief Plane distance in the equation dot(normal, point) + distance. */
     float distance = 0.0f;
 
     /**
@@ -31,8 +33,10 @@ struct FrustumPlane {
  * Contains the six clipping planes used for frustum culling.
  */
 struct Frustum {
+    /** @brief Clipping planes indexed by Plane. */
     FrustumPlane planes[6];
 
+    /** @brief Indices of the six view-frustum clipping planes. */
     enum Plane {
         Left = 0,
         Right,
@@ -61,19 +65,29 @@ struct Frustum {
     bool intersectsAABB(const glm::vec3& min, const glm::vec3& max) const;
 };
 
+/** @brief Perspective camera defined by a transform and Euler view angles. */
 class Camera : public Transform {
 public:
+    /** @brief Default near clipping distance. */
     static constexpr float kNearPlane = 0.1f;
+    /** @brief Default far clipping distance. */
     static constexpr float kFarPlane = 100.0f;
 
+    /** @brief World-space up direction used to derive the camera orientation. */
     glm::vec3 worldUp{0.0f, 1.0f, 0.0f};
 
+    /** @brief Horizontal view angle in degrees. */
     float yaw = -90.0f;
+    /** @brief Vertical view angle in degrees. */
     float pitch = 0.0f;
+    /** @brief Vertical field of view in degrees. */
     float fov = 45.0f;
+    /** @brief Distance to the near clipping plane. */
     float nearPlane = kNearPlane;
+    /** @brief Distance to the far clipping plane. */
     float farPlane = kFarPlane;
 
+    /** @brief Creates a camera from position and Euler-angle view parameters. */
     Camera(glm::vec3 startPos = glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = -90.0f, float pitch = 0.0f,
            float fov = 45.0f, float nearPlane = kNearPlane, float farPlane = kFarPlane);
 
@@ -103,7 +117,7 @@ public:
      * Calculates the camera's front, right, and up vectors from the current
      * yaw and pitch angles, then updates the camera rotation.
      */
-    void Camera::updateCameraVector();
+    void updateCameraVector();
 
     /**
      * @brief Rotates the camera to look at a target position.
@@ -113,7 +127,7 @@ public:
      *
      * @param targetPos The position for the camera to look at.
      */
-    void Camera::lookAtTarget(glm::vec3 targetPos);
+    void lookAtTarget(glm::vec3 targetPos);
 
     /**
      * @brief Gets the camera's view frustum.
@@ -174,7 +188,9 @@ public:
      */
     void rotate(float xOffset, float yOffset, bool constrainPitch = true);
 
+    /** @brief Movement speed in world units per second. */
     float speed;
+    /** @brief Multiplier applied to rotation input offsets. */
     float sensitivity;
 };
 
