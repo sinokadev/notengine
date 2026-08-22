@@ -37,13 +37,13 @@ int main() {
     knot::Scene scene;
 
     if (!scene.loadSeno(
-            knot::getAssetRoot() + "assets/asdf.seno")) {
+            knot::getAssetRoot() + "assets/scene.seno")) {
         std::cerr << "[Error] Failed to load demo scene"
                   << std::endl;
         return 1;
     }
 
-    scene.loadHDRMap(knot::getAssetRoot() + "assets/asdf.seno");
+    scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
     auto& camera =
         static_cast<knot::MovingCamera&>(scene.getCamera());
