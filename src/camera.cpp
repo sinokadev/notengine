@@ -4,6 +4,28 @@
 #include <knot/camera.h>
 
 namespace knot {
+
+
+bool Frustum::intersectsSphere(const glm::vec3& center, float radius) const {
+    for (const auto& plane : planes) {
+        if (plane.signedDistance(center) < -radius)
+            return false;
+    }
+
+    return true;
+}
+
+bool Frustum::intersectsAABB(const glm::vec3& min, const glm::vec3& max) const {
+    for (const auto& plane : planes) {
+        glm::vec3 p(plane.normal.x >= 0.0f ? max.x : min.x, plane.normal.y >= 0.0f ? max.y : min.y, plane.normal.z >= 0.0f ? max.z : min.z);
+
+        if (plane.signedDistance(p) < 0.0f)
+            return false;
+    }
+
+    return true;
+}
+
 Camera::Camera(glm::vec3 startPos, glm::vec3 worldUp, float yaw, float pitch, float fov, float nearPlane, float farPlane)
     : worldUp(worldUp), yaw(yaw), pitch(pitch), fov(fov), nearPlane(nearPlane), farPlane(farPlane) {
     this->position = startPos;
