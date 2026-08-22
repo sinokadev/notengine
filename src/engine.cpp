@@ -19,11 +19,12 @@ bool Engine::init(int width, int height, const std::string& title, const std::st
 
     std::cout << "[Info] Not Engine v"
             << GAME_VERSION_STRING
+            << " by sinoka.dev"
             << std::endl;
 
     std::cout << "[Info] Init..."
             << std::endl;
-            
+
     if (!assetRoot.empty()) {
         setAssetRoot(assetRoot);
     } else {
