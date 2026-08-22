@@ -1,4 +1,5 @@
 #include <knot/engine.h>
+#include <knot/version.h>
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -16,6 +17,13 @@ bool Engine::init(int width, int height, const std::string& title, const std::st
     this->height = height;
     this->title = title;
 
+    std::cout << "[Info] Not Engine v"
+            << GAME_VERSION_STRING
+            << std::endl;
+
+    std::cout << "[Info] Init..."
+            << std::endl;
+            
     if (!assetRoot.empty()) {
         setAssetRoot(assetRoot);
     } else {
