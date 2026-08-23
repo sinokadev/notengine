@@ -126,7 +126,7 @@ int main() {
         std::cout << "========================================\n";
         std::cout << "        KNOT ENGINE BENCHMARK\n";
         std::cout << "========================================\n";
-        std::cout << "VSync: ON\n";
+        std::cout << "VSync: OFF\n";
         std::cout << "\n";
 
         std::cout << std::left << std::setw(15) << "Objects" << std::setw(18) << "Average FPS" << std::setw(18) << "Minimum FPS"
