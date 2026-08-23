@@ -1,4 +1,4 @@
-# Not Engine Alpha 0.1.9
+# Not Engine Alpha 0.1.10
 
 > Everything as code!
 
@@ -26,6 +26,7 @@ Versions 0.1.6 and earlier have a critical issue where resources are not automat
 |---|---:|---|---:|---|
 | 0.1.5 | 1,000,000 | `notbox.obj` | 1 FPS | ON |
 | 0.1.6 | 1,000,000 | `notbox.obj` | **30 FPS** | ON |
+| 0.1.10 | 1,000,000 | `notbox.obj` | **46 FPS** | OFF |
 
 The same scene was used for both benchmarks.
 
