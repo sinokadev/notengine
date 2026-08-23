@@ -149,6 +149,9 @@ void Renderer::renderInstanced(const std::shared_ptr<Model>& model, const std::v
 
     model->material->bind();
 
+    shader->use();
+    shader->set("u_IsInstanced", true);
+
     shader->set("view", camera.getViewMatrix());
     shader->set("projection", camera.getProjectionMatrix(aspectRatio));
     shader->set("u_CameraPos", camera.position);
