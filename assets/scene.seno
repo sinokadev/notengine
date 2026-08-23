@@ -1,5 +1,5 @@
 {
-    "version": 3,
+    "version": 4,
 
     "sky": {
         "type": "HDR",
@@ -47,8 +47,7 @@
 
     "models": [
         {
-            "mesh": 0,
-            "material": 0
+            "obj": "{assetRoot}/assets/Untitled.obj"
         },
         {
             "mesh": 1,

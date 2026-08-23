@@ -122,8 +122,6 @@ bool Scene::loadSeno(const std::string& path) {
 
         clear();
 
-        const int version = scene.value("version", 1);
-
         // ------------------------------------------------------------
         // Sky
         // ------------------------------------------------------------
@@ -375,8 +373,57 @@ bool Scene::loadSeno(const std::string& path) {
         std::vector<std::shared_ptr<Model>> models;
 
         if (scene.contains("models")) {
-            for (const auto& modelData :
-                 scene["models"]) {
+            for (const auto& modelData : scene["models"]) {
+
+                // --------------------------------------------------------
+                // External OBJ (+ optional MTL)
+                // --------------------------------------------------------
+
+                if (modelData.contains("obj")) {
+                    std::string objPath =
+                        modelData.value("obj", "");
+
+                    if (objPath.empty()) {
+                        std::cerr << "[Error] Model OBJ path is empty"
+                                << std::endl;
+                        return false;
+                    }
+
+                    objPath = resolveAssetPath(objPath);
+
+                    auto shader =
+                        resourceManager.getShader("pbrShader");
+
+                    if (!shader) {
+                        std::cerr << "[Error] Failed to find shader: "
+                                << "pbrShader"
+                                << std::endl;
+                        return false;
+                    }
+
+                    auto loadedModels =
+                        loadModelOBJWithMTL(
+                            objPath,
+                            shader
+                        );
+
+                    if (loadedModels.empty()) {
+                        std::cerr << "[Error] Failed to load OBJ: "
+                                << objPath
+                                << std::endl;
+                        return false;
+                    }
+
+                    for (auto& model : loadedModels) {
+                        models.push_back(std::move(model));
+                    }
+
+                    continue;
+                }
+
+                // --------------------------------------------------------
+                // Mesh + Material
+                // --------------------------------------------------------
 
                 const int meshIndex =
                     modelData.value("mesh", -1);
@@ -387,9 +434,9 @@ bool Scene::loadSeno(const std::string& path) {
                 if (meshIndex < 0 ||
                     meshIndex >= static_cast<int>(meshes.size())) {
                     std::cerr << "[Error] Model mesh index "
-                              << meshIndex
-                              << " is out of range"
-                              << std::endl;
+                            << meshIndex
+                            << " is out of range"
+                            << std::endl;
                     return false;
                 }
 
@@ -397,9 +444,9 @@ bool Scene::loadSeno(const std::string& path) {
                     materialIndex >=
                         static_cast<int>(materials.size())) {
                     std::cerr << "[Error] Model material index "
-                              << materialIndex
-                              << " is out of range"
-                              << std::endl;
+                            << materialIndex
+                            << " is out of range"
+                            << std::endl;
                     return false;
                 }
 
@@ -411,7 +458,6 @@ bool Scene::loadSeno(const std::string& path) {
                 );
             }
         }
-
         // ------------------------------------------------------------
         // Objects
         // ------------------------------------------------------------
