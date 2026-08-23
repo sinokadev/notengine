@@ -101,6 +101,21 @@ set_target_properties(demo PROPERTIES
     VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
 )
 
+add_executable(benchmark EXCLUDE_FROM_ALL demo/benchmark.cpp)
+target_link_libraries(benchmark PRIVATE notengine)
+
+set_target_properties(benchmark PROPERTIES
+    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+)
+
+add_executable(scene_render EXCLUDE_FROM_ALL demo/scene_render.cpp)
+target_link_libraries(scene_render PRIVATE notengine)
+
+set_target_properties(scene_render PROPERTIES
+    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+)
+
+
 include(GNUInstallDirs)
 
 # 1. 타겟 설치 (헤더 및 라이브러리 바이너리)
