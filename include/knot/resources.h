@@ -385,6 +385,13 @@ private:
     bool isNormalAllocated = false;
 };
 
+// Loads Wavefront .mtl materials from a file and returns PBR materials.
+// The loader creates PbrMaterial instances using the MTL's Kd as base albedo,
+// map_Kd as an albedo texture (if present), Ns is heuristically mapped to
+// roughness, and metallic is left as 0. The returned materials are owned by
+// the caller.
+std::vector<std::shared_ptr<Material>> loadMaterialsFromMtl(const std::string& path, ResourceManager& resourceManager);
+
 /** @brief Renderable mesh/material pair with a local bounding sphere. */
 struct Model {
     /** @brief Mesh geometry to draw. */
