@@ -18,6 +18,7 @@ Versions 0.1.6 and earlier have a critical issue where resources are not automat
 - PBR shader
 - Event system
 - OBJ file import
+- MTL material import (albedo, roughness, metallic, normal maps)
 
 ## Performance
 

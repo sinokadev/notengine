@@ -15,3 +15,5 @@ Mesh helpers API
 
 .. doxygenfunction:: knot::loadModelOBJ
 
+.. doxygenfunction:: knot::loadModelOBJWithMTL
+

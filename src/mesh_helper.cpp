@@ -6,7 +6,41 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tinyobjloader/tiny_obj_loader.h>
 
+#include <cmath>
+#include <filesystem>
+#include <map>
+#include <unordered_map>
+
 namespace knot {
+namespace {
+
+std::string getObjDirectory(const std::string& filePath) {
+    return std::filesystem::path(filePath).parent_path().string();
+}
+
+Vertex makeVertexFromObjIndex(const tinyobj::attrib_t& attrib, const tinyobj::index_t& index) {
+    Vertex vertex{};
+
+    vertex.Position = glm::vec3(attrib.vertices[3 * index.vertex_index + 0], attrib.vertices[3 * index.vertex_index + 1],
+                                attrib.vertices[3 * index.vertex_index + 2]);
+
+    if (index.texcoord_index >= 0) {
+        vertex.TexCoords = glm::vec2(attrib.texcoords[2 * index.texcoord_index + 0], 1.0f - attrib.texcoords[2 * index.texcoord_index + 1]);
+    } else {
+        vertex.TexCoords = glm::vec2(0.0f);
+    }
+
+    if (index.normal_index >= 0) {
+        vertex.Normal = glm::vec3(attrib.normals[3 * index.normal_index + 0], attrib.normals[3 * index.normal_index + 1],
+                                  attrib.normals[3 * index.normal_index + 2]);
+    } else {
+        vertex.Normal = glm::vec3(0.0f, 1.0f, 0.0f);
+    }
+
+    return vertex;
+}
+
+} // namespace
 
 void calculateMeshTangents(std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices) {
     for (auto& v : vertices) {
@@ -219,7 +253,9 @@ std::shared_ptr<Mesh> loadModelOBJ(const std::string& filePath) {
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filePath.c_str())) {
+    const std::string objDir = getObjDirectory(filePath);
+
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filePath.c_str(), objDir.c_str())) {
         std::cerr << "[Error] Failed to load the OBJ File: " << warn << err << std::endl;
         return nullptr;
     }
@@ -243,24 +279,7 @@ std::shared_ptr<Mesh> loadModelOBJ(const std::string& filePath) {
             IndexTuple idxTuple = {index.vertex_index, index.texcoord_index, index.normal_index};
 
             if (uniqueVertices.count(idxTuple) == 0) {
-                Vertex vertex{};
-
-                vertex.Position = glm::vec3(attrib.vertices[3 * index.vertex_index + 0], attrib.vertices[3 * index.vertex_index + 1],
-                                            attrib.vertices[3 * index.vertex_index + 2]);
-
-                if (index.texcoord_index >= 0) {
-                    vertex.TexCoords =
-                        glm::vec2(attrib.texcoords[2 * index.texcoord_index + 0], 1.0f - attrib.texcoords[2 * index.texcoord_index + 1]);
-                } else {
-                    vertex.TexCoords = glm::vec2(0.0f);
-                }
-
-                if (index.normal_index >= 0) {
-                    vertex.Normal = glm::vec3(attrib.normals[3 * index.normal_index + 0], attrib.normals[3 * index.normal_index + 1],
-                                              attrib.normals[3 * index.normal_index + 2]);
-                } else {
-                    vertex.Normal = glm::vec3(0.0f, 1.0f, 0.0f);
-                }
+                Vertex vertex = makeVertexFromObjIndex(attrib, index);
 
                 uniqueVertices[idxTuple] = static_cast<unsigned int>(mesh->vertices.size());
                 mesh->vertices.push_back(vertex);
@@ -278,5 +297,170 @@ std::shared_ptr<Mesh> loadModelOBJ(const std::string& filePath) {
     mesh->setup();
 
     return mesh;
+}
+
+std::vector<std::shared_ptr<Model>> loadModelOBJWithMTL(const std::string& filePath, std::shared_ptr<Shader> pbrShader) {
+    if (!pbrShader) {
+        std::cerr << "[Error] A PBR shader is required to load OBJ materials" << std::endl;
+        return {};
+    }
+
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn, err;
+
+    const std::string objDir = getObjDirectory(filePath);
+
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filePath.c_str(), objDir.c_str())) {
+        std::cerr << "[Error] Failed to load the OBJ File: " << warn << err << std::endl;
+        return {};
+    }
+
+    struct IndexTuple {
+        int v_idx, vt_idx, vn_idx;
+        bool operator<(const IndexTuple& other) const {
+            if (v_idx != other.v_idx)
+                return v_idx < other.v_idx;
+            if (vt_idx != other.vt_idx)
+                return vt_idx < other.vt_idx;
+            return vn_idx < other.vn_idx;
+        }
+    };
+
+    struct MaterialGroup {
+        std::vector<Vertex> vertices;
+        std::vector<unsigned int> indices;
+        std::map<IndexTuple, unsigned int> uniqueVertices;
+    };
+
+    std::map<int, MaterialGroup> groups;
+
+    for (const auto& shape : shapes) {
+        size_t indexOffset = 0;
+        size_t faceIndex = 0;
+
+        for (const unsigned char faceVertexCount : shape.mesh.num_face_vertices) {
+            int materialId = -1;
+
+            if (faceIndex < shape.mesh.material_ids.size()) {
+                materialId = shape.mesh.material_ids[faceIndex];
+            }
+            ++faceIndex;
+
+            MaterialGroup& group = groups[materialId];
+
+            for (unsigned char v = 0; v < faceVertexCount; ++v) {
+                const tinyobj::index_t idx = shape.mesh.indices[indexOffset + v];
+
+                IndexTuple idxTuple = {idx.vertex_index, idx.texcoord_index, idx.normal_index};
+
+                auto it = group.uniqueVertices.find(idxTuple);
+                if (it == group.uniqueVertices.end()) {
+                    it = group.uniqueVertices.emplace(idxTuple, static_cast<unsigned int>(group.vertices.size())).first;
+                    group.vertices.push_back(makeVertexFromObjIndex(attrib, idx));
+                }
+
+                group.indices.push_back(it->second);
+            }
+
+            indexOffset += faceVertexCount;
+        }
+    }
+
+    std::unordered_map<std::string, unsigned int> textureCache;
+
+    auto getTexture = [&objDir, &textureCache](const std::string& texName) -> unsigned int {
+        if (texName.empty())
+            return 0;
+
+        std::filesystem::path path(texName);
+
+        if (!path.is_absolute()) {
+            path = std::filesystem::path(objDir) / path;
+        }
+
+        const std::string pathStr = path.generic_string();
+
+        auto it = textureCache.find(pathStr);
+        if (it != textureCache.end())
+            return it->second;
+
+        if (!std::filesystem::exists(path)) {
+            std::cout << "[Warning] MTL texture not found: " << pathStr << std::endl;
+            textureCache.emplace(pathStr, 0);
+            return 0;
+        }
+
+        const unsigned int textureId = loadTextureFromFile(pathStr);
+        textureCache.emplace(pathStr, textureId);
+        return textureId;
+    };
+
+    auto createMaterial = [&materials, &getTexture, pbrShader](int materialId) -> std::shared_ptr<PbrMaterial> {
+        glm::vec3 albedoColor(1.0f);
+        float metallicFactor = 0.0f;
+        float roughnessFactor = 0.5f;
+
+        unsigned int albedoMap = 0;
+        unsigned int metallicMap = 0;
+        unsigned int roughnessMap = 0;
+        unsigned int normalMap = 0;
+
+        if (materialId >= 0 && materialId < static_cast<int>(materials.size())) {
+            const tinyobj::material_t& mtl = materials[materialId];
+
+            albedoColor = glm::vec3(mtl.diffuse[0], mtl.diffuse[1], mtl.diffuse[2]);
+
+            if (!mtl.diffuse_texname.empty()) {
+                albedoMap = getTexture(mtl.diffuse_texname);
+            }
+
+            if (!mtl.metallic_texname.empty()) {
+                metallicMap = getTexture(mtl.metallic_texname);
+            } else if (mtl.metallic > 0.0f) {
+                metallicFactor = glm::clamp(mtl.metallic, 0.0f, 1.0f);
+            }
+
+            if (!mtl.roughness_texname.empty()) {
+                roughnessMap = getTexture(mtl.roughness_texname);
+            } else if (mtl.roughness > 0.0f) {
+                roughnessFactor = glm::clamp(mtl.roughness, 0.0f, 1.0f);
+            } else if (mtl.shininess > 0.0f) {
+                roughnessFactor = glm::clamp(sqrtf(2.0f / (mtl.shininess + 2.0f)), 0.05f, 1.0f);
+            } else {
+                roughnessFactor = 1.0f;
+            }
+
+            normalMap = getTexture(mtl.normal_texname);
+
+            if (normalMap == 0) {
+                normalMap = getTexture(mtl.bump_texname);
+            }
+        }
+
+        return std::make_shared<PbrMaterial>(pbrShader, albedoColor, metallicFactor, roughnessFactor, 1.0f, albedoMap, metallicMap, roughnessMap, 0,
+                                             normalMap);
+    };
+
+    std::vector<std::shared_ptr<Model>> models;
+
+    for (auto& [materialId, group] : groups) {
+        if (group.indices.empty())
+            continue;
+
+        auto mesh = std::make_shared<Mesh>();
+        mesh->vertices = std::move(group.vertices);
+        mesh->indices = std::move(group.indices);
+
+        calculateMeshTangents(mesh->vertices, mesh->indices);
+
+        mesh->indexCount = static_cast<unsigned int>(mesh->indices.size());
+        mesh->setup();
+
+        models.push_back(std::make_shared<Model>(std::move(mesh), createMaterial(materialId)));
+    }
+
+    return models;
 }
 } // namespace knot
