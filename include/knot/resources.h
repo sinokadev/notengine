@@ -486,12 +486,27 @@ public:
 /** @brief Directional light with separate ambient, diffuse, and specular terms. */
 class DirLight : public Light {
 public:
-    /** @brief Ambient lighting contribution. */
     glm::vec3 ambient{0.05f};
-    /** @brief Diffuse lighting contribution. */
     glm::vec3 diffuse{0.8f};
-    /** @brief Specular lighting contribution. */
     glm::vec3 specular{1.0f};
+
+    DirLight(
+        glm::vec3 direction = glm::vec3(0.0f, -1.0f, 0.0f),
+        glm::vec3 ambient = glm::vec3(0.05f),
+        glm::vec3 diffuse = glm::vec3(0.8f),
+        glm::vec3 specular = glm::vec3(1.0f)
+    )
+        : ambient(ambient),
+          diffuse(diffuse),
+          specular(specular)
+    {
+        if (glm::length(direction) > 0.0f) {
+            rotation = glm::quatLookAt(
+                glm::normalize(direction),
+                glm::vec3(0.0f, 1.0f, 0.0f)
+            );
+        }
+    }
 
     /** @brief Returns the light direction derived from its rotation. */
     glm::vec3 getDirection() const {
