@@ -14,5 +14,9 @@ unsigned int bakeHDRMapToCubemap(unsigned int hdrTexture2D, int size);
  *  @param size Width and height of each generated face.
  *  @return The generated irradiance cubemap texture ID. */
 unsigned int bakeCubemapToIrradianceMap(unsigned int envCubemapID, int size);
+/** @brief Generates a prefiltered environment cubemap for specular IBL.
+ *  @param envCubemapID Source environment cubemap.
+ *  @param size Width and height of each cubemap face.
+ *  @return The generated prefiltered cubemap texture ID. */
 unsigned int bakeCubemapToPrefilterMap(unsigned int envCubemapID, int size = 128);
 } // namespace knot
