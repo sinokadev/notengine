@@ -61,6 +61,10 @@ uniform samplerCube irradianceMap;
 
 uniform float u_AmbientIntensity;
 
+uniform samplerCube prefilterMap;
+uniform sampler2D   brdfLUT;
+uniform float       u_MaxReflectionLOD;
+
 #define PI 3.14159265359
 
 float pow5(float x) {
@@ -121,41 +125,48 @@ vec3 calcPbrLight(vec3 N, vec3 V, vec3 L, vec3 lightColor, vec3 albedo, float me
 }
 
 void main() {
-    // 1. 주요 렌더링 벡터 계산
     vec3 V = normalize(u_CameraPos - FragPos);
 
-    // 2. 텍스처 맵 샘플링 및 보정
+    // Texture Map
     vec3 albedo     = texture(material.albedoMap, TexCoords).rgb;
     float metallic  = texture(material.metallicMap, TexCoords).r;
     float roughness = texture(material.roughnessMap, TexCoords).r;
     float ao        = texture(material.aoMap, TexCoords).r;
 
-    // 노멀맵
+    // Normal Map
     vec3 normalMap = texture(material.normalMap, TexCoords).rgb;
     vec3 N = normalize(normalMap * 2.0 - 1.0);
     N = normalize(TBN * N);
 
     float alphaRoughness = max(roughness * roughness, 0.002); 
 
-    // 3. F0 계산
+    // F0
     vec3 f0 = mix(vec3(0.04), albedo, metallic);
 
-    // 4. Directional Light 기여도 계산
+    // Directional Light
     vec3 L_dir = normalize(-dirLight.direction);
     vec3 directLighting = calcPbrLight(N, V, L_dir, dirLight.diffuse, albedo, metallic, alphaRoughness, f0);
-    // 1. 프레넬 항(F) 계산 (간접광에서의 프레넬)
-    vec3 kS = fresnelSchlickRoughness(max(dot(N, V), 0.0), f0, roughness); 
-    vec3 kD = 1.0 - kS;
-    kD *= 1.0 - metallic; // 금속은 Diffuse(난반사)가 없으므로 금속성만큼 차감
 
-    // 2. Irradiance Map 샘플링 (Diffuse IBL)
+    // Fresnel
+    float NoV = max(dot(N, V), 0.0);
+    vec3 kS = fresnelSchlickRoughness(NoV, f0, roughness); 
+    vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic); 
+
+    // Diffuse IBL
     vec3 irradiance = texture(irradianceMap, normalize(N)).rgb;
+    vec3 diffuse = irradiance * albedo;
 
-    // 3. Ambient 최종 계산
-    vec3 diffuse = irradiance * albedo; // 환경광으로부터 오는 Diffuse 색상
-    vec3 ambient = (kD * diffuse) * ao * u_AmbientIntensity; // AO와 금속성 보정 적용
+    // Specular IBL
+    vec3 R = reflect(-V, N);
+    float mipLevel = roughness * u_MaxReflectionLOD;
+    vec3 prefilteredColor = textureLod(prefilterMap, R, mipLevel).rgb;
+    vec2 brdf = texture(brdfLUT, vec2(NoV, roughness)).rg;
+    vec3 specular = prefilteredColor * (kS * brdf.x + brdf.y);
 
-    // 5. Point Light 기여도 계산
+    // Ambient
+    vec3 ambient = (kD * diffuse + specular) * ao * u_AmbientIntensity;
+
+    // Point Light
     for (int i = 0; i < u_ActivePointLightCount; ++i) {
         vec3 lightPos = pointLights[i].position.xyz;
         vec3 lightColorRaw = pointLights[i].color.rgb;
@@ -180,12 +191,11 @@ void main() {
     }
     vec3 finalColor = ambient + directLighting;
 
-    // 6. Reinhard 톤매핑
+    // Reinhard 톤매핑
     finalColor = finalColor / (finalColor + vec3(1.0));
 
-    // 7. 감마 보정
+    // 감마 보정
     finalColor = pow(finalColor, vec3(1.0 / 2.2));  
 
-    // 8. 최종 출력
     FragColor = vec4(finalColor, 1.0);
 }

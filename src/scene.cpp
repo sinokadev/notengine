@@ -38,6 +38,13 @@ void Scene::clear() {
         irradianceMap = 0;
     }
 
+    if (prefilterMap != 0) {
+        if (glfwGetCurrentContext() != nullptr)
+            glDeleteTextures(1, &prefilterMap);
+
+        prefilterMap = 0;
+    }
+
     updateCallback = nullptr;
 }
 
@@ -51,12 +58,16 @@ void Scene::loadHDRMap(const std::string& path) {
         glDeleteTextures(1, &cubeMap);
     if (irradianceMap != 0)
         glDeleteTextures(1, &irradianceMap);
+    if (prefilterMap != 0)
+        glDeleteTextures(1, &prefilterMap);
 
     unsigned int tempHdrMap = loadHDRTexture(path);
 
     cubeMap = bakeHDRMapToCubemap(tempHdrMap, 512);
 
     irradianceMap = bakeCubemapToIrradianceMap(cubeMap, 32);
+
+    prefilterMap = bakeCubemapToPrefilterMap(cubeMap, 128);
 
     glDeleteTextures(1, &tempHdrMap);
 }

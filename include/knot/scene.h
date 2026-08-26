@@ -62,6 +62,11 @@ public:
         return irradianceMap;
     }
 
+    /** @brief Returns the prefilter map texture ID. */
+    unsigned int getPrefilterMap() const {
+        return prefilterMap;
+    }
+
     /** @brief Loads a scene from a Seno JSON file.
      *  @return true when the file is parsed and all referenced resources load. */
     bool loadSeno(const std::string& path);
@@ -77,6 +82,7 @@ private:
 
     unsigned int cubeMap = 0;
     unsigned int irradianceMap = 0;
+    unsigned int prefilterMap = 0;
 };
 
 } // namespace knot

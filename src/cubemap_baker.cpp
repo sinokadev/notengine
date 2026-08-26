@@ -157,4 +157,100 @@ unsigned int bakeCubemapToIrradianceMap(unsigned int envCubemapID, int size = 32
 
     return irradianceMapID; // 최종 구워진 Diffuse IBL용 큐브맵 ID 반환
 }
+
+unsigned int bakeCubemapToPrefilterMap(unsigned int envCubemapID, int size) {
+    // 1. Prefilter 셰이더 및 큐브 메쉬 로드
+    auto prefilterSource = std::make_shared<ShaderSource>(getAssetRoot() + "assets/shaders/prefilter.vert",
+                                                         getAssetRoot() + "assets/shaders/prefilter.frag");
+    std::shared_ptr<Shader> prefilterShader = std::make_shared<Shader>(prefilterSource, 2000001);
+
+    std::shared_ptr<Mesh> boxMesh = createCube();
+
+    // 2. 결과 저장용 Prefilter 큐브맵 생성 (Mipmap 필수)
+    unsigned int prefilterMapID;
+    glGenTextures(1, &prefilterMapID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMapID);
+    for (unsigned int i = 0; i < 6; ++i) {
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, size, size, 0, GL_RGB, GL_FLOAT, nullptr);
+    }
+
+    // Mipmap Trilinear 필터링 설정
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    // Mipmap 메모리 할당
+    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+    // 3. 뷰 / 투영 행렬 설정
+    glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+    glm::mat4 captureViews[] = {
+        glm::lookAt(glm::vec3(0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+        glm::lookAt(glm::vec3(0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+        glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+        glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
+        glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+        glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f))
+    };
+
+    // 4. FBO 설정 및 상태 백업
+    unsigned int captureFBO;
+    glGenFramebuffers(1, &captureFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+
+    GLint originalViewport[4];
+    glGetIntegerv(GL_VIEWPORT, originalViewport);
+    GLboolean depthTestEnabled = glIsEnabled(GL_DEPTH_TEST);
+    GLboolean cullFaceEnabled = glIsEnabled(GL_CULL_FACE);
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+
+    // 5. 텍스처 바인딩
+    prefilterShader->use();
+    prefilterShader->set("environmentMap", 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemapID);
+
+    // 6. Mipmap Level 및 Roughness별 렌더링 (최대 5레벨: 0~4)
+    unsigned int maxMipLevels = 5;
+    for (unsigned int mip = 0; mip < maxMipLevels; ++mip) {
+        // Mipmap 레벨에 따른 해상도 축소 (예: 128 -> 64 -> 32 -> 16 -> 8)
+        unsigned int mipWidth = static_cast<unsigned int>(size * std::pow(0.5f, mip));
+        unsigned int mipHeight = static_cast<unsigned int>(size * std::pow(0.5f, mip));
+        glViewport(0, 0, mipWidth, mipHeight);
+
+        float roughness = static_cast<float>(mip) / static_cast<float>(maxMipLevels - 1);
+        prefilterShader->set("roughness", roughness);
+
+        for (unsigned int i = 0; i < 6; ++i) {
+            prefilterShader->set("view", captureViews[i]);
+            prefilterShader->set("projection", captureProjection);
+            
+            // 핵심: Mipmap 레벨(mip)을 지정하여 FBO에 결합
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
+                                   GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, prefilterMapID, mip);
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            glBindVertexArray(boxMesh->vao);
+            glDrawElements(GL_TRIANGLES, boxMesh->indexCount, GL_UNSIGNED_INT, nullptr);
+        }
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // 7. 이전 상태 복구
+    if (depthTestEnabled)
+        glEnable(GL_DEPTH_TEST);
+    if (cullFaceEnabled)
+        glEnable(GL_CULL_FACE);
+    glViewport(originalViewport[0], originalViewport[1], originalViewport[2], originalViewport[3]);
+
+    glDeleteFramebuffers(1, &captureFBO);
+
+    return prefilterMapID;
+}
+
 } // namespace knot

@@ -89,5 +89,14 @@ private:
     static constexpr unsigned int SKYBOX_SHADER_ID = 999999;
     std::shared_ptr<Mesh> skyboxMesh;
     std::shared_ptr<Shader> skyboxShader;
+
+    static constexpr unsigned int BRDF_SHADER_ID = 999998;
+    GLuint brdfLUTTexture = 0;
+    
+    void generateBRDFLUT();
+    void renderQuad();
+    
+    GLuint quadVAO = 0;
+    GLuint quadVBO = 0;
 };
 } // namespace knot
