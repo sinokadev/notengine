@@ -36,6 +36,8 @@ bool Renderer::init(GLADloadfunc loadProc) {
     auto skyboxSource = std::make_shared<ShaderSource>(getAssetRoot() + "assets/shaders/skybox.vert", getAssetRoot() + "assets/shaders/skybox.frag");
     skyboxShader = std::make_shared<Shader>(skyboxSource, SKYBOX_SHADER_ID);
 
+    generateBRDFLUT();
+
     initialized = true;
     return true;
 }
@@ -60,10 +62,84 @@ void Renderer::shutdown() {
         instanceVBO = 0;
     }
 
+    if (brdfLUTTexture != 0) {
+        if (hasContext) {
+            glDeleteTextures(1, &brdfLUTTexture);
+        }
+        brdfLUTTexture = 0;
+    }
+
+    if (quadVAO != 0) {
+        if (hasContext) {
+            glDeleteVertexArrays(1, &quadVAO);
+            glDeleteBuffers(1, &quadVBO);
+        }
+        quadVAO = 0;
+        quadVBO = 0;
+    }
+
     skyboxMesh.reset();
     skyboxShader.reset();
 
     initialized = false;
+}
+
+void Renderer::renderQuad() {
+    if (quadVAO == 0) {
+        float quadVertices[] = {
+            // positions   // texture Coords
+            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        };
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    }
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
+}
+
+void Renderer::generateBRDFLUT() {
+    // 1. 2D RG16F 텍스처 생성
+    glGenTextures(1, &brdfLUTTexture);
+    glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // 2. 임시 Framebuffer 생성 후 텍스처 바인딩
+    GLuint captureFBO;
+    glGenFramebuffers(1, &captureFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdfLUTTexture, 0);
+
+    // 3. 셰이더 로드 및 렌더링
+    auto brdfSource = std::make_shared<ShaderSource>(getAssetRoot() + "assets/shaders/brdf.vert", getAssetRoot() + "assets/shaders/brdf.frag");
+    std::shared_ptr<Shader> brdfShader = std::make_shared<Shader>(brdfSource, BRDF_SHADER_ID);
+
+    GLint prevViewport[4];
+    glGetIntegerv(GL_VIEWPORT, prevViewport); // 기존 뷰포트 백업
+
+    glViewport(0, 0, 512, 512);
+    brdfShader->use();
+    glClear(GL_COLOR_BUFFER_BIT);
+    renderQuad();
+
+    // 4. 복구 및 자원 정리
+    glViewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3]);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDeleteFramebuffers(1, &captureFBO);
 }
 
 void Renderer::beginFrame(int framebufferWidth, int framebufferHeight) {
@@ -294,10 +370,24 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
 
         shader->set("u_ActivePointLightCount", static_cast<int>(pointLights.size()));
 
+        // 기존 Irradiance Map (Diffuse IBL)
         glActiveTexture(GL_TEXTURE8);
         glBindTexture(GL_TEXTURE_CUBE_MAP, scene.getIrradianceMap());
-
         shader->set("irradianceMap", 8);
+
+        // === 신규: Prefilter Map (Specular IBL) ===
+        glActiveTexture(GL_TEXTURE9);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, scene.getPrefilterMap()); // Scene 클래스에 getPrefilterMap() 추가 필요
+        shader->set("prefilterMap", 9);
+
+        // === 신규: 구워둔 BRDF LUT (2D Texture) ===
+        glActiveTexture(GL_TEXTURE10);
+        glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
+        shader->set("brdfLUT", 10);
+
+        // Max Mipmap Level 유니폼 전달
+        shader->set("u_MaxReflectionLOD", 4.0f); // Prefilter Mipmap 최대 레벨에 맞춰 설정
+
         shader->set("u_AmbientIntensity", AMBIENT_INTENSITY);
 
         if (instances.size() >= INSTANCE_THRESHOLD) {
