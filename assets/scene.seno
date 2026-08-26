@@ -47,7 +47,8 @@
 
     "models": [
         {
-            "obj": "{assetRoot}/assets/Untitled.obj"
+            "mesh": 0,
+            "material": 0
         },
         {
             "mesh": 1,
