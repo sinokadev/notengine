@@ -42,7 +42,7 @@ bool Engine::init(int width, int height, const std::string& title, const std::st
         return false;
     }
 
-    if (!renderer.init(window.getProcAddress())) {
+    if (!Renderer::get().init(window.getProcAddress())) {
         shutdown();
         return false;
     }
@@ -82,7 +82,7 @@ bool Engine::init(int width, int height, const std::string& title, const std::st
         }
     });
 
-    renderer.beginFrame(window.getFramebufferWidth(), window.getFramebufferHeight());
+    Renderer::get().beginFrame(window.getFramebufferWidth(), window.getFramebufferHeight());
 
     window.enableVsync();
     initialized = true;
@@ -127,7 +127,7 @@ void Engine::shutdown() {
     }
 
     // 2. Renderer 자원 정리 (SSBO, VBO, Skybox 등 OpenGL 리소스 해제)
-    renderer.shutdown();
+    Renderer::get().shutdown();
 
     // 3. 타이머 및 콜백 정리
     eventCallback = nullptr;
@@ -152,8 +152,8 @@ void Engine::update() {
 void Engine::render() {
     glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    renderer.beginFrame(window.getFramebufferWidth(), window.getFramebufferHeight());
-    renderer.renderScene(*scene, getAspectRatio());
+    Renderer::get().beginFrame(window.getFramebufferWidth(), window.getFramebufferHeight());
+    Renderer::get().renderScene(*scene, getAspectRatio());
     if (renderLoopCallback) {
         renderLoopCallback(deltaTime);
     }
