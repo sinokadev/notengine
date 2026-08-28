@@ -1,7 +1,5 @@
 #include <knot/window.h>
 
-#include <glad/gl.h>
-
 #include <iostream>
 
 namespace knot {

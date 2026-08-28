@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
 #include <knot/key.h>
@@ -87,7 +88,5 @@ private:
     static void keyCallback_glfw(GLFWwindow* window, int key, int scancode, int action, int mods);
     static void cursorPositionCallback_glfw(GLFWwindow* window, double xpos, double ypos);
     static void mouseButtonCallback_glfw(GLFWwindow* window, int button, int action, int mods);
-
-    static ScanCode convertGlfwToKnotScancode(int glfwKey);
 };
 } // namespace knot
