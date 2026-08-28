@@ -39,8 +39,20 @@ struct GPUMovingPointLight {
 /** @brief OpenGL renderer for scenes, meshes, lights, and skyboxes. */
 class Renderer {
 public:
-    Renderer() = default;
+    static Renderer& get();
+
+    /**
+     * @brief Destroys the renderer.
+     *
+     * Releases renderer-owned resources through shutdown().
+     */
     ~Renderer();
+
+    Renderer(const Renderer&) = delete;
+    Renderer& operator=(const Renderer&) = delete;
+
+    Renderer(Renderer&&) = delete;
+    Renderer& operator=(Renderer&&) = delete;
 
     /** @brief Default near clipping distance exposed for renderer clients. */
     static constexpr float kNearPlane = 0.1f;
@@ -80,23 +92,54 @@ public:
     void renderInstanced(const std::shared_ptr<Model>& model, const std::vector<VisibleInstance>& instances, const Camera& camera, float aspectRatio);
 
 private:
+    /**
+     * @brief Constructs the global renderer instance.
+     *
+     * Construction is private to enforce the singleton pattern.
+     */
+    Renderer() = default;
+
+    /** @brief Whether the renderer has completed GPU initialization. */
     bool initialized = false;
+
+    /** @brief Shader-storage buffer containing point-light data. */
     GLuint lightSSBO = 0;
 
+    /** @brief Instance transform vertex buffer. */
     unsigned int instanceVBO = 0;
+
+    /** @brief Minimum instance count required to use instanced rendering. */
     static constexpr std::size_t INSTANCE_THRESHOLD = 4;
 
+    /** @brief Internal identifier used for the skybox shader resource. */
     static constexpr unsigned int SKYBOX_SHADER_ID = 999999;
+
+    /** @brief Shared mesh used to render the skybox. */
     std::shared_ptr<Mesh> skyboxMesh;
+
+    /** @brief Shader used to render the skybox. */
     std::shared_ptr<Shader> skyboxShader;
 
+    /** @brief Internal identifier used for the BRDF shader resource. */
     static constexpr unsigned int BRDF_SHADER_ID = 999998;
+
+    /** @brief Precomputed BRDF integration lookup texture. */
     GLuint brdfLUTTexture = 0;
-    
+
+    /**
+     * @brief Generates the BRDF integration lookup texture.
+     */
     void generateBRDFLUT();
+
+    /**
+     * @brief Renders the internal fullscreen quad.
+     */
     void renderQuad();
-    
+
+    /** @brief Vertex array object for the fullscreen quad. */
     GLuint quadVAO = 0;
+
+    /** @brief Vertex buffer object for the fullscreen quad. */
     GLuint quadVBO = 0;
 };
 } // namespace knot

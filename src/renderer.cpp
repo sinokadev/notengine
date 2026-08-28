@@ -10,6 +10,12 @@
 
 namespace knot {
 
+Renderer& Renderer::get()
+{
+    static Renderer instance;
+    return instance;
+}
+
 Renderer::~Renderer() {
     shutdown();
 }

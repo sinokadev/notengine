@@ -261,7 +261,6 @@ public:
 
 private:
     Window window;
-    Renderer renderer;
 
     glm::vec4 clearColor = {0, 0, 0, 1};
 
