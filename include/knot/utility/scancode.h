@@ -281,7 +281,7 @@ enum class ScanCode : unsigned int {
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 SinokaDev
 
-ScanCode convertGlfwToKnotScancode(int glfwKey) {
+inline ScanCode convertGlfwToKnotScancode(int glfwKey) {
     switch (glfwKey) {
     // --- 알파벳 ---
     case GLFW_KEY_A:
