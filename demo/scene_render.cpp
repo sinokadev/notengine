@@ -11,10 +11,7 @@
 #include <unordered_map>
 #include <GLFW/glfw3.h>
 
-enum UserEventType : uint32_t {
-    PRINT_FPS,
-    RELOAD_SCENE
-};
+enum UserEventType : uint32_t { PRINT_FPS, RELOAD_SCENE };
 
 int main() {
     knot::Engine engine;
@@ -23,25 +20,14 @@ int main() {
         return 1;
     }
 
-    glfwSetInputMode(
-        engine.getWindow().getHandle(),
-        GLFW_CURSOR,
-        GLFW_CURSOR_DISABLED
-    );
+    glfwSetInputMode(engine.getWindow().getHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    engine.setClearColor(
-        0.12f,
-        0.14f,
-        0.18f,
-        1.0f
-    );
+    engine.setClearColor(0.12f, 0.14f, 0.18f, 1.0f);
 
     knot::Scene scene;
 
-    if (!scene.loadSeno(
-            knot::getAssetRoot() + "assets/scene.seno")) {
-        std::cerr << "[Error] Failed to load demo scene"
-                  << std::endl;
+    if (!scene.loadSeno(knot::getAssetRoot() + "assets/scene.seno")) {
+        std::cerr << "[Error] Failed to load demo scene" << std::endl;
         return 1;
     }
 
@@ -49,9 +35,7 @@ int main() {
     const std::string scenePath = knot::getAssetRoot() + "assets/scene.seno";
     scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
-    scene.setCamera(std::make_shared<knot::MovingCamera>(
-        glm::vec3(0.0f, 2.0f, 5.0f)
-    ));
+    scene.setCamera(std::make_shared<knot::MovingCamera>(glm::vec3(0.0f, 2.0f, 5.0f)));
 
     std::unordered_map<knot::ScanCode, bool> keyStates;
 
@@ -87,16 +71,9 @@ int main() {
 
         glm::vec3 moveDir(0.0f);
 
-        const glm::vec3 front =
-            camera.getFront();
+        const glm::vec3 front = camera.getFront();
 
-        const glm::vec3 right =
-            glm::normalize(
-                glm::cross(
-                    front,
-                    camera.worldUp
-                )
-            );
+        const glm::vec3 right = glm::normalize(glm::cross(front, camera.worldUp));
 
         if (keyStates[knot::ScanCode::W])
             moveDir += front;
@@ -111,10 +88,7 @@ int main() {
             moveDir += right;
 
         if (glm::length(moveDir) > 0.0f) {
-            camera.move(
-                glm::normalize(moveDir),
-                deltaTime
-            );
+            camera.move(glm::normalize(moveDir), deltaTime);
         }
     };
 
@@ -125,17 +99,9 @@ int main() {
 
                 if (event.key == knot::ScanCode::ESCAPE) {
                     if (!stop) {
-                        glfwSetInputMode(
-                            engine.getWindow().getHandle(),
-                            GLFW_CURSOR,
-                            GLFW_CURSOR_NORMAL
-                        );
+                        glfwSetInputMode(engine.getWindow().getHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
                     } else {
-                        glfwSetInputMode(
-                            engine.getWindow().getHandle(),
-                            GLFW_CURSOR,
-                            GLFW_CURSOR_DISABLED
-                        );
+                        glfwSetInputMode(engine.getWindow().getHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                     }
 
                     stop = !stop;
@@ -153,22 +119,16 @@ int main() {
             if (stop)
                 return;
 
-            const float xOffset =
-                static_cast<float>(event.x) - lastX;
+            const float xOffset = static_cast<float>(event.x) - lastX;
 
-            const float yOffset =
-                lastY - static_cast<float>(event.y);
+            const float yOffset = lastY - static_cast<float>(event.y);
 
             lastX = static_cast<float>(event.x);
             lastY = static_cast<float>(event.y);
 
             // Query the current camera from the scene each time — reloads may replace it
             auto& cam = static_cast<knot::MovingCamera&>(scene.getCamera());
-            cam.rotate(
-                xOffset,
-                yOffset,
-                true
-            );
+            cam.rotate(xOffset, yOffset, true);
 
             event.handled = true;
         }
@@ -176,9 +136,7 @@ int main() {
         if (event.type == knot::EventType::User) {
             switch (event.userCode) {
             case PRINT_FPS:
-                std::cout << "FPS: "
-                          << frameCount
-                          << "\n";
+                std::cout << "FPS: " << frameCount << "\n";
 
                 frameCount = 0;
                 event.handled = true;

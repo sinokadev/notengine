@@ -10,8 +10,7 @@
 
 namespace knot {
 
-Renderer& Renderer::get()
-{
+Renderer& Renderer::get() {
     static Renderer instance;
     return instance;
 }
@@ -21,9 +20,7 @@ Renderer::~Renderer() {
 }
 
 bool Renderer::init(GLADloadfunc loadProc) {
-    std::cout << "[Info] Not Engine Renderer Init"
-        << std::endl;
-
+    std::cout << "[Info] Not Engine Renderer Init" << std::endl;
 
     if (!gladLoadGL(loadProc)) {
         std::cerr << "[Error] Failed to load OpenGL functions" << std::endl;
@@ -94,10 +91,7 @@ void Renderer::renderQuad() {
     if (quadVAO == 0) {
         float quadVertices[] = {
             // positions   // texture Coords
-            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+            -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
         };
         glGenVertexArrays(1, &quadVAO);
         glGenBuffers(1, &quadVBO);

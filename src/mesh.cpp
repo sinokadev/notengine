@@ -73,4 +73,4 @@ void Mesh::setupInstanceAttributes(unsigned int instanceVBO) {
     glBindVertexArray(0);
 }
 
-} //namespace knot
+} // namespace knot

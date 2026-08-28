@@ -57,14 +57,12 @@ int main() {
 
     scene.getLightManager().registerLight(pointLightObj);
 
-    auto camera = std::make_shared<knot::Camera>(
-        glm::vec3(0.0f, 20.0f, 0.0f)
-    );
+    auto camera = std::make_shared<knot::Camera>(glm::vec3(0.0f, 20.0f, 0.0f));
 
     camera->lookAtTarget(glm::vec3(0.0f, 0.0f, 0.0f));
 
     scene.setCamera(camera);
-    
+
     // 테스트할 Object 개수
     const std::vector<int> objectCounts = {1, 500, 1'000, 5'000, 10'000, 25'000, 50'000, 100'000, 250'000, 500'000, 1'000'000};
     std::vector<BenchmarkResult> results;
