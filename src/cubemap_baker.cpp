@@ -160,8 +160,8 @@ unsigned int bakeCubemapToIrradianceMap(unsigned int envCubemapID, int size = 32
 
 unsigned int bakeCubemapToPrefilterMap(unsigned int envCubemapID, int size) {
     // 1. Prefilter 셰이더 및 큐브 메쉬 로드
-    auto prefilterSource = std::make_shared<ShaderSource>(getAssetRoot() + "assets/shaders/prefilter.vert",
-                                                         getAssetRoot() + "assets/shaders/prefilter.frag");
+    auto prefilterSource =
+        std::make_shared<ShaderSource>(getAssetRoot() + "assets/shaders/prefilter.vert", getAssetRoot() + "assets/shaders/prefilter.frag");
     std::shared_ptr<Shader> prefilterShader = std::make_shared<Shader>(prefilterSource, 2000001);
 
     std::shared_ptr<Mesh> boxMesh = createCube();
@@ -186,14 +186,12 @@ unsigned int bakeCubemapToPrefilterMap(unsigned int envCubemapID, int size) {
 
     // 3. 뷰 / 투영 행렬 설정
     glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
-    glm::mat4 captureViews[] = {
-        glm::lookAt(glm::vec3(0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
-        glm::lookAt(glm::vec3(0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
-        glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
-        glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
-        glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
-        glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f))
-    };
+    glm::mat4 captureViews[] = {glm::lookAt(glm::vec3(0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+                                glm::lookAt(glm::vec3(0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+                                glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+                                glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
+                                glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+                                glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f))};
 
     // 4. FBO 설정 및 상태 백업
     unsigned int captureFBO;
@@ -228,10 +226,9 @@ unsigned int bakeCubemapToPrefilterMap(unsigned int envCubemapID, int size) {
         for (unsigned int i = 0; i < 6; ++i) {
             prefilterShader->set("view", captureViews[i]);
             prefilterShader->set("projection", captureProjection);
-            
+
             // 핵심: Mipmap 레벨(mip)을 지정하여 FBO에 결합
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
-                                   GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, prefilterMapID, mip);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, prefilterMapID, mip);
             glClear(GL_COLOR_BUFFER_BIT);
 
             glBindVertexArray(boxMesh->vao);

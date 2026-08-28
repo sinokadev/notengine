@@ -5,7 +5,6 @@
 
 namespace knot {
 
-
 bool Frustum::intersectsSphere(const glm::vec3& center, float radius) const {
     for (const auto& plane : planes) {
         if (plane.signedDistance(center) < -radius)
@@ -133,26 +132,8 @@ const Frustum& Camera::getFrustum(float aspectRatio) const {
     return frustum;
 }
 
-MovingCamera::MovingCamera(
-    glm::vec3 startPos,
-    glm::vec3 worldUp,
-    float yaw,
-    float pitch,
-    float fov,
-    float nearPlane,
-    float farPlane
-)
-    : Camera(
-        startPos,
-        worldUp,
-        yaw,
-        pitch,
-        fov,
-        nearPlane,
-        farPlane
-    ),
-      speed(5.0f),
-      sensitivity(0.1f) {
+MovingCamera::MovingCamera(glm::vec3 startPos, glm::vec3 worldUp, float yaw, float pitch, float fov, float nearPlane, float farPlane)
+    : Camera(startPos, worldUp, yaw, pitch, fov, nearPlane, farPlane), speed(5.0f), sensitivity(0.1f) {
 }
 
 void MovingCamera::move(glm::vec3 direction, float deltaTime) {

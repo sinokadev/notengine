@@ -37,14 +37,7 @@ struct Frustum {
     FrustumPlane planes[6];
 
     /** @brief Indices of the six view-frustum clipping planes. */
-    enum Plane {
-        Left = 0,
-        Right,
-        Bottom,
-        Top,
-        Near,
-        Far
-    };
+    enum Plane { Left = 0, Right, Bottom, Top, Near, Far };
 
     /**
      * @brief Tests whether a sphere intersects the frustum.
@@ -161,15 +154,8 @@ public:
      * @param nearPlane The near clipping plane distance.
      * @param farPlane The far clipping plane distance.
      */
-    MovingCamera(
-        glm::vec3 startPos = glm::vec3(0.0f, 0.0f, 5.0f),
-        glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f),
-        float yaw = -90.0f,
-        float pitch = 0.0f,
-        float fov = 45.0f,
-        float nearPlane = 0.1f,
-        float farPlane = 100.0f
-    );
+    MovingCamera(glm::vec3 startPos = glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = -90.0f,
+                 float pitch = 0.0f, float fov = 45.0f, float nearPlane = 0.1f, float farPlane = 100.0f);
 
     /**
      * @brief Moves the camera.

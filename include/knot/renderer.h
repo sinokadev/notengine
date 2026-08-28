@@ -26,7 +26,7 @@ struct GPUMovingPointLight {
     /** @brief Position in xyz; w is padding. */
     glm::vec4 position; // [x, y, z, w(Any data or Padding)]
     /** @brief RGB color and intensity in w. */
-    glm::vec4 color;    // [r, g, b, brightness]
+    glm::vec4 color; // [r, g, b, brightness]
     /** @brief Influence radius derived from light intensity. */
     float radius;
     /** @brief Constant attenuation coefficient. */

@@ -8,7 +8,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
 #include <glm/glm.hpp>
@@ -490,21 +489,11 @@ public:
     glm::vec3 diffuse{0.8f};
     glm::vec3 specular{1.0f};
 
-    DirLight(
-        glm::vec3 direction = glm::vec3(0.0f, -1.0f, 0.0f),
-        glm::vec3 ambient = glm::vec3(0.05f),
-        glm::vec3 diffuse = glm::vec3(0.8f),
-        glm::vec3 specular = glm::vec3(1.0f)
-    )
-        : ambient(ambient),
-          diffuse(diffuse),
-          specular(specular)
-    {
+    DirLight(glm::vec3 direction = glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3 ambient = glm::vec3(0.05f), glm::vec3 diffuse = glm::vec3(0.8f),
+             glm::vec3 specular = glm::vec3(1.0f))
+        : ambient(ambient), diffuse(diffuse), specular(specular) {
         if (glm::length(direction) > 0.0f) {
-            rotation = glm::quatLookAt(
-                glm::normalize(direction),
-                glm::vec3(0.0f, 1.0f, 0.0f)
-            );
+            rotation = glm::quatLookAt(glm::normalize(direction), glm::vec3(0.0f, 1.0f, 0.0f));
         }
     }
 

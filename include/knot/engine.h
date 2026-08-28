@@ -45,7 +45,7 @@ struct TimerTask {
 /**
  * @brief This is the master class for the not engine.
  *
- * It manages the game loop and provides related functionalities, 
+ * It manages the game loop and provides related functionalities,
  * primarily handling application window management, renderer management, scene rendering, event handling, and timer tasks.
  *
  * An Engine must be initialized with init() and have a Scene registered
@@ -87,12 +87,7 @@ public:
      *
      * @return true if initialization succeeds, false otherwise.
      */
-    bool init(
-        int width,
-        int height,
-        const std::string& title,
-        const std::string& assetRoot = ""
-    );
+    bool init(int width, int height, const std::string& title, const std::string& assetRoot = "");
 
     /**
      * @brief Runs the main engine loop.
@@ -114,7 +109,7 @@ public:
      * callbacks, and finally the window and OpenGL context.
      *
      * Calling shutdown() on an already shut down engine has no effect.
-     * 
+     *
      * This function executes automatically before run() terminates, so there is no need to run it manually.
      */
     void shutdown();
@@ -228,11 +223,7 @@ public:
      *
      * @return The unique ID assigned to the timer task.
      */
-    int after(
-        double interval,
-        uint32_t eventCode,
-        std::any eventData = {}
-    );
+    int after(double interval, uint32_t eventCode, std::any eventData = {});
 
     /**
      * @brief Schedules a repeating user event.
@@ -246,11 +237,7 @@ public:
      *
      * @return The unique ID assigned to the timer task.
      */
-    int repeat(
-        double interval,
-        uint32_t eventCode,
-        std::any eventData = {}
-    );
+    int repeat(double interval, uint32_t eventCode, std::any eventData = {});
 
     /**
      * @brief Requests the engine to stop running.
