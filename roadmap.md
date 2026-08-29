@@ -36,6 +36,7 @@
 - [x] IBL Specular
 - [x] Dir Shadow Map
 - [ ] Point Shadow Map
+- [ ] Cascaded Shadow Maps
 
 - [ ] EXR 확장자 지원 (TinyEXR 사용)
 
