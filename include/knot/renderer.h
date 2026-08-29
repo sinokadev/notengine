@@ -81,6 +81,8 @@ public:
     /** @brief Performs frustum culling, batching, and rendering for a scene.
      *  @return false when the renderer has not been initialized. */
     bool renderScene(Scene& scene, float aspectRatio);
+    /** @brief Renders a Shadows. */
+    void renderShadow();
 
     /** @brief Writes the first directional light, or zero lighting, to a shader. */
     void processDirLights(const std::shared_ptr<Shader>& shader, const std::vector<const DirLight*>& dirLights);
