@@ -57,7 +57,7 @@ Fedora
 
    # 라이브러리 릴리즈 빌드
    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-   cmake --build build --target demo
+   cmake --build build --target notengine
    # 설치
    sudo cmake --install build
 
@@ -84,7 +84,7 @@ Visual Studio (MSVC) 사용 시
 
    # 라이브러리 릴리즈 빌드
    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-   cmake --build build --config Release --target demo
+   cmake --build build --config Release --target notengine
 
    # 설치 (설치시 관리자 권한 필요)
    cmake --install build --config Release
@@ -103,7 +103,7 @@ MinGW (GCC) 사용 시
 
    # 라이브러리 릴리즈 빌드
    cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
-   cmake --build build --target demo
+   cmake --build build --target notengine
 
    # 설치 (설치시 관리자 권한 필요)
    cmake --install build
