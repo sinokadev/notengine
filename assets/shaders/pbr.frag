@@ -32,13 +32,13 @@ struct DirLight {
 uniform DirLight dirLight;
 
 struct PointLight {
-    vec4 position;    // 0 ~ 15 바이트
-    vec4 color;       // 16 ~ 31 바이트 (rgb: 색상, a: 밝기)
-    float radius;     // 32 ~ 35 바이트
-    float constant;   // 36 ~ 39 바이트
-    float linear;     // 40 ~ 43 바이트
-    float quadratic;  // 44 ~ 47 바이트
-}; // 명확하게 48바이트 블록으로 떨어짐
+    vec4 position;
+    vec4 color;
+    float radius;
+    float constant;
+    float linear;
+    float quadratic;
+};
 
 layout(std430, binding = 0) readonly buffer LightBuffer {
     PointLight pointLights[]; 

@@ -116,22 +116,18 @@ void Engine::shutdown() {
         return;
     }
 
-    // 1. Scene 자원 정리 (Scene 내 텍스처, 셰이더, 오브젝트 등 OpenGL 리소스 해제)
     if (scene) {
         scene->shutdown();
         scene = nullptr;
     }
 
-    // 2. Renderer 자원 정리 (SSBO, VBO, Skybox 등 OpenGL 리소스 해제)
     Renderer::get().shutdown();
 
-    // 3. 타이머 및 콜백 정리
     eventCallback = nullptr;
     renderLoopCallback = nullptr;
     afterTimerTasks.clear();
     repeatTimerTasks.clear();
 
-    // 4. 모든 GPU 리소스 해제 후 마지막으로 Window 및 OpenGL Context 셧다운
     window.shutdown();
 
     initialized = false;
