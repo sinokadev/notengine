@@ -22,6 +22,7 @@ in vec3 FragPos;
 in vec3 Normal;
 in vec2 TexCoords;
 in mat3 TBN;
+in vec4 LightSpaceFragPos;
 
 struct DirLight {
     vec3 direction;
@@ -65,6 +66,8 @@ uniform samplerCube prefilterMap;
 uniform sampler2D   brdfLUT;
 uniform float       u_MaxReflectionLOD;
 
+uniform sampler2D shadowMap;
+
 #define PI 3.14159265359
 
 float pow5(float x) {
@@ -105,7 +108,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness) {
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-vec3 calcPbrLight(vec3 N, vec3 V, vec3 L, vec3 lightColor, vec3 albedo, float metallic, float alphaRoughness, vec3 f0) {
+vec3 calcPbrLight(vec3 N, vec3 V, vec3 L, vec3 lightColor, vec3 albedo, float metallic, float alphaRoughness, vec3 f0, float shadow) {
     vec3 H = normalize(V + L);
     float NoV = max(dot(N, V), 0.0001);
     float NoL = max(dot(N, L), 0.0);
@@ -121,9 +124,39 @@ vec3 calcPbrLight(vec3 N, vec3 V, vec3 L, vec3 lightColor, vec3 albedo, float me
 
     vec3 kD = (vec3(1.0) - F) * (1.0 - metallic); 
     
-    return (kD * Fd + Fr) * lightColor * NoL;
+    return ((kD * Fd + Fr) * lightColor * NoL) * (1.0 - shadow);
 }
 
+float calcShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
+    vec3 projCoords =
+        lightSpaceFragPos.xyz / lightSpaceFragPos.w;
+
+    projCoords = projCoords * 0.5 + 0.5;
+
+    // Light frustum 밖이면 그림자 없음
+    if (projCoords.z > 1.0 || projCoords.z < 0.0 ||
+        projCoords.x < 0.0 || projCoords.x > 1.0 ||
+        projCoords.y < 0.0 || projCoords.y > 1.0)
+        return 0.0;
+
+    float currentDepth = projCoords.z;
+
+    // 표면 기울기에 따른 적응형 바이어스
+    float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.001);
+
+    // 3x3 PCF 필터링
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
+            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
+            shadow += (currentDepth - bias > pcfDepth) ? 1.0 : 0.0;
+        }
+    }
+    shadow /= 9.0;
+
+    return shadow;
+}
 void main() {
     vec3 V = normalize(u_CameraPos - FragPos);
 
@@ -145,7 +178,7 @@ void main() {
 
     // Directional Light
     vec3 L_dir = normalize(-dirLight.direction);
-    vec3 directLighting = calcPbrLight(N, V, L_dir, dirLight.diffuse, albedo, metallic, alphaRoughness, f0);
+    vec3 directLighting = calcPbrLight(N, V, L_dir, dirLight.diffuse, albedo, metallic, alphaRoughness, f0, calcShadow(LightSpaceFragPos, N, L_dir));
 
     // Fresnel
     float NoV = max(dot(N, V), 0.0);
@@ -187,7 +220,7 @@ void main() {
         // 최종 광도 계산
         vec3 lightColor = lightColorRaw * brightness * attenuation;
         
-        directLighting += calcPbrLight(N, V, L_point, lightColor, albedo, metallic, alphaRoughness, f0);
+        directLighting += calcPbrLight(N, V, L_point, lightColor, albedo, metallic, alphaRoughness, f0, 0.0);
     }
     vec3 finalColor = ambient + directLighting;
 
