@@ -128,33 +128,39 @@ vec3 calcPbrLight(vec3 N, vec3 V, vec3 L, vec3 lightColor, vec3 albedo, float me
 }
 
 float calcShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
-    vec3 projCoords =
-        lightSpaceFragPos.xyz / lightSpaceFragPos.w;
+    vec3 projCoords = lightSpaceFragPos.xyz / lightSpaceFragPos.w;
 
     projCoords = projCoords * 0.5 + 0.5;
 
-    // Light frustum 밖이면 그림자 없음
-    if (projCoords.z > 1.0 || projCoords.z < 0.0 ||
-        projCoords.x < 0.0 || projCoords.x > 1.0 ||
-        projCoords.y < 0.0 || projCoords.y > 1.0)
+    if(projCoords.z > 1.0) {
         return 0.0;
+    }
+
+    float closestDepth = texture(shadowMap, projCoords.xy).r; 
 
     float currentDepth = projCoords.z;
 
-    // 표면 기울기에 따른 적응형 바이어스
-    float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.001);
+    vec3 N = normalize(normal);
 
-    // 3x3 PCF 필터링
+    vec3 L = normalize(lightDir);
+
+    float bias = max(0.005 * (1.0 - dot(N, L)), 0.0005); 
+
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
-    for (int x = -1; x <= 1; ++x) {
-        for (int y = -1; y <= 1; ++y) {
-            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
-            shadow += (currentDepth - bias > pcfDepth) ? 1.0 : 0.0;
-        }
+    for(int x = -1; x <= 1; ++x)
+    {
+        for(int y = -1; y <= 1; ++y)
+        {
+            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
+            shadow += currentDepth - bias > pcfDepth  ? 1.0 : 0.0;        
+        }    
     }
     shadow /= 9.0;
 
+    if(projCoords.z > 1.0)
+        shadow = 0.0;
+        
     return shadow;
 }
 void main() {

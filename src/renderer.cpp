@@ -8,7 +8,7 @@
 
 #define AMBIENT_INTENSITY 1.0f
 
-constexpr unsigned int SHADOW_RESOLUTION = 1024;
+constexpr unsigned int SHADOW_RESOLUTION = 2048;
 
 namespace knot {
 
