@@ -42,7 +42,6 @@ Fedora
 
 .. code-block:: bash
 
-   sudo dnf check-update
    sudo dnf install cmake glfw-devel @development-tools
 
 After installing the required packages, run the following commands to build and install the library.
