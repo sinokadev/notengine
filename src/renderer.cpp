@@ -61,37 +61,23 @@ bool Renderer::init(GLADloadfunc loadProc) {
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
     // depth map bind
-glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 
-glFramebufferTexture2D(
-    GL_FRAMEBUFFER,
-    GL_DEPTH_ATTACHMENT,
-    GL_TEXTURE_2D,
-    depthMap,
-    0
-);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
 
-glDrawBuffer(GL_NONE);
-glReadBuffer(GL_NONE);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
 
-if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-    std::cerr << "[Error] Shadow framebuffer is not complete!\n";
-}
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cerr << "[Error] Shadow framebuffer is not complete!\n";
+    }
 
-glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Shadow Shader
-    auto shadowSource =
-        std::make_shared<ShaderSource>(
-            getAssetRoot() + "assets/shaders/shadow.vert",
-            getAssetRoot() + "assets/shaders/shadow.frag"
-        );
+    auto shadowSource = std::make_shared<ShaderSource>(getAssetRoot() + "assets/shaders/shadow.vert", getAssetRoot() + "assets/shaders/shadow.frag");
 
-    shadowShader =
-        std::make_shared<Shader>(
-            shadowSource,
-            SHADOW_SHADER_ID
-        );
+    shadowShader = std::make_shared<Shader>(shadowSource, SHADOW_SHADER_ID);
 
     initialized = true;
     return true;
@@ -194,20 +180,14 @@ void Renderer::generateBRDFLUT() {
     glDeleteFramebuffers(1, &captureFBO);
 }
 
-void Renderer::beginFrame(int fbWidth, int fbHeight)
-{
+void Renderer::beginFrame(int fbWidth, int fbHeight) {
     if (fbWidth <= 0 || fbHeight <= 0)
         return;
 
     framebufferWidth = fbWidth;
     framebufferHeight = fbHeight;
 
-    glViewport(
-        0,
-        0,
-        framebufferWidth,
-        framebufferHeight
-    );
+    glViewport(0, 0, framebufferWidth, framebufferHeight);
 }
 
 void Renderer::processDirLights(const std::shared_ptr<Shader>& shader, const std::vector<const DirLight*>& dirLights) {
@@ -493,12 +473,7 @@ void Renderer::renderShadow(Scene& scene) {
         lightDir = glm::normalize(lightDir);
     }
 
-    glm::mat4 lightProjection =
-        glm::ortho(
-            -15.0f, 15.0f,
-            -15.0f, 15.0f,
-            0.1f, 30.0f
-        );
+    glm::mat4 lightProjection = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, 0.1f, 30.0f);
 
     glm::vec3 lightPos = -lightDir * 10.0f;
     glm::vec3 target = glm::vec3(0.0f);
@@ -507,44 +482,26 @@ void Renderer::renderShadow(Scene& scene) {
         up = glm::vec3(0.0f, 0.0f, 1.0f);
     }
 
-    glm::mat4 lightView =
-        glm::lookAt(
-            lightPos,
-            target,
-            up
-        );
+    glm::mat4 lightView = glm::lookAt(lightPos, target, up);
 
     // Main Pass에서도 사용할 행렬
-    lightSpaceMatrix =
-        lightProjection * lightView;
+    lightSpaceMatrix = lightProjection * lightView;
 
     // Shadow map 크기로 변경
-    glViewport(
-        0,
-        0,
-        SHADOW_RESOLUTION,
-        SHADOW_RESOLUTION
-    );
+    glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
 
     // Shadow FBO
-    glBindFramebuffer(
-        GL_FRAMEBUFFER,
-        depthMapFBO
-    );
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 
     glClear(GL_DEPTH_BUFFER_BIT);
 
     // Shadow shader
     shadowShader->use();
 
-    shadowShader->set(
-        "lightSpaceMatrix",
-        lightSpaceMatrix
-    );
+    shadowShader->set("lightSpaceMatrix", lightSpaceMatrix);
 
     // 모든 오브젝트를 광원 시점에서 렌더
-    for (const auto& object :
-         scene.getObjectManager().getObjects()) {
+    for (const auto& object : scene.getObjectManager().getObjects()) {
 
         if (!object->model)
             continue;
@@ -552,39 +509,22 @@ void Renderer::renderShadow(Scene& scene) {
         if (!object->model->mesh)
             continue;
 
-        auto mesh =
-            object->model->mesh;
+        auto mesh = object->model->mesh;
 
         if (!mesh->isReady())
             continue;
 
-        shadowShader->set(
-            "model",
-            object->getWorldMatrix()
-        );
+        shadowShader->set("model", object->getWorldMatrix());
 
         glBindVertexArray(mesh->vao);
 
-        glDrawElements(
-            GL_TRIANGLES,
-            mesh->indexCount,
-            GL_UNSIGNED_INT,
-            nullptr
-        );
+        glDrawElements(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, nullptr);
     }
 
     glBindVertexArray(0);
 
-    glBindFramebuffer(
-        GL_FRAMEBUFFER,
-        0
-    );
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    glViewport(
-        0,
-        0,
-        framebufferWidth,
-        framebufferHeight
-    );
+    glViewport(0, 0, framebufferWidth, framebufferHeight);
 }
 } // namespace knot
