@@ -1,30 +1,33 @@
 ================
-시작하기
+Getting Started
 ================
 
-이 문서는 Not Engine을 처음 접하는 사람들을 위해 빌드하고 데모를 실행하는 방법과 기본적인 기능을 안내합니다.
+This document provides instructions for building Not Engine, running the demos,
+and an overview of its basic features for users who are new to Not Engine.
 
 --------------------------------
-설치하기
+Installation
 --------------------------------
 
-아직 사전 빌드된 바이너리를 제공하지 않기 때문에 직접 빌드해야 합니다.
+Not Engine does not currently provide pre-built binaries, so you must build it yourself.
 
-요구사항
+Requirements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- OpenGL 4.3 이상을 지원하는 그래픽 카드
+- A graphics card that supports OpenGL 4.3 or later
 
-빌드
+Building
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. note::
-   이 엔진은 현재 Linux 환경에서만 테스트되었습니다. Windows나 macOS 환경에서의 동작 및 안정성은 보장되지 않습니다.
 
-Linux (권장)
+   Not Engine has currently only been tested on Linux.
+   Operation and stability on Windows and macOS are not guaranteed.
+
+Linux (Recommended)
 --------------------------------
 
-빌드를 하기 위해서는 ``cmake``\ 와 ``glfw3`` 패키지가 필요합니다.
+CMake and the ``glfw3`` package are required to build Not Engine.
 
 Debian/Ubuntu
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -42,79 +45,106 @@ Fedora
    sudo dnf check-update
    sudo dnf install cmake glfw-devel @development-tools
 
-패키지 설치를 완료하였다면 아래 명령어를 입력하여 빌드하고 설치할 수 있습니다.
+After installing the required packages, run the following commands to build and install the library.
 
 .. code-block:: bash
 
-   # 라이브러리 릴리즈 빌드
+   # Build the library in Release mode
    ./script/library_release_build.sh
-   # 설치
+
+   # Install
    sudo cmake --install build
 
-또는 cmake를 직접 사용해서
+To build and run the demos, run the following commands.
 
 .. code-block:: bash
 
-   # 라이브러리 릴리즈 빌드
-   cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-   cmake --build build --target notengine
-   # 설치
-   sudo cmake --install build
+   # Build the demos
+   ./script/demo_release_build.sh
+
+   # Run the default demo
+   ./build/demo
+
+   # Scene file rendering demo
+   ./build/scene_render
+
+   # Benchmark
+   ./build/benchmark
+
+The demo build script automatically builds the library when necessary,
+so you do not need to build or install the library beforehand when you only want to run the demos.
 
 Windows
 --------------------------------
 
-빌드를 하기 위해서는 CMake와 GLFW가 필요합니다.
+.. warning::
 
-- **CMake**: `cmake.org <https://cmake.org/download/>`_ 에서 설치 가능
+   The Windows build instructions have not been tested and may not work correctly.
+
+CMake and GLFW are required to build Not Engine.
+
+- **CMake**: Available from `cmake.org <https://cmake.org/download/>`_
+
 - **GLFW**:
-  
-  - vcpkg 사용 (권장):
-    
-    .. code-block:: powershell
-    
-       vcpkg install glfw3:x64-windows
-  
-  - 공식 바이너리: `glfw.org <https://www.glfw.org/download.html>`_ 에서 Windows용 사전 빌드된 바이너리 다운로드
 
-Visual Studio (MSVC) 사용 시
+  - Using vcpkg (recommended):
+
+    .. code-block:: powershell
+
+       vcpkg install glfw3:x64-windows
+
+  - Official binaries:
+    Download the pre-built Windows binaries from
+    `glfw.org <https://www.glfw.org/download.html>`_
+
+Visual Studio (MSVC)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: powershell
 
-   # 라이브러리 릴리즈 빌드
+   # Build the library in Release mode
    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
    cmake --build build --config Release --target notengine
 
-   # 설치 (설치시 관리자 권한 필요)
+   # Install (administrator privileges required)
    cmake --install build --config Release
 
 .. tip::
-   vcpkg로 GLFW를 설치했다면 1번 Configure 단계에 toolchain 옵션을 추가하세요.
+
+   If you installed GLFW using vcpkg, add the toolchain option during the Configure step.
 
 .. code-block:: powershell
 
-   cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="[vcpkg 설치경로]/scripts/buildsystems/vcpkg.cmake"
+   cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="[vcpkg installation path]/scripts/buildsystems/vcpkg.cmake"
 
-MinGW (GCC) 사용 시
+MinGW (GCC)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: powershell
 
-   # 라이브러리 릴리즈 빌드
+   # Build the library in Release mode
    cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+
    cmake --build build --target notengine
 
-   # 설치 (설치시 관리자 권한 필요)
+   # Install (administrator privileges required)
    cmake --install build
 
 macOS
 --------------------------------
 
 .. warning::
-   macOS는 OpenGL 4.1까지만 지원하므로 OpenGL 4.3 이상을 요구하는 Not Engine을 사용할 수 없습니다.
 
-   만약 Not Engine이 Vulkan을 지원하게 되더라도 macOS는 Metal을 제외한 모든 그래픽 API를 지원하지 않고, Vulkan 또한 직접적으로 지원하지 않기 때문에 MoltenVK를 사용하지 않는 한 사용이 불가능합니다. 우리는 아직까지 공식적으로 macOS를 지원하지 않으므로 macOS에서의 빌드에 관한 가이드를 지원하지 않을 겁니다.
+   macOS only supports OpenGL up to version 4.1, so Not Engine,
+   which requires OpenGL 4.3 or later, cannot currently be used on macOS.
+
+   Even if Not Engine supports Vulkan in the future, macOS does not provide
+   native Vulkan support. Therefore, a compatibility layer such as MoltenVK
+   would be required.
+
+   Not Engine does not officially support macOS at this time,
+   so no separate guide for building on macOS is provided.
 
 .. toctree::
    :maxdepth: 2
