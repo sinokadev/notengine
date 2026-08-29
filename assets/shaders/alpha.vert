@@ -11,12 +11,14 @@ layout (location = 4) in mat4 instanceModel;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
+uniform mat4 lightSpaceMatrix;
 uniform bool u_IsInstanced;
 
 out vec3 FragPos;
 out vec2 TexCoords;
 out vec3 Normal;
 out mat3 TBN;
+out vec4 LightSpaceFragPos;
 
 void main()
 {
@@ -44,6 +46,8 @@ void main()
     TBN = mat3(T, B, N);
 
     TexCoords = aTexCoords;
+
+    LightSpaceFragPos = lightSpaceMatrix * vec4(FragPos, 1.0);
 
     gl_Position = projection * view * modelMatrix * vec4(aPos, 1.0);
 }

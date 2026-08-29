@@ -85,7 +85,7 @@ public:
      *  @return false when the renderer has not been initialized. */
     bool renderScene(Scene& scene, float aspectRatio);
     /** @brief Renders a Shadows. */
-    void renderShadow();
+    void renderShadow(Scene& scene);
 
     /** @brief Writes the first directional light, or zero lighting, to a shader. */
     void processDirLights(const std::shared_ptr<Shader>& shader, const std::vector<const DirLight*>& dirLights);
@@ -146,5 +146,16 @@ private:
 
     /** @brief Vertex buffer object for the fullscreen quad. */
     GLuint quadVBO = 0;
+
+    unsigned int depthMapFBO;
+    unsigned int depthMap;
+
+    static constexpr unsigned int SHADOW_SHADER_ID = 999997;
+
+    std::shared_ptr<Shader> shadowShader;
+    glm::mat4 lightSpaceMatrix{1.0f};
+
+    int framebufferWidth;
+    int framebufferHeight;
 };
 } // namespace knot

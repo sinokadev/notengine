@@ -6,7 +6,9 @@
 #include <cassert>
 #include <knot/mesh.h>
 
-#define AMBIENT_INTENSITY 10.0f
+#define AMBIENT_INTENSITY 1.0f
+
+constexpr unsigned int SHADOW_RESOLUTION = 1024;
 
 namespace knot {
 
@@ -22,11 +24,13 @@ Renderer::~Renderer() {
 bool Renderer::init(GLADloadfunc loadProc) {
     std::cout << "[Info] Not Engine Renderer Init" << std::endl;
 
+    // Load GL
     if (!gladLoadGL(loadProc)) {
         std::cerr << "[Error] Failed to load OpenGL functions" << std::endl;
         return false;
     }
 
+    // GL Config
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_CULL_FACE);
@@ -35,11 +39,59 @@ bool Renderer::init(GLADloadfunc loadProc) {
     glGenBuffers(1, &lightSSBO);
     glGenBuffers(1, &instanceVBO);
 
+    // Sky Map and IBL
     skyboxMesh = createCube();
     auto skyboxSource = std::make_shared<ShaderSource>(getAssetRoot() + "assets/shaders/skybox.vert", getAssetRoot() + "assets/shaders/skybox.frag");
     skyboxShader = std::make_shared<Shader>(skyboxSource, SKYBOX_SHADER_ID);
 
     generateBRDFLUT();
+
+    // Shadow Map
+    glGenFramebuffers(1, &depthMapFBO);
+
+    // depth map texture gen
+    glGenTextures(1, &depthMap);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+    // depth map bind
+glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+
+glFramebufferTexture2D(
+    GL_FRAMEBUFFER,
+    GL_DEPTH_ATTACHMENT,
+    GL_TEXTURE_2D,
+    depthMap,
+    0
+);
+
+glDrawBuffer(GL_NONE);
+glReadBuffer(GL_NONE);
+
+if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+    std::cerr << "[Error] Shadow framebuffer is not complete!\n";
+}
+
+glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // Shadow Shader
+    auto shadowSource =
+        std::make_shared<ShaderSource>(
+            getAssetRoot() + "assets/shaders/shadow.vert",
+            getAssetRoot() + "assets/shaders/shadow.frag"
+        );
+
+    shadowShader =
+        std::make_shared<Shader>(
+            shadowSource,
+            SHADOW_SHADER_ID
+        );
 
     initialized = true;
     return true;
@@ -142,10 +194,20 @@ void Renderer::generateBRDFLUT() {
     glDeleteFramebuffers(1, &captureFBO);
 }
 
-void Renderer::beginFrame(int framebufferWidth, int framebufferHeight) {
-    if (framebufferWidth <= 0 || framebufferHeight <= 0)
+void Renderer::beginFrame(int fbWidth, int fbHeight)
+{
+    if (fbWidth <= 0 || fbHeight <= 0)
         return;
-    glViewport(0, 0, framebufferWidth, framebufferHeight);
+
+    framebufferWidth = fbWidth;
+    framebufferHeight = fbHeight;
+
+    glViewport(
+        0,
+        0,
+        framebufferWidth,
+        framebufferHeight
+    );
 }
 
 void Renderer::processDirLights(const std::shared_ptr<Shader>& shader, const std::vector<const DirLight*>& dirLights) {
@@ -323,6 +385,7 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     if (!initialized)
         return false;
 
+    // var
     const auto& camera = scene.getCamera();
     auto& objectManager = scene.getObjectManager();
     auto& lightManager = scene.getLightManager();
@@ -330,14 +393,19 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     const auto dirLights = lightManager.getDirLights();
     const auto pointLights = lightManager.getPointLights();
 
+    // render
+    renderShadow(scene);
+
     renderSkybox(scene.getCubeMap(), camera, aspectRatio);
 
     processPointLights(pointLights);
 
+    // object render
     std::unordered_map<const Model*, std::vector<VisibleInstance>> instanceGroups;
 
     const Frustum& frustum = camera.getFrustum(aspectRatio);
 
+    // 인스턴스하는것만 골라내기
     for (const auto& object : objectManager.getObjects()) {
         if (!object->model)
             continue;
@@ -353,6 +421,7 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
         instanceGroups[object->model.get()].push_back(VisibleInstance{object.get(), worldMatrix});
     }
 
+    // 실제 오브젝트 렌더
     for (const auto& [modelKey, instances] : instanceGroups) {
         if (instances.empty())
             continue;
@@ -370,29 +439,36 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
 
         shader->set("u_ActivePointLightCount", static_cast<int>(pointLights.size()));
 
-        // 기존 Irradiance Map (Diffuse IBL)
+        // Irradiance Map
         glActiveTexture(GL_TEXTURE8);
         glBindTexture(GL_TEXTURE_CUBE_MAP, scene.getIrradianceMap());
         shader->set("irradianceMap", 8);
 
-        // === 신규: Prefilter Map (Specular IBL) ===
+        // Prefilter Map
         glActiveTexture(GL_TEXTURE9);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, scene.getPrefilterMap()); // Scene 클래스에 getPrefilterMap() 추가 필요
+        glBindTexture(GL_TEXTURE_CUBE_MAP, scene.getPrefilterMap());
         shader->set("prefilterMap", 9);
 
-        // === 신규: 구워둔 BRDF LUT (2D Texture) ===
+        // BRDF LUT
         glActiveTexture(GL_TEXTURE10);
         glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
         shader->set("brdfLUT", 10);
 
-        // Max Mipmap Level 유니폼 전달
-        shader->set("u_MaxReflectionLOD", 4.0f); // Prefilter Mipmap 최대 레벨에 맞춰 설정
+        // 유니폼
+        shader->set("u_MaxReflectionLOD", 4.0f);
 
         shader->set("u_AmbientIntensity", AMBIENT_INTENSITY);
 
-        if (instances.size() >= INSTANCE_THRESHOLD) {
+        // Shadow Map
+        glActiveTexture(GL_TEXTURE11);
+        glBindTexture(GL_TEXTURE_2D, depthMap);
+
+        shader->set("shadowMap", 11);
+        shader->set("lightSpaceMatrix", lightSpaceMatrix);
+
+        if (instances.size() >= INSTANCE_THRESHOLD) { // 인스턴싱 할때
             renderInstanced(model, instances, camera, aspectRatio);
-        } else {
+        } else { // 인스턴싱 안 할때
             for (const auto& inst : instances) {
                 renderObject(inst, camera, aspectRatio);
             }
@@ -402,4 +478,113 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     return true;
 }
 
+void Renderer::renderShadow(Scene& scene) {
+    if (!shadowShader || !shadowShader->isValid())
+        return;
+
+    const auto dirLights = scene.getLightManager().getDirLights();
+    glm::vec3 lightDir(0.0f, -1.0f, 0.0f);
+    if (!dirLights.empty()) {
+        lightDir = dirLights.front()->getDirection();
+    }
+    if (glm::length(lightDir) < 0.0001f) {
+        lightDir = glm::vec3(0.0f, -1.0f, 0.0f);
+    } else {
+        lightDir = glm::normalize(lightDir);
+    }
+
+    glm::mat4 lightProjection =
+        glm::ortho(
+            -15.0f, 15.0f,
+            -15.0f, 15.0f,
+            0.1f, 30.0f
+        );
+
+    glm::vec3 lightPos = -lightDir * 10.0f;
+    glm::vec3 target = glm::vec3(0.0f);
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    if (std::abs(glm::dot(lightDir, up)) > 0.99f) {
+        up = glm::vec3(0.0f, 0.0f, 1.0f);
+    }
+
+    glm::mat4 lightView =
+        glm::lookAt(
+            lightPos,
+            target,
+            up
+        );
+
+    // Main Pass에서도 사용할 행렬
+    lightSpaceMatrix =
+        lightProjection * lightView;
+
+    // Shadow map 크기로 변경
+    glViewport(
+        0,
+        0,
+        SHADOW_RESOLUTION,
+        SHADOW_RESOLUTION
+    );
+
+    // Shadow FBO
+    glBindFramebuffer(
+        GL_FRAMEBUFFER,
+        depthMapFBO
+    );
+
+    glClear(GL_DEPTH_BUFFER_BIT);
+
+    // Shadow shader
+    shadowShader->use();
+
+    shadowShader->set(
+        "lightSpaceMatrix",
+        lightSpaceMatrix
+    );
+
+    // 모든 오브젝트를 광원 시점에서 렌더
+    for (const auto& object :
+         scene.getObjectManager().getObjects()) {
+
+        if (!object->model)
+            continue;
+
+        if (!object->model->mesh)
+            continue;
+
+        auto mesh =
+            object->model->mesh;
+
+        if (!mesh->isReady())
+            continue;
+
+        shadowShader->set(
+            "model",
+            object->getWorldMatrix()
+        );
+
+        glBindVertexArray(mesh->vao);
+
+        glDrawElements(
+            GL_TRIANGLES,
+            mesh->indexCount,
+            GL_UNSIGNED_INT,
+            nullptr
+        );
+    }
+
+    glBindVertexArray(0);
+
+    glBindFramebuffer(
+        GL_FRAMEBUFFER,
+        0
+    );
+
+    glViewport(
+        0,
+        0,
+        framebufferWidth,
+        framebufferHeight
+    );
+}
 } // namespace knot
