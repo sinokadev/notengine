@@ -34,7 +34,8 @@
 - [x] 스카이박스 구현하기
 - [x] IBL Diffuse
 - [x] IBL Specular
-- [ ] 그림자 매핑 구현하기
+- [x] Dir Shadow Map
+- [ ] Point Shadow Map
 
 - [ ] EXR 확장자 지원 (TinyEXR 사용)
 
