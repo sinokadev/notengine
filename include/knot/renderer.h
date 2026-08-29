@@ -39,6 +39,9 @@ struct GPUMovingPointLight {
 /** @brief OpenGL renderer for scenes, meshes, lights, and skyboxes. */
 class Renderer {
 public:
+
+    /** @brief Get the singleton instance of the Renderer.
+     * @return Reference to the single Renderer instance. */
     static Renderer& get();
 
     /**
