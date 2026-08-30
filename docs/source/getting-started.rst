@@ -78,7 +78,7 @@ Windows
 
 .. warning::
 
-   The Windows build instructions have not been tested and may not work correctly.
+   The Windows build instructions are currently not functional.
 
 CMake and GLFW are required to build Not Engine.
 
