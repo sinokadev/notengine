@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 SinokaDev
+
 #pragma once
 
 #define GAME_VERSION_MAJOR @GAME_VERSION_MAJOR @
