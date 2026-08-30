@@ -135,15 +135,7 @@ macOS
 
 .. warning::
 
-   macOS only supports OpenGL up to version 4.1, so Not Engine,
-   which requires OpenGL 4.3 or later, cannot currently be used on macOS.
-
-   Even if Not Engine supports Vulkan in the future, macOS does not provide
-   native Vulkan support. Therefore, a compatibility layer such as MoltenVK
-   would be required.
-
-   Not Engine does not officially support macOS at this time,
-   so no separate guide for building on macOS is provided.
+   Due to Apple's restrictive platform policies, macOS supports OpenGL only up to version 4.1. Not Engine requires OpenGL 4.3 or later and therefore cannot be used on macOS.
 
 .. toctree::
    :maxdepth: 2
