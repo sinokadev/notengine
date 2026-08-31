@@ -92,39 +92,38 @@ CMake and GLFW are required to build Not Engine.
     Download the pre-built Windows binaries from
     `glfw.org <https://www.glfw.org/download.html>`_
 
-Visual Studio (MSVC)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. tip::
+
+   If you installed GLFW using vcpkg, run ``vcpkg integrate install`` so CMake can automatically locate installed packages.
+
+After installing the required tools and dependencies, run the following commands to build and install the library.
 
 .. code-block:: powershell
 
    # Build the library in Release mode
-   cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-
-   cmake --build build --config Release --target notengine
+   .\script\library_release_build.bat
 
    # Install (administrator privileges required)
    cmake --install build --config Release
 
-.. tip::
-
-   If you installed GLFW using vcpkg, add the toolchain option during the Configure step.
+To build and run the demos, run the following commands.
 
 .. code-block:: powershell
 
-   cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="[vcpkg installation path]/scripts/buildsystems/vcpkg.cmake"
+   # Build the demos
+   .\script\demo_release_build.bat
 
-MinGW (GCC)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   # Run the default demo
+   .\build\Release\demo.exe
 
-.. code-block:: powershell
+   # Scene file rendering demo
+   .\build\Release\scene_render.exe
 
-   # Build the library in Release mode
-   cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+   # Benchmark
+   .\build\Release\benchmark.exe
 
-   cmake --build build --target notengine
-
-   # Install (administrator privileges required)
-   cmake --install build
+The demo build script automatically builds the library when necessary,
+so you do not need to build or install the library beforehand when you only want to run the demos.
 
 macOS
 --------------------------------
