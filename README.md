@@ -6,13 +6,7 @@ A code-first game engine built on OpenGL, empowering you to build everything fro
 
 **PRs and issues are welcome!**
 
-### Upgrade Now
-If you are using version 0.1.6 or earlier, upgrade to version 0.1.7.1 or later immediately.
-
-Versions 0.1.6 and earlier have a critical issue where resources are not automatically cleaned up upon termination, leading to memory leaks. **Please upgrade immediately.**
-
-<img width="1282" height="749" alt="image" src="/images/626650067-de731f10-f17b-42cb-a143-d4fbbff1a457.png" /><br>
-<sub>demo/demo.cpp</sub>
+<img width="1282" height="749" alt="image" src="/images/shadowmap.png" /><br>
 
 ## Supported Features
 
