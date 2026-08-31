@@ -152,7 +152,7 @@ public:
      *
      * @return The framebuffer width-to-height ratio.
      *
-     * @retval 1.0f If the framebuffer width or height is zero or negative.
+     * @retval -1.0f If the framebuffer width or height is zero or negative.
      */
     float getAspectRatio() const;
 
