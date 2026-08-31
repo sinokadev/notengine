@@ -10,14 +10,14 @@
 
 1. 원하는 타이밍에 재생
 오디오는 미리 로드해두자
-Sound file1 = engine.getAudio().load("file.mp3")
-Sound file2 = engine.getAudio().load("file.wav")
+engine.getAudio().load("file.mp3", "audio_name")
+engine.getAudio().load("file.wav", "audio_name1")
 
-engine.getAudio().play(file1, "any_group_name", 볼륨, 피치, 루프여부)
+engine.getAudio().play("audio_name", "any_group_name", 볼륨, 피치, 루프여부)
 
-audio.stopGroup("any_group_name") (해당 그룹에 속한 모든 오디오 중지)
-audio.stop(file1) (해당 오디오 이름인 모든 오디오 중지)
-audio.stopInGroup(file1, "any_group_name") (해당 그룹에 속한 해당 오디오 이름의 오디오만 정지)
+audio.stopGroup("group name") (해당 그룹에 속한 모든 오디오 중지)
+audio.stop("audio_name") (해당 오디오 이름인 모든 오디오 중지)
+audio.stopInGroup("audio_name", "group name") (해당 그룹에 속한 해당 오디오 이름의 오디오만 정지)
 
 하나의 그룹에서는 같은 오디오를 한번만 재생 가능
 
