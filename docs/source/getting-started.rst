@@ -76,10 +76,6 @@ so you do not need to build or install the library beforehand when you only want
 Windows
 --------------------------------
 
-.. warning::
-
-   The Windows build instructions are currently not functional.
-
 CMake and GLFW are required to build Not Engine.
 
 - **CMake**: Available from `cmake.org <https://cmake.org/download/>`_
