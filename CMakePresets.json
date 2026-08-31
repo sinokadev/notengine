@@ -1,0 +1,166 @@
+{
+    "version": 6,
+
+    "configurePresets": [
+        {
+            "name": "ninja-debug",
+            "displayName": "Ninja - Debug",
+            "description": "Configure using Ninja on Ninja (Debug)",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/ninja-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "ninja-release",
+            "displayName": "Ninja - Release",
+            "description": "Configure using Ninja on Ninja (Release)",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/ninja-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+
+        {
+            "name": "vs2022",
+            "displayName": "Visual Studio 2022",
+            "description": "Configure using Visual Studio 2022",
+            "generator": "Visual Studio 17 2022",
+            "binaryDir": "${sourceDir}/build/vs2022",
+            "architecture": "x64"
+        },
+        {
+            "name": "vs2026",
+            "displayName": "Visual Studio 2026",
+            "description": "Configure using Visual Studio 2026",
+            "generator": "Visual Studio 18 2026",
+            "binaryDir": "${sourceDir}/build/vs2026",
+            "architecture": "x64"
+        }
+    ],
+
+    "buildPresets": [
+        {
+            "name": "ninja-debug-notengine",
+            "displayName": "Ninja Debug - notengine",
+            "configurePreset": "ninja-debug",
+            "targets": [
+                "notengine"
+            ]
+        },
+        {
+            "name": "ninja-release-notengine",
+            "displayName": "Ninja Release - notengine",
+            "configurePreset": "ninja-release",
+            "targets": [
+                "notengine"
+            ]
+        },
+        {
+            "name": "ninja-debug-all",
+            "displayName": "Ninja Debug - All",
+            "configurePreset": "ninja-debug",
+            "targets": [
+                "demo",
+                "benchmark",
+                "scene_render"
+            ]
+        },
+        {
+            "name": "ninja-release-all",
+            "displayName": "Ninja Release - All",
+            "configurePreset": "ninja-release",
+            "targets": [
+                "demo",
+                "benchmark",
+                "scene_render"
+            ]
+        },
+
+        {
+            "name": "vs2022-debug-notengine",
+            "displayName": "VS 2022 Debug - notengine",
+            "configurePreset": "vs2022",
+            "configuration": "Debug",
+            "targets": [
+                "notengine"
+            ]
+        },
+        {
+            "name": "vs2022-release-notengine",
+            "displayName": "VS 2022 Release - notengine",
+            "configurePreset": "vs2022",
+            "configuration": "Release",
+            "targets": [
+                "notengine"
+            ]
+        },
+        {
+            "name": "vs2022-debug-all",
+            "displayName": "VS 2022 Debug - All",
+            "configurePreset": "vs2022",
+            "configuration": "Debug",
+            "targets": [
+                "demo",
+                "benchmark",
+                "scene_render"
+            ]
+        },
+        {
+            "name": "vs2022-release-all",
+            "displayName": "VS 2022 Release - All",
+            "configurePreset": "vs2022",
+            "configuration": "Release",
+            "targets": [
+                "demo",
+                "benchmark",
+                "scene_render"
+            ]
+        },
+
+        {
+            "name": "vs2026-debug-notengine",
+            "displayName": "VS 2026 Debug - notengine",
+            "configurePreset": "vs2026",
+            "configuration": "Debug",
+            "targets": [
+                "notengine"
+            ]
+        },
+        {
+            "name": "vs2026-release-notengine",
+            "displayName": "VS 2026 Release - notengine",
+            "configurePreset": "vs2026",
+            "configuration": "Release",
+            "targets": [
+                "notengine"
+            ]
+        },
+        {
+            "name": "vs2026-debug-all",
+            "displayName": "VS 2026 Debug - All",
+            "configurePreset": "vs2026",
+            "configuration": "Debug",
+            "targets": [
+                "demo",
+                "benchmark",
+                "scene_render"
+            ]
+        },
+        {
+            "name": "vs2026-release-all",
+            "displayName": "VS 2026 Release - All",
+            "configurePreset": "vs2026",
+            "configuration": "Release",
+            "targets": [
+                "demo",
+                "benchmark",
+                "scene_render"
+            ]
+        }
+    ]
+}
