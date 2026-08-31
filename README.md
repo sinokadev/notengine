@@ -4,6 +4,8 @@
 
 A code-first game engine built on OpenGL, empowering you to build everything from scratch with clean, simple code.
 
+**PRs and issues are welcome!**
+
 ### Upgrade Now
 If you are using version 0.1.6 or earlier, upgrade to version 0.1.7.1 or later immediately.
 
