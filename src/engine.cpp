@@ -177,7 +177,7 @@ float Engine::getAspectRatio() const {
     const int framebufferWidth = window.getFramebufferWidth();
     const int framebufferHeight = window.getFramebufferHeight();
     if (framebufferWidth <= 0 || framebufferHeight <= 0) {
-        return 1.0f;
+        return -1.0f;
     }
 
     return static_cast<float>(framebufferWidth) / static_cast<float>(framebufferHeight);
