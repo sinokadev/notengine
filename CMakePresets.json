@@ -5,7 +5,7 @@
         {
             "name": "ninja-debug",
             "displayName": "Ninja - Debug",
-            "description": "Configure using Ninja on Ninja (Debug)",
+            "description": "Configure using Ninja (Debug)",
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/build/ninja-debug",
             "cacheVariables": {
@@ -16,9 +16,43 @@
         {
             "name": "ninja-release",
             "displayName": "Ninja - Release",
-            "description": "Configure using Ninja on Ninja (Release)",
+            "description": "Configure using Ninja (Release)",
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/build/ninja-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+
+        {
+            "name": "ninja-multi",
+            "displayName": "Ninja Multi-Config",
+            "description": "Configure using Ninja Multi-Config",
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "${sourceDir}/build/ninja-multi",
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+
+        {
+            "name": "make-debug",
+            "displayName": "Make - Debug",
+            "description": "Configure using Unix Makefiles (Debug)",
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build/make-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "make-release",
+            "displayName": "Make - Release",
+            "description": "Configure using Unix Makefiles (Release)",
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build/make-release",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
@@ -74,6 +108,84 @@
             "name": "ninja-release-all",
             "displayName": "Ninja Release - All",
             "configurePreset": "ninja-release",
+            "targets": [
+                "demo",
+                "benchmark",
+                "scene_render"
+            ]
+        },
+
+        {
+            "name": "ninja-multi-debug-notengine",
+            "displayName": "Ninja Multi-Config Debug - notengine",
+            "configurePreset": "ninja-multi",
+            "configuration": "Debug",
+            "targets": [
+                "notengine"
+            ]
+        },
+        {
+            "name": "ninja-multi-release-notengine",
+            "displayName": "Ninja Multi-Config Release - notengine",
+            "configurePreset": "ninja-multi",
+            "configuration": "Release",
+            "targets": [
+                "notengine"
+            ]
+        },
+        {
+            "name": "ninja-multi-debug-all",
+            "displayName": "Ninja Multi-Config Debug - All",
+            "configurePreset": "ninja-multi",
+            "configuration": "Debug",
+            "targets": [
+                "demo",
+                "benchmark",
+                "scene_render"
+            ]
+        },
+        {
+            "name": "ninja-multi-release-all",
+            "displayName": "Ninja Multi-Config Release - All",
+            "configurePreset": "ninja-multi",
+            "configuration": "Release",
+            "targets": [
+                "demo",
+                "benchmark",
+                "scene_render"
+            ]
+        },
+
+        {
+            "name": "make-debug-notengine",
+            "displayName": "Make Debug - notengine",
+            "configurePreset": "make-debug",
+            "targets": [
+                "notengine"
+            ]
+        },
+        {
+            "name": "make-release-notengine",
+            "displayName": "Make Release - notengine",
+            "configurePreset": "make-release",
+            "targets": [
+                "notengine"
+            ]
+        },
+        {
+            "name": "make-debug-all",
+            "displayName": "Make Debug - All",
+            "configurePreset": "make-debug",
+            "targets": [
+                "demo",
+                "benchmark",
+                "scene_render"
+            ]
+        },
+        {
+            "name": "make-release-all",
+            "displayName": "Make Release - All",
+            "configurePreset": "make-release",
             "targets": [
                 "demo",
                 "benchmark",
