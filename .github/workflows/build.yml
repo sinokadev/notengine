@@ -1,0 +1,89 @@
+name: Build Not Engine
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    name: Linux / ${{ matrix.preset }}
+    runs-on: ubuntu-24.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        preset:
+          - ninja-debug
+          - ninja-release
+          - ninja-multi
+          - make-debug
+          - make-release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            cmake \
+            ninja-build \
+            libglfw3-dev \
+            build-essential
+
+      - name: Configure
+        run: cmake --preset ${{ matrix.preset }}
+
+      - name: Build library
+        run: cmake --build --preset ${{ matrix.preset }}-notengine
+
+      - name: Build demos
+        run: cmake --build --preset ${{ matrix.preset }}-all
+
+  windows-vs2022:
+    name: Windows / VS2022
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install GLFW
+        shell: pwsh
+        run: |
+          vcpkg install glfw3:x64-windows
+          vcpkg integrate install
+
+      - name: Configure
+        run: cmake --preset vs2022
+
+      - name: Build library
+        run: cmake --build --preset vs2022-release-notengine
+
+      - name: Build demos
+        run: cmake --build --preset vs2022-release-all
+
+  windows-vs2026:
+    name: Windows / VS2026
+    runs-on: windows-2025-vs2026
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install GLFW
+        shell: pwsh
+        run: |
+          vcpkg install glfw3:x64-windows
+          vcpkg integrate install
+
+      - name: Configure
+        run: cmake --preset vs2026
+
+      - name: Build library
+        run: cmake --build --preset vs2026-release-notengine
+
+      - name: Build demos
+        run: cmake --build --preset vs2026-release-all
