@@ -80,10 +80,11 @@ jobs:
         shell: pwsh
         run: |
           vcpkg install glfw3:x64-windows
-          vcpkg integrate install
 
       - name: Configure
-        run: cmake --preset vs2022
+        run: >
+          cmake --preset vs2022
+          -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
 
       - name: Build Debug
         run: |
@@ -107,10 +108,11 @@ jobs:
         shell: pwsh
         run: |
           vcpkg install glfw3:x64-windows
-          vcpkg integrate install
 
       - name: Configure
-        run: cmake --preset vs2026
+        run: >
+          cmake --preset vs2026
+          -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
 
       - name: Build Debug
         run: |
