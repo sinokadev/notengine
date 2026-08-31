@@ -36,11 +36,37 @@ jobs:
       - name: Configure
         run: cmake --preset ${{ matrix.preset }}
 
-      - name: Build library
-        run: cmake --build --preset ${{ matrix.preset }}-notengine
+      - name: Build
+        if: matrix.preset == 'ninja-debug'
+        run: |
+          cmake --build --preset ninja-debug-notengine
+          cmake --build --preset ninja-debug-all
 
-      - name: Build demos
-        run: cmake --build --preset ${{ matrix.preset }}-all
+      - name: Build
+        if: matrix.preset == 'ninja-release'
+        run: |
+          cmake --build --preset ninja-release-notengine
+          cmake --build --preset ninja-release-all
+
+      - name: Build
+        if: matrix.preset == 'ninja-multi'
+        run: |
+          cmake --build --preset ninja-multi-debug-notengine
+          cmake --build --preset ninja-multi-debug-all
+          cmake --build --preset ninja-multi-release-notengine
+          cmake --build --preset ninja-multi-release-all
+
+      - name: Build
+        if: matrix.preset == 'make-debug'
+        run: |
+          cmake --build --preset make-debug-notengine
+          cmake --build --preset make-debug-all
+
+      - name: Build
+        if: matrix.preset == 'make-release'
+        run: |
+          cmake --build --preset make-release-notengine
+          cmake --build --preset make-release-all
 
   windows-vs2022:
     name: Windows / VS2022
@@ -59,11 +85,15 @@ jobs:
       - name: Configure
         run: cmake --preset vs2022
 
-      - name: Build library
-        run: cmake --build --preset vs2022-release-notengine
+      - name: Build Debug
+        run: |
+          cmake --build --preset vs2022-debug-notengine
+          cmake --build --preset vs2022-debug-all
 
-      - name: Build demos
-        run: cmake --build --preset vs2022-release-all
+      - name: Build Release
+        run: |
+          cmake --build --preset vs2022-release-notengine
+          cmake --build --preset vs2022-release-all
 
   windows-vs2026:
     name: Windows / VS2026
@@ -82,8 +112,12 @@ jobs:
       - name: Configure
         run: cmake --preset vs2026
 
-      - name: Build library
-        run: cmake --build --preset vs2026-release-notengine
+      - name: Build Debug
+        run: |
+          cmake --build --preset vs2026-debug-notengine
+          cmake --build --preset vs2026-debug-all
 
-      - name: Build demos
-        run: cmake --build --preset vs2026-release-all
+      - name: Build Release
+        run: |
+          cmake --build --preset vs2026-release-notengine
+          cmake --build --preset vs2026-release-all
