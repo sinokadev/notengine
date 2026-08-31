@@ -45,25 +45,41 @@ Renderer optimization improved performance from **1 FPS to 30 FPS** — approxim
 
 ## Build
 
-You will need the `cmake` and `glfw3` (development) packages to build this project.
+You will need the `cmake`, `ninja` (or `make`), and `glfw3` (development) packages to build this project.
 
 ### Prerequisites (Linux/Ubuntu)
 
 ```bash
 sudo apt update
-sudo apt install cmake libglfw3-dev build-essential
+sudo apt install cmake ninja-build libglfw3-dev build-essential
 ```
 
 ### Instructions
 
-Run the following scripts to build the library and the demos:
+Configure and build using CMake Presets:
 
 ```bash
+# Configure (Ninja Release)
+cmake --preset ninja-release
+
 # Build the core library
-./script/library_release_build.sh
+cmake --build --preset ninja-release-notengine
 
 # Build the demo executables
-./script/demo_release_build.sh
+cmake --build --preset ninja-release-all
+```
+
+Run the built demos:
+
+```bash
+# Default demo
+./build/ninja-release/demo
+
+# Scene file rendering demo
+./build/ninja-release/scene_render
+
+# Benchmark
+./build/ninja-release/benchmark
 ```
 
 ## Asset Source
