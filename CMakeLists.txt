@@ -10,13 +10,11 @@ if(MSVC)
     add_compile_options(/utf-8)
 endif()
 
+# Version configuration
 set(GAME_VERSION_MAJOR 0)
 set(GAME_VERSION_MINOR 1)
-set(GAME_VERSION_PATCH 11)
-
-set(GAME_VERSION_STRING
-    "${GAME_VERSION_MAJOR}.${GAME_VERSION_MINOR}.${GAME_VERSION_PATCH}"
-)
+set(GAME_VERSION_PATCH 10)
+set(GAME_VERSION_STRING "${GAME_VERSION_MAJOR}.${GAME_VERSION_MINOR}.${GAME_VERSION_PATCH}")
 
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/knot/version.h"
@@ -28,17 +26,16 @@ configure_file(
 find_package(glfw3 CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
 
-# Create the Engine library
-file(GLOB_RECURSE SOURCES "src/*.cpp")
-
+# Sources (CONFIGURE_DEPENDS 추가하여 파일 추가 감지)
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 list(APPEND SOURCES "library/gl.c")
 
 add_library(notengine STATIC ${SOURCES})
 
-# 셰이더 자동 포함 로직
+# Shader embedding setup
 set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders")
 set(GENERATED_HEADER "${CMAKE_CURRENT_BINARY_DIR}/GeneratedShaders.h")
-file(GLOB SHADER_FILES "${SHADER_DIR}/*.glsl" "${SHADER_DIR}/*.vert" "${SHADER_DIR}/*.frag")
+file(GLOB SHADER_FILES CONFIGURE_DEPENDS "${SHADER_DIR}/*.glsl" "${SHADER_DIR}/*.vert" "${SHADER_DIR}/*.frag")
 
 function(embed_shaders_to_header input_files output_header)
     set(header_content "#pragma once\n#include <string>\n#include <unordered_map>\n\nnamespace Shaders {\n")
@@ -74,13 +71,14 @@ endfunction()
 
 embed_shaders_to_header("${SHADER_FILES}" "${GENERATED_HEADER}")
 
-# Set include directories
+# Include directories
 target_include_directories(notengine PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-# Link dependencies to the library
+# Link dependencies
 target_link_libraries(notengine PUBLIC
     glfw
     OpenGL::GL
@@ -91,28 +89,20 @@ target_compile_definitions(notengine PUBLIC
     NOTENGINE_ASSET_ROOT="${CMAKE_SOURCE_DIR}"
 )
 
-# Demo executable (EXCLUDE_FROM_ALL 추가)
+# Demo executables
 add_executable(demo EXCLUDE_FROM_ALL demo/demo.cpp)
 target_link_libraries(demo PRIVATE notengine)
-
-set_target_properties(demo PROPERTIES
-    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-)
+set_target_properties(demo PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
 add_executable(benchmark EXCLUDE_FROM_ALL demo/benchmark.cpp)
 target_link_libraries(benchmark PRIVATE notengine)
-
-set_target_properties(benchmark PROPERTIES
-    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-)
+set_target_properties(benchmark PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
 add_executable(scene_render EXCLUDE_FROM_ALL demo/scene_render.cpp)
 target_link_libraries(scene_render PRIVATE notengine)
+set_target_properties(scene_render PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
-set_target_properties(scene_render PROPERTIES
-    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-)
-
+# Installation
 include(GNUInstallDirs)
 
 install(TARGETS notengine
@@ -124,6 +114,7 @@ install(TARGETS notengine
 
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(FILES ${GENERATED_HEADER} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/knot/version.h" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/knot)
 
 install(EXPORT notengineTargets
     FILE notengineTargets.cmake
@@ -131,8 +122,7 @@ install(EXPORT notengineTargets
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/notengine
 )
 
-include(CMakePackageConfigHelpers)
-
+# Config generation
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/notengineConfig.cmake" "
 include(CMakeFindDependencyMacro)
 find_dependency(glfw3 REQUIRED)
