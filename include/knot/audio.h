@@ -16,11 +16,10 @@ namespace knot {
  * @brief A standalone miniaudio-based 2D audio system.
  *
  * Audio clips are fully decoded to float PCM when loaded. Playback instances
- * are identified by (groupName, soundName): the same sound can play in
- * several groups, while a repeated play() call for the same pair restarts the
- * existing instance. Format selection is delegated to miniaudio; this class
- * deliberately does not whitelist filename extensions, so newly enabled
- * miniaudio decoders work without changes to this API.
+ * are organized by (groupName, soundName): the same sound can play in
+ * several groups or concurrently within the same group. Format selection is
+ * delegated to miniaudio; this class deliberately does not whitelist filename
+ * extensions, so newly enabled miniaudio decoders work without changes to this API.
  *
  * Public methods must be called from one application thread. Audio does not
  * depend on knot::Engine and may be created and used directly.
@@ -68,7 +67,7 @@ public:
     void stop(const std::string& name);
     /** @brief Stops every active instance in @p groupName. */
     void stopGroup(const std::string& groupName);
-    /** @brief Stops the active @p name instance in @p groupName. */
+    /** @brief Stops active @p name instances in @p groupName. */
     void stopInGroup(const std::string& name, const std::string& groupName);
     /** @brief Stops every active instance. */
     void stopAll();
@@ -91,7 +90,7 @@ private:
         bool loop = false;
     };
 
-    using PlaybackGroup = std::unordered_map<std::string, std::unique_ptr<Playback>>;
+    using PlaybackGroup = std::unordered_multimap<std::string, std::unique_ptr<Playback>>;
 
     void releasePlayback(Playback& playback);
 

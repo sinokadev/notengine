@@ -149,19 +149,6 @@ bool Audio::play(const std::string& name, const std::string& groupName, float vo
         return false;
     }
 
-    auto group = groups.find(groupName);
-    if (group != groups.end()) {
-        const auto existing = group->second.find(name);
-        if (existing != group->second.end()) {
-            releasePlayback(*existing->second);
-            group->second.erase(existing);
-        }
-
-        if (group->second.empty()) {
-            groups.erase(group);
-        }
-    }
-
     auto playback = std::make_unique<Playback>();
     ma_result result = ma_audio_buffer_ref_init(ma_format_f32, ma_engine_get_channels(&engine), clip->second.samples.data(), clip->second.frameCount,
                                                 &playback->buffer);
@@ -202,11 +189,11 @@ void Audio::stop(const std::string& name) {
     }
 
     for (auto group = groups.begin(); group != groups.end();) {
-        const auto playback = group->second.find(name);
-        if (playback != group->second.end()) {
-            releasePlayback(*playback->second);
-            group->second.erase(playback);
+        const auto range = group->second.equal_range(name);
+        for (auto it = range.first; it != range.second; ++it) {
+            releasePlayback(*it->second);
         }
+        group->second.erase(range.first, range.second);
 
         if (group->second.empty()) {
             group = groups.erase(group);
@@ -234,13 +221,15 @@ void Audio::stopInGroup(const std::string& name, const std::string& groupName) {
         return;
     }
 
-    const auto playback = group->second.find(name);
-    if (playback == group->second.end()) {
+    const auto range = group->second.equal_range(name);
+    if (range.first == range.second) {
         return;
     }
 
-    releasePlayback(*playback->second);
-    group->second.erase(playback);
+    for (auto it = range.first; it != range.second; ++it) {
+        releasePlayback(*it->second);
+    }
+    group->second.erase(range.first, range.second);
     if (group->second.empty()) {
         groups.erase(group);
     }
