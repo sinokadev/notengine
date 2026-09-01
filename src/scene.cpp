@@ -508,24 +508,30 @@ bool Scene::loadSeno(const std::string& path) {
             if (cameraData.contains("position")) {
                 const auto& p = cameraData["position"];
 
-                position = glm::vec3(p[0].get<float>(), p[1].get<float>(), p[2].get<float>());
+                position = glm::vec3(
+                    p[0].get<float>(),
+                    p[1].get<float>(),
+                    p[2].get<float>()
+                );
             }
+
+            std::shared_ptr<Camera> cam;
 
             if (type == "MovingCamera") {
-                auto cam = std::make_shared<MovingCamera>(position);
-
-                cam->yaw = cameraData.value("yaw", -90.0f);
-
-                cam->pitch = cameraData.value("pitch", 0.0f);
-
-                cam->fov = cameraData.value("fov", 45.0f);
-
-                cam->nearPlane = cameraData.value("near", 0.1f);
-
-                cam->farPlane = cameraData.value("far", 100.0f);
-
-                setCamera(cam);
+                cam = std::make_shared<MovingCamera>(position);
+            } else {
+                cam = std::make_shared<Camera>(position);
             }
+
+            cam->yaw = cameraData.value("yaw", -90.0f);
+            cam->pitch = cameraData.value("pitch", 0.0f);
+            cam->fov = cameraData.value("fov", 45.0f);
+            cam->nearPlane = cameraData.value("near", 0.1f);
+            cam->farPlane = cameraData.value("far", 100.0f);
+
+            cam->updateCameraVector();
+
+            setCamera(cam);
         }
 
         return true;
