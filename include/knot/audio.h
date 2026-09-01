@@ -5,22 +5,25 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
+#include <vector>
+
+#include <miniaudio/miniaudio.h>
 
 namespace knot {
 
-class Engine;
-
 /**
+ * @brief A standalone miniaudio-based 2D audio system.
  *
- * load() fully decodes WAV and MP3 files into float PCM data in memory.
- * Playback instances are identified by (groupName, soundName). A sound may
- * play simultaneously in different groups, but replaying the same pair stops
- * its current instance and restarts it with the new volume, pitch, and loop
- * settings.
+ * Audio clips are fully decoded to float PCM when loaded. Playback instances
+ * are identified by (groupName, soundName): the same sound can play in
+ * several groups, while a repeated play() call for the same pair restarts the
+ * existing instance. Format selection is delegated to miniaudio; this class
+ * deliberately does not whitelist filename extensions, so newly enabled
+ * miniaudio decoders work without changes to this API.
  *
- * Audio remains unavailable when the default output device cannot be opened.
- * In that case, load() and play() return false.
- * All Audio methods must be called from the Engine's main thread.
+ * Public methods must be called from one application thread. Audio does not
+ * depend on knot::Engine and may be created and used directly.
  */
 class Audio {
 public:
@@ -32,22 +35,24 @@ public:
     Audio(Audio&&) = delete;
     Audio& operator=(Audio&&) = delete;
 
-    /** @brief Opens the default output device.
+    /** @brief Opens miniaudio's default output device.
      *  @return true when playback is available. */
     bool init();
 
-    /** @brief Stops playback and releases loaded clips and the output device. */
+    /** @brief Stops playback, releases loaded clips, and closes the device. */
     void shutdown();
-    
-    /** @brief Removes every loaded object */
+
+    /** @brief Stops playback and releases every loaded clip without closing the device. */
     void clear();
 
-    /** @brief Reports whether the default output device is available. */
+    /** @brief Reports whether the output device is available. */
     bool isInitialized() const;
 
-    /** @brief Fully decodes a WAV or MP3 file and registers it under @p name.
-     *  @return false for invalid names or paths, duplicate names, unsupported
-     *  extensions, decode failures, or when audio is unavailable. */
+    /** @brief Decodes @p path and registers it under @p name.
+     *  The file extension is not restricted; miniaudio decides whether the
+     *  underlying file format is supported.
+     *  @return false for invalid names or paths, duplicate names, decode
+     *  failures, or unavailable audio. */
     bool load(const std::string& path, const std::string& name);
 
     /** @brief Reports whether a clip has been successfully loaded. */
@@ -68,14 +73,32 @@ public:
     /** @brief Stops every active instance. */
     void stopAll();
 
-private:
-    friend class Engine;
-
-    /** @brief Releases non-looping instances that finished during the frame. */
+    /** @brief Releases non-looping instances that finished since the last call.
+     *  Call once per application frame while audio is in use. */
     void update();
 
-    struct Impl;
-    std::unique_ptr<Impl> impl;
+private:
+    struct Clip {
+        std::vector<float> samples;
+        ma_uint64 frameCount = 0;
+    };
+
+    struct Playback {
+        ma_audio_buffer_ref buffer{};
+        ma_sound sound{};
+        bool bufferInitialized = false;
+        bool soundInitialized = false;
+        bool loop = false;
+    };
+
+    using PlaybackGroup = std::unordered_map<std::string, std::unique_ptr<Playback>>;
+
+    void releasePlayback(Playback& playback);
+
+    ma_engine engine{};
+    bool initialized = false;
+    std::unordered_map<std::string, Clip> clips;
+    std::unordered_map<std::string, PlaybackGroup> groups;
 };
 
 } // namespace knot
