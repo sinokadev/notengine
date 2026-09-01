@@ -448,9 +448,19 @@ public:
 
     virtual ~Object() = default;
 
-    /** @brief Tests the model bounds against @p frustum using this transform. */
+    /** @brief Tests the model's bounding sphere against @p frustum using this object's transform. */
     bool isVisible(const Frustum& frustum) const;
-    /** @brief Tests the model bounds against @p frustum using @p worldMatrix. */
+
+    /**
+     * @brief Tests the model's bounding sphere against @p frustum using @p worldMatrix.
+     *
+     * The model's local bounding sphere is transformed into world space and
+     * scaled using the maximum absolute scale component.
+     *
+     * @param frustum The frustum to test against.
+     * @param worldMatrix The world transform used to calculate the sphere position.
+     * @return true if the bounding sphere intersects the frustum; false otherwise.
+     */
     bool isVisible(const Frustum& frustum, const glm::mat4& worldMatrix) const;
 };
 
