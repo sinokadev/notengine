@@ -501,7 +501,8 @@ bool Scene::loadSeno(const std::string& path) {
         if (scene.contains("camera")) {
             const auto& cameraData = scene["camera"];
 
-            const std::string type = cameraData.value("type", "Camera");
+            const std::string type =
+                cameraData.value("type", "PerspectiveCamera");
 
             glm::vec3 position(0.0f, 0.0f, 5.0f);
 
@@ -515,21 +516,92 @@ bool Scene::loadSeno(const std::string& path) {
                 );
             }
 
+            const float nearPlane =
+                cameraData.value("near", Camera::kNearPlane);
+
+            const float farPlane =
+                cameraData.value("far", Camera::kFarPlane);
+
             std::shared_ptr<Camera> cam;
 
-            if (type == "MovingCamera") {
-                cam = std::make_shared<MovingCamera>(position);
-            } else {
-                cam = std::make_shared<Camera>(position);
+            if (type == "OrthographicCamera") {
+                const float size =
+                    cameraData.value("size", 10.0f);
+
+                auto orthoCam =
+                    std::make_shared<OrthographicCamera>(
+                        position,
+                        nearPlane,
+                        farPlane,
+                        size
+                    );
+
+                if (cameraData.contains("rotation")) {
+                    const auto& r = cameraData["rotation"];
+
+                    orthoCam->rotation = glm::quat(
+                        r[0].get<float>(),
+                        r[1].get<float>(),
+                        r[2].get<float>(),
+                        r[3].get<float>()
+                    );
+                }
+
+                cam = orthoCam;
             }
+            else if (
+                type == "PerspectiveCamera" ||
+                type == "Camera"
+            ) {
+                const float fov =
+                    cameraData.value("fov", 45.0f);
 
-            cam->yaw = cameraData.value("yaw", -90.0f);
-            cam->pitch = cameraData.value("pitch", 0.0f);
-            cam->fov = cameraData.value("fov", 45.0f);
-            cam->nearPlane = cameraData.value("near", 0.1f);
-            cam->farPlane = cameraData.value("far", 100.0f);
+                auto perspCam =
+                    std::make_shared<PerspectiveCamera>(
+                        position,
+                        fov,
+                        nearPlane,
+                        farPlane
+                    );
 
-            cam->updateCameraVector();
+                if (cameraData.contains("rotation")) {
+                    const auto& r = cameraData["rotation"];
+
+                    perspCam->rotation = glm::quat(
+                        r[0].get<float>(),
+                        r[1].get<float>(),
+                        r[2].get<float>(),
+                        r[3].get<float>()
+                    );
+                }
+
+                cam = perspCam;
+            }
+            else if (type == "MovingCamera") {
+                const float fov =
+                    cameraData.value("fov", 45.0f);
+
+                auto movingCam =
+                    std::make_shared<MovingCamera>(
+                        position,
+                        fov,
+                        nearPlane,
+                        farPlane
+                    );
+
+                if (cameraData.contains("rotation")) {
+                    const auto& r = cameraData["rotation"];
+
+                    movingCam->rotation = glm::quat(
+                        r[0].get<float>(),
+                        r[1].get<float>(),
+                        r[2].get<float>(),
+                        r[3].get<float>()
+                    );
+                }
+
+                cam = movingCam;
+            }
 
             setCamera(cam);
         }

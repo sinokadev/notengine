@@ -57,7 +57,7 @@ int main() {
 
     scene.getLightManager().registerLight(pointLightObj);
 
-    auto camera = std::make_shared<knot::Camera>(glm::vec3(0.0f, 20.0f, 0.0f));
+    auto camera = std::make_shared<knot::PerspectiveCamera>(glm::vec3(0.0f, 20.0f, 0.0f));
 
     camera->lookAtTarget(glm::vec3(0.0f, 0.0f, 0.0f));
 

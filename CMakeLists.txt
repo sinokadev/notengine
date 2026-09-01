@@ -125,6 +125,10 @@ add_executable(scene_render EXCLUDE_FROM_ALL demo/scene_render.cpp)
 target_link_libraries(scene_render PRIVATE notengine)
 set_target_properties(scene_render PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
+add_executable(ortho_test EXCLUDE_FROM_ALL demo/ortho_test.cpp)
+target_link_libraries(ortho_test PRIVATE notengine)
+set_target_properties(ortho_test PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+
 install(TARGETS notengine
     EXPORT notengineTargets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

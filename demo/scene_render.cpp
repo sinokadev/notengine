@@ -73,7 +73,7 @@ int main() {
 
         const glm::vec3 front = camera.getFront();
 
-        const glm::vec3 right = glm::normalize(glm::cross(front, camera.worldUp));
+        const glm::vec3 right = camera.getRight();
 
         if (keyStates[knot::ScanCode::W])
             moveDir += front;
@@ -128,7 +128,7 @@ int main() {
 
             // Query the current camera from the scene each time — reloads may replace it
             auto& cam = static_cast<knot::MovingCamera&>(scene.getCamera());
-            cam.rotate(xOffset, yOffset, true);
+            cam.rotate(xOffset, yOffset);
 
             event.handled = true;
         }

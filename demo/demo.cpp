@@ -156,7 +156,7 @@ int main() {
 
             lastY = static_cast<float>(event.y);
 
-            camera->rotate(xOffset, yOffset, true);
+            camera->rotate(xOffset, yOffset);
 
             event.handled = true;
         }
@@ -191,7 +191,7 @@ int main() {
         glm::vec3 moveDir(0.0f);
 
         const glm::vec3 front = camera->getFront();
-        const glm::vec3 right = glm::normalize(glm::cross(front, camera->worldUp));
+        const glm::vec3 right = camera->getRight();
 
         if (keyStates[knot::ScanCode::W])
             moveDir += front;
