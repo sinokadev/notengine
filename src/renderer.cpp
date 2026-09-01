@@ -7,8 +7,9 @@
 #include <knot/mesh.h>
 
 #define AMBIENT_INTENSITY 1.0f
-
-constexpr unsigned int SHADOW_RESOLUTION = 2048;
+#define SHADOW_RESOLUTION 2048
+#define DISABLE_SKYMAP false
+#define DISABLE_SHADOW false
 
 namespace knot {
 
@@ -336,6 +337,8 @@ bool Renderer::renderObject(const Object& object, const Camera& camera, float as
 }
 
 void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio) {
+    if (DISABLE_SKYMAP)
+        return;
     glDepthMask(GL_FALSE);
     glDepthFunc(GL_LEQUAL);
     glDisable(GL_CULL_FACE);
@@ -459,6 +462,8 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
 }
 
 void Renderer::renderShadow(Scene& scene) {
+    if (DISABLE_SHADOW)
+        return;
     if (!shadowShader || !shadowShader->isValid())
         return;
 
