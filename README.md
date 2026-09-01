@@ -1,4 +1,4 @@
-# Not Engine Alpha 0.1.11
+# Not Engine Alpha 0.1.12
 
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/t/sinokadev/notengine) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/sinokadev/notengine/build.yml)](https://github.com/sinokadev/notengine/actions) [![Read the Docs](https://img.shields.io/readthedocs/notengine)](https://notengine.readthedocs.io/en/latest/) ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/sinokadev/notengine/total) [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/sinokadev/notengine)
 ](https://github.com/sinokadev/notengine/pulls) [![GitHub License](https://img.shields.io/github/license/sinokadev/notengine)](https://github.com/sinokadev/notengine/blob/main/LICENSE) 
@@ -20,6 +20,7 @@ A code-first game engine built on OpenGL, empowering you to build everything fro
 - Event system
 - OBJ file import
 - MTL material import (albedo, roughness, metallic, normal maps)
+- Play Audio
 
 ## Performance
 
