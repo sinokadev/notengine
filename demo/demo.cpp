@@ -2,7 +2,9 @@
 // Copyright 2026 SinokaDev
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <filesystem>
 #include <iostream>
+#include <knot/audio.h>
 #include <knot/engine.h>
 #include <knot/scene.h>
 #include <knot/resources.h>
@@ -17,6 +19,34 @@ int main() {
 
     if (!engine.init(1280, 720, "Knot Demo")) {
         return 1;
+    }
+
+    knot::Audio audio;
+    bool testWavLoaded = false;
+    bool testMp3Loaded = false;
+
+    if (audio.init()) {
+        const std::string audioDirectory = knot::getAssetRoot() + "assets/audio/";
+        const std::string testWavPath = audioDirectory + "test_wav.wav";
+        const std::string testMp3Path = audioDirectory + "test_mp3.mp3";
+
+        if (std::filesystem::exists(testWavPath)) {
+            testWavLoaded = audio.load(testWavPath, "testWav");
+        } else {
+            std::cout << "[Info] Audio demo WAV not found: " << testWavPath << std::endl;
+        }
+
+        if (std::filesystem::exists(testMp3Path)) {
+            testMp3Loaded = audio.load(testMp3Path, "testMp3");
+        } else {
+            std::cout << "[Info] Audio demo MP3 not found: " << testMp3Path << std::endl;
+        }
+
+        if (testWavLoaded || testMp3Loaded) {
+            std::cout << "[Info] Audio controls: 1=WAV, 2=looping MP3, 3=stop effects, 4=stop music" << std::endl;
+        }
+    } else {
+        std::cerr << "[Warning] Audio demo is unavailable because no output device could be opened" << std::endl;
     }
 
     glfwSetInputMode(engine.getWindow().getHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -88,6 +118,26 @@ int main() {
                     event.handled = true;
                 }
 
+                if (event.key == knot::ScanCode::NUM_1 && testWavLoaded) {
+                    audio.play("testWav", "demo.effects", 0.5f);
+                    event.handled = true;
+                }
+
+                if (event.key == knot::ScanCode::NUM_2 && testMp3Loaded) {
+                    audio.play("testMp3", "demo.music", 0.25f, 1.0f, true);
+                    event.handled = true;
+                }
+
+                if (event.key == knot::ScanCode::NUM_3) {
+                    audio.stopGroup("demo.effects");
+                    event.handled = true;
+                }
+
+                if (event.key == knot::ScanCode::NUM_4) {
+                    audio.stopGroup("demo.music");
+                    event.handled = true;
+                }
+
                 keyStates[event.key] = true;
             } else if (event.action == knot::KeyState::RELEASE) {
                 keyStates[event.key] = false;
@@ -126,6 +176,8 @@ int main() {
 
     scene.setUpdateCallback([&](knot::Scene& currentScene, float deltaTime) {
         frameCount++;
+
+        audio.update();
 
         if (stop)
             return;
