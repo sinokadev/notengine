@@ -57,10 +57,14 @@ public:
     /** @brief Reports whether a clip has been successfully loaded. */
     bool isLoaded(const std::string& name) const;
 
-    /** @brief Plays a loaded clip in @p groupName.
-     *  @param volume Linear gain in the inclusive range [0, 1].
-     *  @param pitch Playback rate multiplier greater than zero.
-     *  @return false for invalid arguments, missing clips, or unavailable audio. */
+    /**
+     * @brief Plays a loaded clip in @p groupName.
+     * Each call creates a new playback instance, allowing the same clip to
+     * play concurrently within the same group.
+     * @param volume Linear gain in the inclusive range [0, 1].
+     * @param pitch Playback rate multiplier greater than zero.
+     * @return false for invalid arguments, missing clips, or unavailable audio.
+     */
     bool play(const std::string& name, const std::string& groupName, float volume = 1.0f, float pitch = 1.0f, bool loop = false);
 
     /** @brief Stops every active instance of @p name in all groups. */
