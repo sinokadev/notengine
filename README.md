@@ -1,5 +1,8 @@
 # Not Engine Alpha 0.1.11
 
+![GitHub commit activity](https://img.shields.io/github/commit-activity/t/sinokadev/notengine) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/sinokadev/notengine/build.yml)](https://github.com/sinokadev/notengine/actions) [![Read the Docs](https://img.shields.io/readthedocs/notengine)](https://notengine.readthedocs.io/en/latest/) ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/sinokadev/notengine/total) [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/sinokadev/notengine)
+](https://github.com/sinokadev/notengine/pulls) [![GitHub License](https://img.shields.io/github/license/sinokadev/notengine)](https://github.com/sinokadev/notengine/blob/main/LICENSE) 
+
 > Everything as code!
 
 A code-first game engine built on OpenGL, empowering you to build everything from scratch with clean, simple code.
@@ -89,3 +92,11 @@ Run the built demos:
    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=sinokadev/notengine&type=date&legend=top-left&sealed_token=8zWNyxLJDIcZDmt26iDQup4hkwqqKFTk3B4h7SQ5zy_a2ScOp5yboWcm3Ad0ZK_6keAOYbcNYMYg6wJABSGtK7avPjye2IB7HdHTQveh29N1xXwjeZ1_BzkTUBoqN7wmTXuKy24hTpKRecVwiE2SQrLqu4RkcJM7b6GxURYu6Wjmb09hycdMUE59cKZo" />
  </picture>
 </a>
+
+## Contributors
+
+<a href="https://github.com/sinokadev/notengine/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=sinokadev/notengine" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).
