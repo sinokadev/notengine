@@ -27,6 +27,8 @@ bool Audio::init() {
         return true;
     }
 
+    std::cout << "[Info] Not Engine Audio Init" << std::endl;
+
     const ma_engine_config config = ma_engine_config_init();
     const ma_result result = ma_engine_init(&config, &engine);
     if (result != MA_SUCCESS) {
