@@ -11,7 +11,7 @@ namespace knot {
 namespace {
 
 void logMiniaudioError(const char* operation, ma_result result) {
-    std::cerr << "[Error] Audio " << operation << ": " << ma_result_description(result) << std::endl;
+    std::cerr << "[Error] miniaudio: " << operation << ": " << ma_result_description(result) << std::endl;
 }
 
 } // namespace
@@ -32,7 +32,7 @@ bool Audio::init() {
     const ma_engine_config config = ma_engine_config_init();
     const ma_result result = ma_engine_init(&config, &engine);
     if (result != MA_SUCCESS) {
-        logMiniaudioError("initialization failed", result);
+        logMiniaudioError("Audio initialization failed", result);
         return false;
     }
 
@@ -86,7 +86,7 @@ bool Audio::load(const std::string& path, const std::string& name) {
     ma_decoder decoder{};
     ma_result result = ma_decoder_init_file(path.c_str(), &config, &decoder);
     if (result != MA_SUCCESS) {
-        logMiniaudioError("load failed", result);
+        logMiniaudioError("Audio load failed", result);
         return false;
     }
 
@@ -94,7 +94,7 @@ bool Audio::load(const std::string& path, const std::string& name) {
     result = ma_decoder_get_length_in_pcm_frames(&decoder, &frameCount);
     if (result != MA_SUCCESS || frameCount == 0) {
         if (result != MA_SUCCESS) {
-            logMiniaudioError("could not determine clip length", result);
+            logMiniaudioError("Audio could not determine clip length", result);
         } else {
             std::cerr << "[Error] Audio file contains no PCM frames: " << path << std::endl;
         }
@@ -117,7 +117,7 @@ bool Audio::load(const std::string& path, const std::string& name) {
 
     if ((result != MA_SUCCESS && result != MA_AT_END) || framesRead == 0) {
         if (result != MA_SUCCESS && result != MA_AT_END) {
-            logMiniaudioError("decode failed", result);
+            logMiniaudioError("Audio decode failed", result);
         } else {
             std::cerr << "[Error] Audio decoder produced no PCM frames: " << path << std::endl;
         }
@@ -155,7 +155,7 @@ bool Audio::play(const std::string& name, const std::string& groupName, float vo
     ma_result result = ma_audio_buffer_ref_init(ma_format_f32, ma_engine_get_channels(&engine), clip->second.samples.data(), clip->second.frameCount,
                                                 &playback->buffer);
     if (result != MA_SUCCESS) {
-        logMiniaudioError("playback buffer initialization failed", result);
+        logMiniaudioError("Audio playback buffer initialization failed", result);
         return false;
     }
     playback->bufferInitialized = true;
@@ -163,7 +163,7 @@ bool Audio::play(const std::string& name, const std::string& groupName, float vo
     result = ma_sound_init_from_data_source(&engine, reinterpret_cast<ma_data_source*>(&playback->buffer), MA_SOUND_FLAG_NO_SPATIALIZATION, nullptr,
                                             &playback->sound);
     if (result != MA_SUCCESS) {
-        logMiniaudioError("sound initialization failed", result);
+        logMiniaudioError("Audio sound initialization failed", result);
         releasePlayback(*playback);
         return false;
     }
@@ -176,7 +176,7 @@ bool Audio::play(const std::string& name, const std::string& groupName, float vo
 
     result = ma_sound_start(&playback->sound);
     if (result != MA_SUCCESS) {
-        logMiniaudioError("start failed", result);
+        logMiniaudioError("Audio start failed", result);
         releasePlayback(*playback);
         return false;
     }
