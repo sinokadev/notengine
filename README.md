@@ -9,8 +9,6 @@ A code-first game engine built on OpenGL, empowering you to build everything fro
 
 **PRs and issues are welcome!**
 
-**Discord: https://discord.gg/w7hbVQ2wHX**
-
 <img width="1282" height="749" alt="image" src="/images/shadowmap.png" /><br>
 
 ## Supported Features
