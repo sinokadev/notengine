@@ -9,6 +9,8 @@ A code-first game engine built on OpenGL, empowering you to build everything fro
 
 **PRs and issues are welcome!**
 
+2026-09-04: This project has many shortcomings, and since it relies heavily on AI, it might feel a bit like "AI slop." Please don't criticize it for that, though. If you don't like this project, you can simply use a better engine, like Godot. 
+
 <img width="1282" height="749" alt="image" src="/images/shadowmap.png" /><br>
 
 ## Supported Features
