@@ -75,6 +75,7 @@ bool Audio::load(const std::string& path, const std::string& name) {
         return false;
     }
 
+    // Check if the audio engine is functioning correctly
     const ma_uint32 channels = ma_engine_get_channels(&engine);
     const ma_uint32 sampleRate = ma_engine_get_sample_rate(&engine);
     if (channels == 0 || sampleRate == 0) {
@@ -82,6 +83,7 @@ bool Audio::load(const std::string& path, const std::string& name) {
         return false;
     }
 
+    // Load audio
     const ma_decoder_config config = ma_decoder_config_init(ma_format_f32, channels, sampleRate);
     ma_decoder decoder{};
     ma_result result = ma_decoder_init_file(path.c_str(), &config, &decoder);
@@ -90,43 +92,53 @@ bool Audio::load(const std::string& path, const std::string& name) {
         return false;
     }
 
+    // Check if loading was successful
     ma_uint64 frameCount = 0;
     result = ma_decoder_get_length_in_pcm_frames(&decoder, &frameCount);
-    if (result != MA_SUCCESS || frameCount == 0) {
-        if (result != MA_SUCCESS) {
-            logMiniaudioError("Audio could not determine clip length", result);
-        } else {
-            std::cerr << "[Error] Audio file contains no PCM frames: " << path << std::endl;
-        }
+
+    if (result != MA_SUCCESS) {
+        logMiniaudioError("Audio could not determine clip length", result);
         ma_decoder_uninit(&decoder);
         return false;
     }
 
+    if (frameCount == 0) {
+        std::cerr << "[Error] Audio file contains no PCM frames: " << path << std::endl;
+        ma_decoder_uninit(&decoder);
+        return false;
+    }
+
+    // Overflow prevention
     if (frameCount > std::numeric_limits<std::size_t>::max() / static_cast<std::size_t>(channels)) {
         std::cerr << "[Error] Audio file is too large to preload: " << path << std::endl;
         ma_decoder_uninit(&decoder);
         return false;
     }
 
+    // Save audio
     Clip clip;
     clip.samples.resize(static_cast<std::size_t>(frameCount) * channels);
+
 
     ma_uint64 framesRead = 0;
     result = ma_decoder_read_pcm_frames(&decoder, clip.samples.data(), frameCount, &framesRead);
     ma_decoder_uninit(&decoder);
 
-    if ((result != MA_SUCCESS && result != MA_AT_END) || framesRead == 0) {
-        if (result != MA_SUCCESS && result != MA_AT_END) {
-            logMiniaudioError("Audio decode failed", result);
-        } else {
-            std::cerr << "[Error] Audio decoder produced no PCM frames: " << path << std::endl;
-        }
+    // Check if saving was successful
+    if (result != MA_SUCCESS && result != MA_AT_END) {
+        logMiniaudioError("Audio decode failed", result);
         return false;
     }
 
-    clip.frameCount = framesRead;
+    if (framesRead == 0) {
+        std::cerr << "[Error] Audio decoder produced no PCM frames: " << path << std::endl;
+        return false;
+    }
+
+    clip.frameCount = framesRead; // 혹시 모르니
     clip.samples.resize(static_cast<std::size_t>(framesRead) * channels);
-    clips.emplace(name, std::move(clip));
+    clips.emplace(name, std::move(clip)); // clips 맨 뒤에 clip 추가
+
     return true;
 }
 
@@ -181,7 +193,7 @@ bool Audio::play(const std::string& name, const std::string& groupName, float vo
         return false;
     }
 
-    groups[groupName].emplace(name, std::move(playback));
+    groups[groupName].emplace(name, std::move(playback)); // 재생중 목록 맨 마지막에 넣기
     return true;
 }
 

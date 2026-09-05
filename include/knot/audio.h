@@ -12,6 +12,19 @@
 
 namespace knot {
 
+struct Clip {
+    std::vector<float> samples;
+    ma_uint64 frameCount = 0;
+};
+
+struct Playback {
+    ma_audio_buffer_ref buffer{};
+    ma_sound sound{};
+    bool bufferInitialized = false;
+    bool soundInitialized = false;
+    bool loop = false;
+};
+
 /**
  * @brief A standalone miniaudio-based 2D audio system.
  *
@@ -81,19 +94,6 @@ public:
     void update();
 
 private:
-    struct Clip {
-        std::vector<float> samples;
-        ma_uint64 frameCount = 0;
-    };
-
-    struct Playback {
-        ma_audio_buffer_ref buffer{};
-        ma_sound sound{};
-        bool bufferInitialized = false;
-        bool soundInitialized = false;
-        bool loop = false;
-    };
-
     using PlaybackGroup = std::unordered_multimap<std::string, std::unique_ptr<Playback>>;
 
     void releasePlayback(Playback& playback);
