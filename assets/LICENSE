@@ -1,0 +1,10 @@
+DaySkyHDRI015A_2K_HDR.hdr: CC0
+notbox.obj: CC0
+testtexture.png: CC0
+Untitled.mtl: CC0
+Untitled.obj: CC0
+utah_teapot.obj: CC0 (Version 2026 by Cem Yuksel, https://graphics.cs.utah.edu/teapot/)
+audio/*: CC0
+
+shaders/*: Same as the LICENSE file in the project root directory.
+*.seno: Same as the LICENSE file in the project root directory.
