@@ -1,5 +1,5 @@
 {
-    "version": 6,
+    "version": 7,
 
     "sky": {
         "type": "HDR",
@@ -8,6 +8,7 @@
 
     "objects": [
         {
+            "id": 100,
             "position": [0, 2, 0],
             "scale": [1, 1, 1],
             "rotation": [1, 0, 0, 0],

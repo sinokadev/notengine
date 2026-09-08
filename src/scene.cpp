@@ -417,7 +417,12 @@ bool Scene::loadSeno(const std::string& path) {
                     object->rotation = glm::quat(r[0].get<float>(), r[1].get<float>(), r[2].get<float>(), r[3].get<float>());
                 }
 
-                objectManager.registerObject(object);
+                int id = -1;
+                if (objectData.contains("id")) {
+                    id = objectData["id"].get<int>();
+                }
+
+                objectManager.registerObject(object, id);
             }
         }
 

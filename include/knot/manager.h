@@ -18,10 +18,11 @@ public:
     ObjectManager() = default;
     ~ObjectManager();
 
-    /** @brief Adds an object and assigns an ID when it has none.
+    /** @brief Adds an object and assigns an ID.
      *  @param newObject Object to manage; may be null.
+     *  @param id Explicit ID to assign, or -1 for automatic assignment.
      *  @return The object's ID, or 0 when @p newObject is null. */
-    unsigned int registerObject(std::shared_ptr<Object> newObject);
+    unsigned int registerObject(std::shared_ptr<Object> newObject, int id = -1);
 
     /** @brief Removes the object with @p id.
      *  @return true when an object was removed. */
@@ -42,6 +43,8 @@ public:
     }
 
 private:
+    unsigned int allocateId();
+
     std::list<std::shared_ptr<Object>> objects;
     std::unordered_map<unsigned int, std::list<std::shared_ptr<Object>>::iterator> idToIterator;
 

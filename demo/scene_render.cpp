@@ -99,8 +99,10 @@ int main() {
 
                 if (event.key == knot::ScanCode::ESCAPE) {
                     if (!stop) {
+                        scene.getObjectManager().getObject(100)->position.x+=10000;
                         glfwSetInputMode(engine.getWindow().getHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
                     } else {
+                        scene.getObjectManager().getObject(100)->position.x-=10000;
                         glfwSetInputMode(engine.getWindow().getHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                     }
 

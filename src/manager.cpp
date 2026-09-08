@@ -4,19 +4,36 @@
 
 namespace knot {
 
-unsigned int ObjectManager::registerObject(std::shared_ptr<Object> newObject) {
+unsigned int ObjectManager::allocateId() {
+    while (nextId == 0 || idToIterator.find(nextId) != idToIterator.end()) {
+        nextId++;
+    }
+    return nextId++;
+}
+
+unsigned int ObjectManager::registerObject(std::shared_ptr<Object> newObject, int id) {
     if (!newObject)
         return 0;
 
-    if (newObject->id == 0) {
-        newObject->id = nextId++;
+    unsigned int finalId = 0;
+    if (id == -1) {
+        finalId = allocateId();
+    } else {
+        const unsigned int requestedId = static_cast<unsigned int>(id);
+        if (idToIterator.find(requestedId) != idToIterator.end()) {
+            finalId = allocateId();
+            std::cerr << "[Warning] Object ID " << requestedId << " already exists. Auto-assigning ID: " << finalId << std::endl;
+        } else {
+            finalId = requestedId;
+        }
     }
 
+    newObject->id = finalId;
     objects.push_back(newObject);
     auto it = --objects.end();
-    idToIterator[newObject->id] = it;
+    idToIterator[finalId] = it;
 
-    return newObject->id;
+    return finalId;
 }
 bool ObjectManager::removeObject(unsigned int id) {
     auto it = idToIterator.find(id);
