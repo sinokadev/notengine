@@ -19,7 +19,7 @@
 
 - [x] OBJ 임포트
 - [x] MTL 머티리얼 임포트
-- [ ] GLTF 임포트
+- [ ] GLTF 임포트 (https://github.com/jkuhlmann/cgltf)
 
 - [x] camera.hpp를 구현과 헤더로 나누기
 
@@ -69,8 +69,6 @@
 - [ ] 하드코딩된 상수들을 하나의 상태머신 헤더로 묶어서 설정하기 편하게 하기
 
 - [ ] Audio를 싱글톤으로 만들기
-
-- [ ] Assimp
 
 - [ ] 에니메이션
 - [ ] Bone
