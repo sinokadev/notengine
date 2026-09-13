@@ -19,7 +19,7 @@
 
 - [x] OBJ 임포트
 - [x] MTL 머티리얼 임포트
-- [ ] GLTF 임포트
+- [ ] GLTF 임포트 (https://github.com/jkuhlmann/cgltf)
 
 - [x] camera.hpp를 구현과 헤더로 나누기
 
@@ -40,6 +40,9 @@
 - [x] Dir Shadow Map
 - [ ] Point Shadow Map
 - [ ] Cascaded Shadow Maps
+- [ ] PCSS
+- [ ] Cascaded PCSS
+- [ ] SSAO
 
 - [ ] EXR 확장자 지원 (TinyEXR 사용)
 
@@ -70,10 +73,9 @@
 
 - [ ] Audio를 싱글톤으로 만들기
 
-- [ ] Assimp
-
 - [ ] 에니메이션
 - [ ] Bone
 
-- [ ] Ai Slop 제거(구현 코드 재작성)
 - [ ] pbr-book.org 읽기
+
+- [ ] 유리
