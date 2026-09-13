@@ -42,6 +42,7 @@
 - [ ] Cascaded Shadow Maps
 - [ ] PCSS
 - [ ] Cascaded PCSS
+- [ ] SSAO
 
 - [ ] EXR 확장자 지원 (TinyEXR 사용)
 
