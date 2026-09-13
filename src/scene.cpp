@@ -319,7 +319,7 @@ bool Scene::loadSeno(const std::string& path) {
         // Models
         // ------------------------------------------------------------
 
-        std::vector<std::shared_ptr<Model>> models;
+        std::vector<std::vector<std::shared_ptr<Model>>> modelGroups;
 
         if (scene.contains("models")) {
             for (const auto& modelData : scene["models"]) {
@@ -353,10 +353,7 @@ bool Scene::loadSeno(const std::string& path) {
                         return false;
                     }
 
-                    for (auto& model : loadedModels) {
-                        models.push_back(std::move(model));
-                    }
-
+                    modelGroups.push_back(std::move(loadedModels));
                     continue;
                 }
 
@@ -378,7 +375,7 @@ bool Scene::loadSeno(const std::string& path) {
                     return false;
                 }
 
-                models.push_back(std::make_shared<Model>(meshes[meshIndex], materials[materialIndex]));
+                modelGroups.push_back({std::make_shared<Model>(meshes[meshIndex], materials[materialIndex])});
             }
         }
         // ------------------------------------------------------------
@@ -390,31 +387,32 @@ bool Scene::loadSeno(const std::string& path) {
 
                 const int modelIndex = objectData.value("model", -1);
 
-                if (modelIndex < 0 || modelIndex >= static_cast<int>(models.size())) {
+                if (modelIndex < 0 || modelIndex >= static_cast<int>(modelGroups.size())) {
                     std::cerr << "[Error] Object model index " << modelIndex << " is out of range" << std::endl;
                     return false;
                 }
 
-                auto object = std::make_shared<Object>();
+                const auto& subModels = modelGroups[modelIndex];
 
-                object->model = models[modelIndex];
-
+                glm::vec3 position(0.0f);
                 if (objectData.contains("position")) {
                     const auto& p = objectData["position"];
 
-                    object->position = glm::vec3(p[0].get<float>(), p[1].get<float>(), p[2].get<float>());
+                    position = glm::vec3(p[0].get<float>(), p[1].get<float>(), p[2].get<float>());
                 }
 
+                glm::vec3 scale(1.0f);
                 if (objectData.contains("scale")) {
                     const auto& s = objectData["scale"];
 
-                    object->scale = glm::vec3(s[0].get<float>(), s[1].get<float>(), s[2].get<float>());
+                    scale = glm::vec3(s[0].get<float>(), s[1].get<float>(), s[2].get<float>());
                 }
 
+                glm::quat rotation(1.0f, 0.0f, 0.0f, 0.0f);
                 if (objectData.contains("rotation")) {
                     const auto& r = objectData["rotation"];
 
-                    object->rotation = glm::quat(r[0].get<float>(), r[1].get<float>(), r[2].get<float>(), r[3].get<float>());
+                    rotation = glm::quat(r[0].get<float>(), r[1].get<float>(), r[2].get<float>(), r[3].get<float>());
                 }
 
                 int id = -1;
@@ -422,7 +420,16 @@ bool Scene::loadSeno(const std::string& path) {
                     id = objectData["id"].get<int>();
                 }
 
-                objectManager.registerObject(object, id);
+                for (size_t i = 0; i < subModels.size(); ++i) {
+                    auto object = std::make_shared<Object>();
+
+                    object->model = subModels[i];
+                    object->position = position;
+                    object->scale = scale;
+                    object->rotation = rotation;
+
+                    objectManager.registerObject(object, (i == 0) ? id : -1);
+                }
             }
         }
 
