@@ -40,6 +40,8 @@
 - [x] Dir Shadow Map
 - [ ] Point Shadow Map
 - [ ] Cascaded Shadow Maps
+- [ ] PCSS
+- [ ] Cascaded PCSS
 
 - [ ] EXR 확장자 지원 (TinyEXR 사용)
 
@@ -74,3 +76,5 @@
 - [ ] Bone
 
 - [ ] pbr-book.org 읽기
+
+- [ ] 유리
