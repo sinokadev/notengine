@@ -328,6 +328,26 @@ public:
         normalMap = texID;
     }
 
+    /** @brief Sets the fallback albedo base color. */
+    void setAlbedoColor(const glm::vec3& color) {
+        baseAlbedo = color;
+    }
+
+    /** @brief Sets the fallback metallic factor. */
+    void setMetallic(float metallic) {
+        baseMetallic = metallic;
+    }
+
+    /** @brief Sets the fallback roughness factor. */
+    void setRoughness(float roughness) {
+        baseRoughness = roughness;
+    }
+
+    /** @brief Sets the fallback ambient-occlusion factor. */
+    void setAo(float ao) {
+        baseAo = ao;
+    }
+
     /** @brief Binds PBR maps to texture units 0 through 4. */
     void bind() override {
         if (!shader)
@@ -419,6 +439,43 @@ struct Model {
 
     /** @brief Recalculates the local bounding sphere from all sub-mesh vertices. */
     void calculateBounds();
+
+    /** @brief Returns the material of a specific sub-mesh, or nullptr if out of range. */
+    std::shared_ptr<Material> getMaterial(size_t subMeshIndex = 0) const {
+        if (subMeshIndex < subMeshes.size()) {
+            return subMeshes[subMeshIndex].material;
+        }
+        return nullptr;
+    }
+
+    /** @brief Replaces the material of a specific sub-mesh.
+     *  @return true if replaced successfully; false if subMeshIndex is out of range. */
+    bool setMaterial(std::shared_ptr<Material> material, size_t subMeshIndex = 0) {
+        if (subMeshIndex < subMeshes.size()) {
+            subMeshes[subMeshIndex].material = std::move(material);
+            return true;
+        }
+        return false;
+    }
+
+    /** @brief Returns the mesh geometry of a specific sub-mesh, or nullptr if out of range. */
+    std::shared_ptr<Mesh> getMesh(size_t subMeshIndex = 0) const {
+        if (subMeshIndex < subMeshes.size()) {
+            return subMeshes[subMeshIndex].mesh;
+        }
+        return nullptr;
+    }
+
+    /** @brief Replaces the mesh geometry of a specific sub-mesh and recalculates bounds.
+     *  @return true if replaced successfully; false if subMeshIndex is out of range. */
+    bool setMesh(std::shared_ptr<Mesh> mesh, size_t subMeshIndex = 0) {
+        if (subMeshIndex < subMeshes.size()) {
+            subMeshes[subMeshIndex].mesh = std::move(mesh);
+            calculateBounds();
+            return true;
+        }
+        return false;
+    }
 };
 
 /** @brief Position, quaternion rotation, and scale in world space. */
@@ -462,6 +519,28 @@ public:
     }
 
     virtual ~Object() = default;
+
+    /** @brief Returns the material of a specific sub-mesh from the object's model. */
+    std::shared_ptr<Material> getMaterial(size_t subMeshIndex = 0) const {
+        return model ? model->getMaterial(subMeshIndex) : nullptr;
+    }
+
+    /** @brief Replaces the material of a specific sub-mesh in the object's model.
+     *  @return true if replaced successfully; false if model is null or index is out of range. */
+    bool setMaterial(std::shared_ptr<Material> material, size_t subMeshIndex = 0) {
+        return model ? model->setMaterial(std::move(material), subMeshIndex) : false;
+    }
+
+    /** @brief Returns the mesh geometry of a specific sub-mesh from the object's model. */
+    std::shared_ptr<Mesh> getMesh(size_t subMeshIndex = 0) const {
+        return model ? model->getMesh(subMeshIndex) : nullptr;
+    }
+
+    /** @brief Replaces the mesh geometry of a specific sub-mesh in the object's model.
+     *  @return true if replaced successfully; false if model is null or index is out of range. */
+    bool setMesh(std::shared_ptr<Mesh> mesh, size_t subMeshIndex = 0) {
+        return model ? model->setMesh(std::move(mesh), subMeshIndex) : false;
+    }
 
     /** @brief Tests the model's bounding sphere against @p frustum using this object's transform. */
     bool isVisible(const Frustum& frustum) const;
