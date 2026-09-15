@@ -82,6 +82,24 @@ int main() {
     }
     std::cout << "[INFO] Untitled.obj subMeshes count: " << untitledModel->subMeshes.size() << "\n";
 
+    // 3. runtime material modification test
+    auto testObj = std::make_shared<knot::Object>(model);
+    assert(testObj->getMaterial(0) != nullptr);
+    assert(testObj->getMaterial(1) != nullptr);
+    assert(testObj->getMaterial(999) == nullptr);
+
+    auto pbr0 = std::dynamic_pointer_cast<knot::PbrMaterial>(testObj->getMaterial(0));
+    assert(pbr0 != nullptr);
+    pbr0->setAlbedoColor(glm::vec3(0.5f, 0.5f, 0.5f));
+    assert(pbr0->baseAlbedo == glm::vec3(0.5f, 0.5f, 0.5f));
+
+    auto newMat = std::make_shared<knot::AlphaMaterial>(shader, glm::vec3(0.0f, 1.0f, 0.0f));
+    bool replaced = testObj->setMaterial(newMat, 1);
+    assert(replaced);
+    assert(testObj->getMaterial(1) == newMat);
+
+    std::cout << "[INFO] Runtime material replacement and property modification API passed!\n";
+
     glfwDestroyWindow(window);
     glfwTerminate();
     std::cout << "[SUCCESS] All submesh checks passed!\n";
