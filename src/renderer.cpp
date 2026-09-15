@@ -4,6 +4,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <cassert>
+#include <unordered_set>
 #include <knot/mesh.h>
 
 #define AMBIENT_INTENSITY 1.0f
@@ -244,15 +245,7 @@ void Renderer::processPointLights(const std::vector<const PbrPointLight*>& point
 
 void Renderer::renderInstanced(const std::shared_ptr<Model>& model, const std::vector<VisibleInstance>& instances, const Camera& camera,
                                float aspectRatio) {
-    if (!model || !model->mesh || !model->material)
-        return;
-
-    if (!model->mesh->isReady() || instances.empty())
-        return;
-
-    auto shader = model->material->getShader();
-
-    if (!shader || !shader->isValid())
+    if (!model || model->subMeshes.empty() || instances.empty())
         return;
 
     std::vector<InstanceData> instanceData;
@@ -266,54 +259,66 @@ void Renderer::renderInstanced(const std::shared_ptr<Model>& model, const std::v
 
     glBufferData(GL_ARRAY_BUFFER, instanceData.size() * sizeof(InstanceData), instanceData.data(), GL_STREAM_DRAW);
 
-    model->material->bind();
+    for (const auto& subMesh : model->subMeshes) {
+        if (!subMesh.mesh || !subMesh.material || !subMesh.mesh->isReady())
+            continue;
 
-    shader->use();
-    shader->set("u_IsInstanced", true);
+        auto shader = subMesh.material->getShader();
 
-    shader->set("view", camera.getViewMatrix());
-    shader->set("projection", camera.getProjectionMatrix(aspectRatio));
-    shader->set("u_CameraPos", camera.position);
+        if (!shader || !shader->isValid())
+            continue;
 
-    model->mesh->setupInstanceAttributes(instanceVBO);
+        subMesh.material->bind();
 
-    glBindVertexArray(model->mesh->vao);
+        shader->use();
+        shader->set("u_IsInstanced", true);
 
-    glDrawElementsInstanced(GL_TRIANGLES, model->mesh->indexCount, GL_UNSIGNED_INT, nullptr, static_cast<GLsizei>(instanceData.size()));
+        shader->set("view", camera.getViewMatrix());
+        shader->set("projection", camera.getProjectionMatrix(aspectRatio));
+        shader->set("u_CameraPos", camera.position);
 
-    glBindVertexArray(0);
+        subMesh.mesh->setupInstanceAttributes(instanceVBO);
+
+        glBindVertexArray(subMesh.mesh->vao);
+
+        glDrawElementsInstanced(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr, static_cast<GLsizei>(instanceData.size()));
+
+        glBindVertexArray(0);
+    }
 }
 
 void Renderer::renderSingle(const std::shared_ptr<Model>& model, const glm::mat4& worldMatrix, const Camera& camera, float aspectRatio) {
-    if (!model || !model->mesh || !model->material)
+    if (!model || model->subMeshes.empty())
         return;
 
-    if (!model->mesh->isReady())
-        return;
+    for (const auto& subMesh : model->subMeshes) {
+        if (!subMesh.mesh || !subMesh.material || !subMesh.mesh->isReady())
+            continue;
 
-    auto shader = model->material->getShader();
-    if (!shader || !shader->isValid())
-        return;
+        auto shader = subMesh.material->getShader();
+        if (!shader || !shader->isValid())
+            continue;
 
-    shader->use();
-    model->material->bind();
+        shader->use();
+        subMesh.material->bind();
 
-    shader->set("u_IsInstanced", false);
+        shader->set("u_IsInstanced", false);
 
-    shader->set("model", worldMatrix);
-    shader->set("view", camera.getViewMatrix());
-    shader->set("projection", camera.getProjectionMatrix(aspectRatio));
-    shader->set("u_CameraPos", camera.position);
+        shader->set("model", worldMatrix);
+        shader->set("view", camera.getViewMatrix());
+        shader->set("projection", camera.getProjectionMatrix(aspectRatio));
+        shader->set("u_CameraPos", camera.position);
 
-    glBindVertexArray(model->mesh->vao);
+        glBindVertexArray(subMesh.mesh->vao);
 
-    for (GLuint i = 0; i < 4; ++i) {
-        glDisableVertexAttribArray(4 + i);
+        for (GLuint i = 0; i < 4; ++i) {
+            glDisableVertexAttribArray(4 + i);
+        }
+
+        glDrawElements(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr);
+
+        glBindVertexArray(0);
     }
-
-    glDrawElements(GL_TRIANGLES, model->mesh->indexCount, GL_UNSIGNED_INT, nullptr);
-
-    glBindVertexArray(0);
 }
 
 bool Renderer::renderObject(const VisibleInstance& instance, const Camera& camera, float aspectRatio) {
@@ -325,7 +330,7 @@ bool Renderer::renderObject(const VisibleInstance& instance, const Camera& camer
     if (!object.model)
         return true;
 
-    if (!object.model->material || !object.model->mesh)
+    if (object.model->subMeshes.empty())
         return false;
 
     renderSingle(object.model, instance.worldMatrix, camera, aspectRatio);
@@ -390,10 +395,7 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
 
     // 인스턴스하는것만 골라내기
     for (const auto& object : objectManager.getObjects()) {
-        if (!object->model)
-            continue;
-
-        if (!object->model->mesh || !object->model->material)
+        if (!object->model || object->model->subMeshes.empty())
             continue;
 
         glm::mat4 worldMatrix = object->getWorldMatrix();
@@ -404,17 +406,9 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
         instanceGroups[object->model.get()].push_back(VisibleInstance{object.get(), worldMatrix});
     }
 
-    // 실제 오브젝트 렌더
-    for (const auto& [modelKey, instances] : instanceGroups) {
-        if (instances.empty())
-            continue;
-
-        const auto& model = instances.front().object->model;
-
-        auto shader = model->material->getShader();
-
+    auto setupSceneUniforms = [&](const std::shared_ptr<Shader>& shader) {
         if (!shader || !shader->isValid())
-            continue;
+            return;
 
         shader->use();
 
@@ -448,6 +442,30 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
 
         shader->set("shadowMap", 11);
         shader->set("lightSpaceMatrix", lightSpaceMatrix);
+    };
+
+    // 실제 오브젝트 렌더
+    for (const auto& [modelKey, instances] : instanceGroups) {
+        if (instances.empty())
+            continue;
+
+        const auto& model = instances.front().object->model;
+        if (!model || model->subMeshes.empty())
+            continue;
+
+        std::unordered_set<unsigned int> preparedShaders;
+        for (const auto& subMesh : model->subMeshes) {
+            if (!subMesh.material)
+                continue;
+
+            auto shader = subMesh.material->getShader();
+            if (!shader || !shader->isValid())
+                continue;
+
+            if (preparedShaders.insert(shader->getShaderProgram()).second) {
+                setupSceneUniforms(shader);
+            }
+        }
 
         if (instances.size() >= INSTANCE_THRESHOLD) { // 인스턴싱 할때
             renderInstanced(model, instances, camera, aspectRatio);
@@ -511,19 +529,16 @@ void Renderer::renderShadow(Scene& scene) {
         if (!object->model)
             continue;
 
-        if (!object->model->mesh)
-            continue;
+        for (const auto& subMesh : object->model->subMeshes) {
+            if (!subMesh.mesh || !subMesh.mesh->isReady())
+                continue;
 
-        auto mesh = object->model->mesh;
+            shadowShader->set("model", object->getWorldMatrix());
 
-        if (!mesh->isReady())
-            continue;
+            glBindVertexArray(subMesh.mesh->vao);
 
-        shadowShader->set("model", object->getWorldMatrix());
-
-        glBindVertexArray(mesh->vao);
-
-        glDrawElements(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, nullptr);
+            glDrawElements(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr);
+        }
     }
 
     glBindVertexArray(0);

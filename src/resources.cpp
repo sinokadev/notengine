@@ -5,6 +5,8 @@
 #include <iostream>
 #include <sstream>
 #include <filesystem>
+#include <cmath>
+#include <limits>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -208,33 +210,52 @@ ShaderSource PbrShader::GetSource() {
     return ShaderSource(getAssetRoot() + "assets/shaders/alpha.vert", getAssetRoot() + "assets/shaders/pbr.frag");
 }
 
-Model::Model(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material) : mesh(std::move(mesh)), material(std::move(material)) {
+Model::Model(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material) {
+    if (mesh || material) {
+        subMeshes.emplace_back(std::move(mesh), std::move(material));
+    }
+    calculateBounds();
+}
+
+Model::Model(std::vector<SubMesh> subMeshes) : subMeshes(std::move(subMeshes)) {
     calculateBounds();
 }
 
 void Model::calculateBounds() {
-    if (!mesh || mesh->vertices.empty()) {
+    bool hasVertices = false;
+    glm::vec3 minPos(std::numeric_limits<float>::max());
+    glm::vec3 maxPos(std::numeric_limits<float>::lowest());
+
+    for (const auto& subMesh : subMeshes) {
+        if (!subMesh.mesh || subMesh.mesh->vertices.empty())
+            continue;
+
+        for (const auto& v : subMesh.mesh->vertices) {
+            minPos = glm::min(minPos, v.Position);
+            maxPos = glm::max(maxPos, v.Position);
+            hasVertices = true;
+        }
+    }
+
+    if (!hasVertices) {
         boundsCenter = glm::vec3(0.0f);
         boundsRadius = 0.0f;
         return;
     }
 
-    glm::vec3 minPos = mesh->vertices[0].Position;
-    glm::vec3 maxPos = mesh->vertices[0].Position;
-
-    for (const auto& v : mesh->vertices) {
-        minPos = glm::min(minPos, v.Position);
-        maxPos = glm::max(maxPos, v.Position);
-    }
-
     boundsCenter = (minPos + maxPos) * 0.5f;
 
     float maxDistSq = 0.0f;
-    for (const auto& v : mesh->vertices) {
-        glm::vec3 diff = v.Position - boundsCenter;
-        float distSq = glm::dot(diff, diff);
-        if (distSq > maxDistSq) {
-            maxDistSq = distSq;
+    for (const auto& subMesh : subMeshes) {
+        if (!subMesh.mesh || subMesh.mesh->vertices.empty())
+            continue;
+
+        for (const auto& v : subMesh.mesh->vertices) {
+            glm::vec3 diff = v.Position - boundsCenter;
+            float distSq = glm::dot(diff, diff);
+            if (distSq > maxDistSq) {
+                maxDistSq = distSq;
+            }
         }
     }
     boundsRadius = std::sqrt(maxDistSq);
@@ -255,7 +276,7 @@ bool Object::isVisible(const Frustum& frustum, const glm::mat4& worldMatrix) con
     if (!model)
         return false;
 
-    if (model->boundsRadius <= 0.0f && model->mesh && !model->mesh->vertices.empty()) {
+    if (model->boundsRadius <= 0.0f) {
         model->calculateBounds();
     }
 

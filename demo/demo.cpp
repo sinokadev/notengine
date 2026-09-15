@@ -61,7 +61,7 @@ int main() {
 
     auto model = knot::loadModelOBJWithMTL(knot::getAssetRoot() + "assets/Untitled.obj", shader);
 
-    auto cubeObject = std::make_shared<knot::Object>(model.front());
+    auto cubeObject = std::make_shared<knot::Object>(model);
 
     scene.getObjectManager().registerObject(cubeObject);
 

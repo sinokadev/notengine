@@ -1,0 +1,9 @@
+newmtl RedMaterial
+Kd 1.0 0.0 0.0
+Pr 0.2
+Pm 0.8
+
+newmtl BlueMaterial
+Kd 0.0 0.0 1.0
+Pr 0.5
+Pm 0.1
