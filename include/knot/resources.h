@@ -385,24 +385,39 @@ private:
     bool isNormalAllocated = false;
 };
 
-/** @brief Renderable mesh/material pair with a local bounding sphere. */
-struct Model {
+/** @brief A pairing of mesh geometry and material for a sub-mesh. */
+struct SubMesh {
     /** @brief Mesh geometry to draw. */
     std::shared_ptr<Mesh> mesh;
     /** @brief Material applied to the mesh. */
     std::shared_ptr<Material> material;
 
-    /** @brief Center of the mesh's local bounding sphere. */
+    SubMesh() = default;
+
+    /** @brief Creates a sub-mesh from mesh geometry and a material. */
+    SubMesh(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material) : mesh(std::move(mesh)), material(std::move(material)) {
+    }
+};
+
+/** @brief Renderable model containing one or more sub-meshes with a local bounding sphere. */
+struct Model {
+    /** @brief List of sub-meshes that comprise this model. */
+    std::vector<SubMesh> subMeshes;
+
+    /** @brief Center of the model's local bounding sphere. */
     glm::vec3 boundsCenter = glm::vec3(0.0f);
-    /** @brief Radius of the mesh's local bounding sphere. */
+    /** @brief Radius of the model's local bounding sphere. */
     float boundsRadius = 1.0f;
 
     Model() = default;
 
-    /** @brief Creates a model and calculates bounds from its mesh vertices. */
+    /** @brief Creates a model with a single sub-mesh and calculates bounds from its vertices. */
     Model(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material);
 
-    /** @brief Recalculates the local bounding sphere from mesh vertices. */
+    /** @brief Creates a model from a list of sub-meshes and calculates bounds from their vertices. */
+    explicit Model(std::vector<SubMesh> subMeshes);
+
+    /** @brief Recalculates the local bounding sphere from all sub-mesh vertices. */
     void calculateBounds();
 };
 

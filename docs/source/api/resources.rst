@@ -34,6 +34,9 @@ Materials
 Scene types
 -----------
 
+.. doxygenstruct:: knot::SubMesh
+   :members:
+
 .. doxygenstruct:: knot::Model
    :members:
 

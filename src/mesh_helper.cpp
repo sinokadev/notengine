@@ -299,10 +299,10 @@ std::shared_ptr<Mesh> loadModelOBJ(const std::string& filePath) {
     return mesh;
 }
 
-std::vector<std::shared_ptr<Model>> loadModelOBJWithMTL(const std::string& filePath, std::shared_ptr<Shader> pbrShader) {
+std::shared_ptr<Model> loadModelOBJWithMTL(const std::string& filePath, std::shared_ptr<Shader> pbrShader) {
     if (!pbrShader) {
         std::cerr << "[Error] A PBR shader is required to load OBJ materials" << std::endl;
-        return {};
+        return nullptr;
     }
 
     tinyobj::attrib_t attrib;
@@ -314,7 +314,7 @@ std::vector<std::shared_ptr<Model>> loadModelOBJWithMTL(const std::string& fileP
 
     if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filePath.c_str(), objDir.c_str())) {
         std::cerr << "[Error] Failed to load the OBJ File: " << warn << err << std::endl;
-        return {};
+        return nullptr;
     }
 
     struct IndexTuple {
@@ -443,7 +443,7 @@ std::vector<std::shared_ptr<Model>> loadModelOBJWithMTL(const std::string& fileP
                                              normalMap);
     };
 
-    std::vector<std::shared_ptr<Model>> models;
+    auto model = std::make_shared<Model>();
 
     for (auto& [materialId, group] : groups) {
         if (group.indices.empty())
@@ -458,9 +458,14 @@ std::vector<std::shared_ptr<Model>> loadModelOBJWithMTL(const std::string& fileP
         mesh->indexCount = static_cast<unsigned int>(mesh->indices.size());
         mesh->setup();
 
-        models.push_back(std::make_shared<Model>(std::move(mesh), createMaterial(materialId)));
+        model->subMeshes.emplace_back(std::move(mesh), createMaterial(materialId));
     }
 
-    return models;
+    if (model->subMeshes.empty()) {
+        return nullptr;
+    }
+
+    model->calculateBounds();
+    return model;
 }
 } // namespace knot

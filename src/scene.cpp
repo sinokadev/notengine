@@ -346,17 +346,42 @@ bool Scene::loadSeno(const std::string& path) {
                         return false;
                     }
 
-                    auto loadedModels = loadModelOBJWithMTL(objPath, shader);
+                    auto loadedModel = loadModelOBJWithMTL(objPath, shader);
 
-                    if (loadedModels.empty()) {
+                    if (!loadedModel) {
                         std::cerr << "[Error] Failed to load OBJ: " << objPath << std::endl;
                         return false;
                     }
 
-                    for (auto& model : loadedModels) {
-                        models.push_back(std::move(model));
-                    }
+                    models.push_back(std::move(loadedModel));
 
+                    continue;
+                }
+
+                // --------------------------------------------------------
+                // Submeshes (array of {mesh, material})
+                // --------------------------------------------------------
+
+                if (modelData.contains("submeshes") && modelData["submeshes"].is_array()) {
+                    auto model = std::make_shared<Model>();
+                    for (const auto& subData : modelData["submeshes"]) {
+                        const int meshIndex = subData.value("mesh", -1);
+                        const int materialIndex = subData.value("material", -1);
+
+                        if (meshIndex < 0 || meshIndex >= static_cast<int>(meshes.size())) {
+                            std::cerr << "[Error] Submesh mesh index " << meshIndex << " is out of range" << std::endl;
+                            return false;
+                        }
+
+                        if (materialIndex < 0 || materialIndex >= static_cast<int>(materials.size())) {
+                            std::cerr << "[Error] Submesh material index " << materialIndex << " is out of range" << std::endl;
+                            return false;
+                        }
+
+                        model->subMeshes.emplace_back(meshes[meshIndex], materials[materialIndex]);
+                    }
+                    model->calculateBounds();
+                    models.push_back(std::move(model));
                     continue;
                 }
 
@@ -506,103 +531,55 @@ bool Scene::loadSeno(const std::string& path) {
         if (scene.contains("camera")) {
             const auto& cameraData = scene["camera"];
 
-            const std::string type =
-                cameraData.value("type", "PerspectiveCamera");
+            const std::string type = cameraData.value("type", "PerspectiveCamera");
 
             glm::vec3 position(0.0f, 0.0f, 5.0f);
 
             if (cameraData.contains("position")) {
                 const auto& p = cameraData["position"];
 
-                position = glm::vec3(
-                    p[0].get<float>(),
-                    p[1].get<float>(),
-                    p[2].get<float>()
-                );
+                position = glm::vec3(p[0].get<float>(), p[1].get<float>(), p[2].get<float>());
             }
 
-            const float nearPlane =
-                cameraData.value("near", Camera::kNearPlane);
+            const float nearPlane = cameraData.value("near", Camera::kNearPlane);
 
-            const float farPlane =
-                cameraData.value("far", Camera::kFarPlane);
+            const float farPlane = cameraData.value("far", Camera::kFarPlane);
 
             std::shared_ptr<Camera> cam;
 
             if (type == "OrthographicCamera") {
-                const float size =
-                    cameraData.value("size", 10.0f);
+                const float size = cameraData.value("size", 10.0f);
 
-                auto orthoCam =
-                    std::make_shared<OrthographicCamera>(
-                        position,
-                        nearPlane,
-                        farPlane,
-                        size
-                    );
+                auto orthoCam = std::make_shared<OrthographicCamera>(position, nearPlane, farPlane, size);
 
                 if (cameraData.contains("rotation")) {
                     const auto& r = cameraData["rotation"];
 
-                    orthoCam->rotation = glm::quat(
-                        r[0].get<float>(),
-                        r[1].get<float>(),
-                        r[2].get<float>(),
-                        r[3].get<float>()
-                    );
+                    orthoCam->rotation = glm::quat(r[0].get<float>(), r[1].get<float>(), r[2].get<float>(), r[3].get<float>());
                 }
 
                 cam = orthoCam;
-            }
-            else if (
-                type == "PerspectiveCamera" ||
-                type == "Camera"
-            ) {
-                const float fov =
-                    cameraData.value("fov", 45.0f);
+            } else if (type == "PerspectiveCamera" || type == "Camera") {
+                const float fov = cameraData.value("fov", 45.0f);
 
-                auto perspCam =
-                    std::make_shared<PerspectiveCamera>(
-                        position,
-                        fov,
-                        nearPlane,
-                        farPlane
-                    );
+                auto perspCam = std::make_shared<PerspectiveCamera>(position, fov, nearPlane, farPlane);
 
                 if (cameraData.contains("rotation")) {
                     const auto& r = cameraData["rotation"];
 
-                    perspCam->rotation = glm::quat(
-                        r[0].get<float>(),
-                        r[1].get<float>(),
-                        r[2].get<float>(),
-                        r[3].get<float>()
-                    );
+                    perspCam->rotation = glm::quat(r[0].get<float>(), r[1].get<float>(), r[2].get<float>(), r[3].get<float>());
                 }
 
                 cam = perspCam;
-            }
-            else if (type == "MovingCamera") {
-                const float fov =
-                    cameraData.value("fov", 45.0f);
+            } else if (type == "MovingCamera") {
+                const float fov = cameraData.value("fov", 45.0f);
 
-                auto movingCam =
-                    std::make_shared<MovingCamera>(
-                        position,
-                        fov,
-                        nearPlane,
-                        farPlane
-                    );
+                auto movingCam = std::make_shared<MovingCamera>(position, fov, nearPlane, farPlane);
 
                 if (cameraData.contains("rotation")) {
                     const auto& r = cameraData["rotation"];
 
-                    movingCam->rotation = glm::quat(
-                        r[0].get<float>(),
-                        r[1].get<float>(),
-                        r[2].get<float>(),
-                        r[3].get<float>()
-                    );
+                    movingCam->rotation = glm::quat(r[0].get<float>(), r[1].get<float>(), r[2].get<float>(), r[3].get<float>());
                 }
 
                 cam = movingCam;

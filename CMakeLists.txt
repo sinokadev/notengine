@@ -129,6 +129,10 @@ add_executable(ortho_test EXCLUDE_FROM_ALL demo/ortho_test.cpp)
 target_link_libraries(ortho_test PRIVATE notengine)
 set_target_properties(ortho_test PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
+add_executable(test_submesh EXCLUDE_FROM_ALL demo/test_submesh.cpp)
+target_link_libraries(test_submesh PRIVATE notengine)
+set_target_properties(test_submesh PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+
 install(TARGETS notengine
     EXPORT notengineTargets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
