@@ -35,11 +35,18 @@ struct Playback {
  * extensions, so newly enabled miniaudio decoders work without changes to this API.
  *
  * Public methods must be called from one application thread. Audio does not
- * depend on knot::Engine and may be created and used directly.
+ * depend on knot::Engine and is accessed via the singleton get() method.
  */
 class Audio {
 public:
-    Audio();
+    /** @brief Get the singleton instance of Audio.
+     *  @return Reference to the single Audio instance. */
+    static Audio& get();
+
+    /** @brief Alias for get() to access the singleton instance.
+     *  @return Reference to the single Audio instance. */
+    static Audio& getInstance();
+
     ~Audio();
 
     Audio(const Audio&) = delete;
@@ -94,6 +101,13 @@ public:
     void update();
 
 private:
+    /**
+     * @brief Constructs the global Audio instance.
+     *
+     * Construction is private to enforce the singleton pattern.
+     */
+    Audio();
+
     using PlaybackGroup = std::unordered_multimap<std::string, std::unique_ptr<Playback>>;
 
     void releasePlayback(Playback& playback);

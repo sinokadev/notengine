@@ -21,7 +21,7 @@ int main() {
         return 1;
     }
 
-    knot::Audio audio;
+    knot::Audio& audio = knot::Audio::get();
     bool testWavLoaded = false;
     bool testMp3Loaded = false;
 
