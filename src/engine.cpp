@@ -104,6 +104,7 @@ int Engine::run() {
         processTimer();
         render();
         window.loop();
+        setMakingMusic(true);
     }
 
     shutdown();
@@ -195,7 +196,7 @@ bool Engine::setScene(Scene& s) {
 int Engine::after(double interval, uint32_t eventCode, std::any eventData) {
     TimerTask afterTimerTask;
     afterTimerTask.time = interval;
-    afterTimerTask.interval = interval;
+    afterTimerTask.interval = 0.0;
     afterTimerTask.eventCode = eventCode;
     afterTimerTask.eventData = eventData;
     afterTimerTask.id = nextTimerTaskId++;

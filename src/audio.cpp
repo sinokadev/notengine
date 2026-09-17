@@ -16,6 +16,15 @@ void logMiniaudioError(const char* operation, ma_result result) {
 
 } // namespace
 
+Audio& Audio::get() {
+    static Audio instance;
+    return instance;
+}
+
+Audio& Audio::getInstance() {
+    return get();
+}
+
 Audio::Audio() = default;
 
 Audio::~Audio() {
