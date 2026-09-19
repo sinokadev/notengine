@@ -190,9 +190,9 @@ MovingCamera::MovingCamera(
 }
 void MovingCamera::move(
     glm::vec3 direction,
-    int deltaTime
+    float deltaTime
 ) {
-    position += direction * (speed * static_cast<float>(deltaTime));
+    position += direction * (speed * deltaTime);
 }
 
 void MovingCamera::rotate(float xOffset, float yOffset) {

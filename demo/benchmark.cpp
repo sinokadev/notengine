@@ -70,13 +70,13 @@ int main() {
     // 현재 테스트에 생성된 Object들의 ID
     std::vector<unsigned int> objectIds;
 
-    constexpr int WARMUP_TIME = 2000;
-    constexpr int TEST_TIME = 5000;
+    constexpr float WARMUP_TIME = 2000.0f;
+    constexpr float TEST_TIME = 5000.0f;
 
     int benchmarkIndex = 0;
 
-    int elapsedTime = 0;
-    int measuredTime = 0;
+    float elapsedTime = 0.0f;
+    float measuredTime = 0.0f;
 
     uint64_t frameCount = 0;
 
@@ -162,8 +162,8 @@ int main() {
 
         createObjects(objectCount);
 
-        elapsedTime = 0;
-        measuredTime = 0;
+        elapsedTime = 0.0f;
+        measuredTime = 0.0f;
         frameCount = 0;
 
         measuring = false;
@@ -191,7 +191,7 @@ int main() {
         }
     });
 
-    scene.setUpdateCallback([&](knot::Scene& currentScene, int deltaTime) {
+    scene.setUpdateCallback([&](knot::Scene& currentScene, float deltaTime) {
         if (finished)
             return;
 
@@ -207,8 +207,8 @@ int main() {
             if (elapsedTime >= WARMUP_TIME) {
                 measuring = true;
 
-                elapsedTime = 0;
-                measuredTime = 0;
+                elapsedTime = 0.0f;
+                measuredTime = 0.0f;
                 frameCount = 0;
 
                 std::cout << "Measuring...\n";
@@ -252,7 +252,7 @@ int main() {
 
         // TEST_TIME 동안 2 * M_PI 라디안을 도는 각속도 계산
         constexpr float TWO_PI = 6.28318530717958647692f;
-        const float angularVelocity = TWO_PI / static_cast<float>(TEST_TIME);
+        const float angularVelocity = TWO_PI / TEST_TIME;
         const float angle = t * angularVelocity;
 
         camera.position.x = std::sin(angle) * 20.0f;

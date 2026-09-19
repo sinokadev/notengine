@@ -46,7 +46,7 @@ int main() {
 
     int frameCount = 0;
 
-    engine.repeat(1000, PRINT_FPS);
+    engine.repeat(1000.0f, PRINT_FPS);
 
     // Track last write time so we can detect file changes
     // Initialize to min so any real file timestamp will compare different
@@ -60,7 +60,7 @@ int main() {
     }
 
     // Update callback used by the scene. Stored so it can be re-applied after reload.
-    auto updateCallback = [&](knot::Scene& currentScene, int deltaTime) {
+    auto updateCallback = [&](knot::Scene& currentScene, float deltaTime) {
         frameCount++;
 
         if (stop)
@@ -181,7 +181,7 @@ int main() {
     });
 
     // Start periodic reload checks (every 500 ms)
-    engine.repeat(500, RELOAD_SCENE);
+    engine.repeat(500.0f, RELOAD_SCENE);
 
     // Register initial update callback
     scene.setUpdateCallback(updateCallback);
