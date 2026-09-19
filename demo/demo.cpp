@@ -94,13 +94,13 @@ int main() {
     float lastX = 1280.0f / 2.0f;
     float lastY = 720.0f / 2.0f;
 
-    float totalTime = 0.0f;
+    int totalTime = 0;
 
     bool stop = false;
 
     int frameCount = 0;
 
-    engine.repeat(1000.0f, PRINT_FPS);
+    engine.repeat(1000, PRINT_FPS);
 
     engine.setEventCallback([&](knot::Event& event) {
         if (event.type == knot::KeyInput) {
@@ -174,7 +174,7 @@ int main() {
         }
     });
 
-    scene.setUpdateCallback([&](knot::Scene& currentScene, float deltaTime) {
+    scene.setUpdateCallback([&](knot::Scene& currentScene, int deltaTime) {
         frameCount++;
 
         audio.update();
@@ -186,7 +186,7 @@ int main() {
 
         float speed = 0.0005f;
 
-        cubeObject->rotation = glm::quat(glm::vec3(sin(totalTime * 0.0005f) * 0.2f, totalTime * speed, 0.0f));
+        cubeObject->rotation = glm::quat(glm::vec3(sin(static_cast<float>(totalTime) * 0.0005f) * 0.2f, static_cast<float>(totalTime) * speed, 0.0f));
 
         glm::vec3 moveDir(0.0f);
 
