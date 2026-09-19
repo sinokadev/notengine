@@ -69,6 +69,95 @@ Object* ObjectManager::getObject(unsigned int id) {
     return nullptr;
 }
 
+const Object* ObjectManager::getObject(unsigned int id) const {
+    auto it = idToIterator.find(id);
+    if (it != idToIterator.end()) {
+        return it->second->get();
+    }
+
+    return nullptr;
+}
+
+unsigned int ObjectManager::registerObject(std::shared_ptr<Object> newObject, const std::string& group, int id) {
+    if (!newObject)
+        return 0;
+
+    if (!group.empty()) {
+        newObject->setGroup(group);
+    }
+
+    return registerObject(newObject, id);
+}
+
+bool ObjectManager::setObjectGroup(unsigned int id, const std::string& group) {
+    Object* obj = getObject(id);
+    if (!obj) {
+        return false;
+    }
+    obj->setGroup(group);
+    return true;
+}
+
+bool ObjectManager::addToGroup(const std::string& group, unsigned int id) {
+    Object* obj = getObject(id);
+    if (!obj) {
+        return false;
+    }
+    obj->addGroup(group);
+    return true;
+}
+
+std::vector<Object*> ObjectManager::getObjectsByGroup(const std::string& group) const {
+    std::vector<Object*> result;
+    if (group.empty()) {
+        return result;
+    }
+
+    for (const auto& obj : objects) {
+        if (obj && obj->isInGroup(group)) {
+            result.push_back(obj.get());
+        }
+    }
+
+    return result;
+}
+
+std::vector<std::shared_ptr<Object>> ObjectManager::getSharedObjectsByGroup(const std::string& group) const {
+    std::vector<std::shared_ptr<Object>> result;
+    if (group.empty()) {
+        return result;
+    }
+
+    for (const auto& obj : objects) {
+        if (obj && obj->isInGroup(group)) {
+            result.push_back(obj);
+        }
+    }
+
+    return result;
+}
+
+std::vector<std::string> ObjectManager::getGroups() const {
+    std::vector<std::string> result;
+    std::unordered_set<std::string> seen;
+
+    for (const auto& obj : objects) {
+        if (!obj) {
+            continue;
+        }
+        if (!obj->group.empty() && seen.insert(obj->group).second) {
+            result.push_back(obj->group);
+        }
+        for (const auto& g : obj->groups) {
+            if (!g.empty() && seen.insert(g).second) {
+                result.push_back(g);
+            }
+        }
+    }
+
+    return result;
+}
+
 LightManager::~LightManager() {
     shutdown();
 }

@@ -442,6 +442,18 @@ bool Scene::loadSeno(const std::string& path) {
                     object->rotation = glm::quat(r[0].get<float>(), r[1].get<float>(), r[2].get<float>(), r[3].get<float>());
                 }
 
+                if (objectData.contains("group") && objectData["group"].is_string()) {
+                    object->setGroup(objectData["group"].get<std::string>());
+                }
+
+                if (objectData.contains("groups") && objectData["groups"].is_array()) {
+                    for (const auto& g : objectData["groups"]) {
+                        if (g.is_string()) {
+                            object->addGroup(g.get<std::string>());
+                        }
+                    }
+                }
+
                 int id = -1;
                 if (objectData.contains("id")) {
                     id = objectData["id"].get<int>();

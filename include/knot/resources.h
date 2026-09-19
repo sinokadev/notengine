@@ -508,6 +508,11 @@ public:
     /** @brief Geometry and material drawn for this object. */
     std::shared_ptr<Model> model;
 
+    /** @brief Primary group name assigned to this object. */
+    std::string group;
+    /** @brief All group names assigned to this object. */
+    std::vector<std::string> groups;
+
     Object() = default;
 
     /** @brief Creates an object from an existing model. */
@@ -518,7 +523,84 @@ public:
     Object(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material) : model(std::make_shared<Model>(std::move(mesh), std::move(material))) {
     }
 
+    /** @brief Creates an object from an existing model and assigns a group. */
+    Object(std::shared_ptr<Model> model, std::string group) : model(std::move(model)), group(std::move(group)) {
+        if (!this->group.empty()) {
+            groups.push_back(this->group);
+        }
+    }
+
+    /** @brief Creates an object from mesh geometry, a material, and assigns a group. */
+    Object(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material, std::string group)
+        : model(std::make_shared<Model>(std::move(mesh), std::move(material))), group(std::move(group)) {
+        if (!this->group.empty()) {
+            groups.push_back(this->group);
+        }
+    }
+
     virtual ~Object() = default;
+
+    /** @brief Returns the primary group name assigned to this object. */
+    const std::string& getGroup() const {
+        return group;
+    }
+
+    /** @brief Sets the primary group name for this object. */
+    void setGroup(const std::string& newGroup) {
+        group = newGroup;
+        groups.clear();
+        if (!group.empty()) {
+            groups.push_back(group);
+        }
+    }
+
+    /** @brief Adds this object to an additional group. */
+    void addGroup(const std::string& newGroup) {
+        if (newGroup.empty()) {
+            return;
+        }
+        if (group.empty()) {
+            group = newGroup;
+        }
+        for (const auto& g : groups) {
+            if (g == newGroup) {
+                return;
+            }
+        }
+        groups.push_back(newGroup);
+    }
+
+    /** @brief Removes this object from a group. */
+    void removeGroup(const std::string& groupName) {
+        if (group == groupName) {
+            group = groups.size() > 1 ? (groups[0] == groupName ? groups[1] : groups[0]) : "";
+        }
+        for (auto it = groups.begin(); it != groups.end();) {
+            if (*it == groupName) {
+                it = groups.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    /** @brief Reports whether this object belongs to @p groupName. */
+    bool isInGroup(const std::string& groupName) const {
+        if (!group.empty() && group == groupName) {
+            return true;
+        }
+        for (const auto& g : groups) {
+            if (g == groupName) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** @brief Returns all groups assigned to this object. */
+    const std::vector<std::string>& getGroups() const {
+        return groups;
+    }
 
     /** @brief Returns the material of a specific sub-mesh from the object's model. */
     std::shared_ptr<Material> getMaterial(size_t subMeshIndex = 0) const {

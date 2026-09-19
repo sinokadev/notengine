@@ -9,18 +9,21 @@
     "objects": [
         {
             "id": 100,
+            "group": "boxes",
             "position": [0, 2, 0],
             "scale": [1, 1, 1],
             "rotation": [1, 0, 0, 0],
             "model": 0
         },
         {
+            "group": "boxes",
             "position": [2, 1, 0],
             "scale": [1, 1, 1],
             "rotation": [1, 0, 0, 0],
             "model": 0
         },
         {
+            "group": "ground",
             "position": [0, 0, 0],
             "scale": [200, 0.1, 200],
             "rotation": [1, 0, 0, 0],
