@@ -28,21 +28,19 @@ A code-first game engine built on OpenGL, empowering you to build everything fro
 | Version | Objects | Model | FPS | VSync |
 |---|---:|---|---:|---|
 | 0.1.5 | 1,000,000 | `notbox.obj` | 1 FPS | ON |
-| 0.1.6 | 1,000,000 | `notbox.obj` | **30 FPS** | ON |
+| 0.1.6 | 1,000,000 | `notbox.obj` | **30 FPS** | OFF |
 | 0.1.10 | 1,000,000 | `notbox.obj` | **46 FPS** | OFF |
 
 The same scene was used for both benchmarks.
 
 Renderer optimization improved performance from **1 FPS to 30 FPS** — approximately **30× faster**.
 
-> Note: Version 0.1.6 also achieved approximately 30 FPS with VSync disabled, confirming that the performance improvement was not caused by VSync.
-
 ### Test Environment
 
 - CPU: AMD Ryzen 7 7800X3D (16) @ 5.05 GHz
 - GPU: AMD Radeon RX 9070 XT [Discrete]
 - Resolution: 1280×720
-- Monitor: 144Hz
+- Monitor: 165Hz
 
 ## Build
 
