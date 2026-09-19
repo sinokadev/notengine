@@ -192,8 +192,7 @@ void MovingCamera::move(
     glm::vec3 direction,
     float deltaTime
 ) {
-    const int deltaTimeMs = static_cast<int>(deltaTime * 1000.0f);
-    position += direction * (speed * static_cast<float>(deltaTimeMs));
+    position += direction * (speed * (deltaTime * 1000.0f));
 }
 
 void MovingCamera::rotate(float xOffset, float yOffset) {

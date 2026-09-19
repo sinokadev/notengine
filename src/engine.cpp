@@ -101,6 +101,11 @@ int Engine::run() {
         const double currentFrame = glfwGetTime();
         deltaTime = static_cast<float>(currentFrame - lastFrame);
         lastFrame = currentFrame;
+
+        millisecondRemainder += deltaTime * 1000.0f;
+        deltaTimeMs = static_cast<int>(millisecondRemainder);
+        millisecondRemainder -= static_cast<float>(deltaTimeMs);
+
         update();
         processTimer();
         render();
@@ -131,6 +136,8 @@ void Engine::shutdown() {
     repeatTimerTasks.clear();
 
     deltaTime = 0.0f;
+    millisecondRemainder = 0.0f;
+    deltaTimeMs = 0;
     lastFrame = 0.0;
 
     window.shutdown();
@@ -157,8 +164,6 @@ void Engine::render() {
 }
 
 void Engine::processTimer() {
-    const int deltaTimeMs = static_cast<int>(deltaTime * 1000.0f);
-
     // after
     for (int i = 0; i < afterTimerTasks.size();) {
         afterTimerTasks[i].time -= deltaTimeMs;

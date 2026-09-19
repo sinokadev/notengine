@@ -195,7 +195,7 @@ int main() {
         if (finished)
             return;
 
-        elapsedTime += static_cast<int>(deltaTime * 1000.0f);
+        elapsedTime += engine.getDeltaTimeMs();
 
         /*
          * Warmup
@@ -221,7 +221,7 @@ int main() {
          * Benchmark
          */
         frameCount++;
-        measuredTime += static_cast<int>(deltaTime * 1000.0f);
+        measuredTime += engine.getDeltaTimeMs();
 
         if (measuredTime >= TEST_TIME) {
             const double averageFPS = static_cast<double>(frameCount) / (static_cast<double>(measuredTime) / 1000.0);
