@@ -100,7 +100,7 @@ void Scene::setCamera(std::shared_ptr<Camera> cam) {
     camera = std::move(cam);
 }
 
-void Scene::update(int dt) {
+void Scene::update(float dt) {
     if (updateCallback) {
         updateCallback(*this, dt);
     }

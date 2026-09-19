@@ -226,7 +226,7 @@ public:
      */
     void move(
         glm::vec3 direction,
-        int deltaTime
+        float deltaTime
     );
 
     /**

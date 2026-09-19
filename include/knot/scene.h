@@ -16,7 +16,7 @@ namespace knot {
 class Scene {
 public:
     /** @brief Callback invoked by update() once per engine frame. */
-    using UpdateCallback = std::function<void(Scene&, int)>;
+    using UpdateCallback = std::function<void(Scene&, float)>;
 
     /** @brief Creates a scene and initializes default shaders when OpenGL is ready. */
     Scene();
@@ -48,7 +48,7 @@ public:
 
     /** @brief Invokes the update callback when one is registered.
      *  @param dt Elapsed frame time in milliseconds. */
-    void update(int dt);
+    void update(float dt);
 
     /** @brief Loads an equirectangular HDR environment and derives IBL maps. */
     void loadHDRMap(const std::string& path);
