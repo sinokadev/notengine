@@ -100,7 +100,7 @@ int main() {
 
     int frameCount = 0;
 
-    engine.repeat(1000, PRINT_FPS);
+    engine.repeat(1000.0f, PRINT_FPS);
 
     engine.setEventCallback([&](knot::Event& event) {
         if (event.type == knot::KeyInput) {
@@ -184,9 +184,9 @@ int main() {
 
         totalTime += deltaTime;
 
-        float speed = 0.5f;
+        float speed = 0.0005f;
 
-        cubeObject->rotation = glm::quat(glm::vec3(sin(totalTime * 0.5f) * 0.2f, totalTime * speed, 0.0f));
+        cubeObject->rotation = glm::quat(glm::vec3(sin(totalTime * 0.0005f) * 0.2f, totalTime * speed, 0.0f));
 
         glm::vec3 moveDir(0.0f);
 

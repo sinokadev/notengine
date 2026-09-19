@@ -222,7 +222,7 @@ public:
      * @brief Moves the camera.
      *
      * @param direction The movement direction.
-     * @param deltaTime The elapsed time since the previous frame.
+     * @param deltaTime The elapsed time since the previous frame, in milliseconds.
      */
     void move(
         glm::vec3 direction,
@@ -270,7 +270,7 @@ public:
      */
     glm::vec3 getUp() const;
 
-    /** @brief Movement speed in world units per second. */
+    /** @brief Movement speed in world units per millisecond. */
     float speed;
 
     /** @brief Multiplier applied to rotation input offsets. */

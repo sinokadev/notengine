@@ -32,12 +32,12 @@ struct TimerTask {
     /**
      * @brief Time remaining until the next event trigger, in milliseconds.
      */
-    double time;
+    float time;
 
     /**
      * @brief The interval between repeated triggers, in milliseconds.
      */
-    double interval;
+    float interval;
 
     /**
      * @brief The unique identifier of the timer task.
@@ -61,9 +61,9 @@ public:
      *
      * The callback is executed after the scene has been rendered.
      *
-     * @param deltaTime The elapsed time since the previous frame, in seconds.
+     * @param deltaTime The elapsed time since the previous frame, in milliseconds.
      */
-    using RenderLoopCallback = std::function<void(double)>;
+    using RenderLoopCallback = std::function<void(float)>;
 
     Engine() = default;
 
@@ -138,7 +138,7 @@ public:
     /**
      * @brief Gets the elapsed time since the previous frame.
      *
-     * @return The frame delta time in seconds.
+     * @return The frame delta time in milliseconds.
      */
     float getDeltaTime() const {
         return deltaTime;
@@ -226,7 +226,7 @@ public:
      *
      * @return The unique ID assigned to the timer task.
      */
-    int after(double interval, uint32_t eventCode, std::any eventData = {});
+    int after(float interval, uint32_t eventCode, std::any eventData = {});
 
     /**
      * @brief Schedules a repeating user event.
@@ -240,7 +240,7 @@ public:
      *
      * @return The unique ID assigned to the timer task.
      */
-    int repeat(double interval, uint32_t eventCode, std::any eventData = {});
+    int repeat(float interval, uint32_t eventCode, std::any eventData = {});
 
     /**
      * @brief Requests the engine to stop running.
@@ -275,8 +275,8 @@ private:
     bool shouldQuit = false;
 
     bool initialized = false;
-    double deltaTime = 0.0f;
-    double lastFrame = 0.0f;
+    float deltaTime = 0.0f;
+    double lastFrame = 0.0;
 
     Scene* scene = nullptr;
 
