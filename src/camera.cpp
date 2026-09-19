@@ -185,14 +185,15 @@ MovingCamera::MovingCamera(
     float farPlane
 )
     : PerspectiveCamera(startPos, fov, nearPlane, farPlane),
-      speed(5.0f),
+      speed(0.005f),
       sensitivity(0.1f) {
 }
 void MovingCamera::move(
     glm::vec3 direction,
     float deltaTime
 ) {
-    position += direction * (speed * deltaTime);
+    const int deltaTimeMs = static_cast<int>(deltaTime * 1000.0f);
+    position += direction * (speed * static_cast<float>(deltaTimeMs));
 }
 
 void MovingCamera::rotate(float xOffset, float yOffset) {
