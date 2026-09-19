@@ -182,7 +182,7 @@ int main() {
         if (stop)
             return;
 
-        totalTime += static_cast<int>(deltaTime * 1000.0f);
+        totalTime += engine.getDeltaTimeMs();
 
         float speed = 0.0005f;
 

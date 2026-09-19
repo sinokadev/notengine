@@ -145,6 +145,18 @@ public:
     }
 
     /**
+     * @brief Gets the elapsed time since the previous frame.
+     *
+     * Sub-millisecond remainders are carried across frames so high frame
+     * rates still advance integer millisecond clocks.
+     *
+     * @return The frame delta time in milliseconds.
+     */
+    int getDeltaTimeMs() const {
+        return deltaTimeMs;
+    }
+
+    /**
      * @brief Gets the current framebuffer aspect ratio.
      *
      * The aspect ratio is calculated from the framebuffer dimensions
@@ -276,6 +288,8 @@ private:
 
     bool initialized = false;
     float deltaTime = 0.0f;
+    float millisecondRemainder = 0.0f;
+    int deltaTimeMs = 0;
     double lastFrame = 0.0;
 
     Scene* scene = nullptr;

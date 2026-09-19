@@ -26,6 +26,7 @@ struct Tween {
     Transform target;
     int duration = 0;  // ms
     int elapsed_time = 0;
+    float millisecondRemainder = 0.0f;
     bool is_finished = false;
 
     std::function<float(float)> ease_func = [](float t) { return t; };
@@ -33,7 +34,10 @@ struct Tween {
     void update(Object& obj, float dt) {
         if (is_finished) return;
 
-        elapsed_time += static_cast<int>(dt * 1000.0f);
+        millisecondRemainder += dt * 1000.0f;
+        const int deltaTimeMs = static_cast<int>(millisecondRemainder);
+        millisecondRemainder -= static_cast<float>(deltaTimeMs);
+        elapsed_time += deltaTimeMs;
 
         float progress = duration > 0 ? std::clamp(static_cast<float>(elapsed_time) / static_cast<float>(duration), 0.0f, 1.0f) : 1.0f;
         float t = ease_func ? ease_func(progress) : progress;
