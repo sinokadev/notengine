@@ -3,14 +3,49 @@
 
 #pragma once
 
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <functional>
+#include <algorithm>
 #include <knot/resources.h>
 
 
 namespace knot {
-struct Tween
-{
-    Transform target;
-    float duration; // ms
+inline Transform mixTransform(const Transform& start, const Transform& target, float t) {
+    Transform result;
+
+    result.position = glm::mix(start.position, target.position, t);
+    result.rotation = glm::slerp(start.rotation, target.rotation, t);
+    result.scale = glm::mix(start.scale, target.scale, t);
+    
+    return result;
+}
+
+struct Tween {
+    Transform start;
+    Transform target; 
+    float duration = 0.0f;  // ms
+    float elapsed_time = 0.0f;
+    bool is_finished = false;
+
+    std::function<float(float)> ease_func = [](float t) { return t; };
+
+    void update(Object& obj, float dt) {
+        if (is_finished) return;
+
+        elapsed_time += dt * 1000.0f;
+
+        float t = std::clamp(elapsed_time / duration, 0.0f, 1.0f);
+
+        Transform current = mixTransform(start, target, t);
+        obj.position = current.position;
+        obj.rotation = current.rotation;
+        obj.scale = current.scale;
+
+        if (t >= 1.0f) {
+            is_finished = true;
+        }
+    }
 };
 
 }
