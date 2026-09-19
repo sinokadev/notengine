@@ -70,13 +70,13 @@ int main() {
     // 현재 테스트에 생성된 Object들의 ID
     std::vector<unsigned int> objectIds;
 
-    constexpr float WARMUP_TIME = 2000.0f;
-    constexpr float TEST_TIME = 5000.0f;
+    constexpr double WARMUP_TIME = 2.0;
+    constexpr double TEST_TIME = 5.0;
 
     int benchmarkIndex = 0;
 
-    float elapsedTime = 0.0f;
-    float measuredTime = 0.0f;
+    double elapsedTime = 0.0;
+    double measuredTime = 0.0;
 
     uint64_t frameCount = 0;
 
@@ -162,8 +162,8 @@ int main() {
 
         createObjects(objectCount);
 
-        elapsedTime = 0.0f;
-        measuredTime = 0.0f;
+        elapsedTime = 0.0;
+        measuredTime = 0.0;
         frameCount = 0;
 
         measuring = false;
@@ -207,8 +207,8 @@ int main() {
             if (elapsedTime >= WARMUP_TIME) {
                 measuring = true;
 
-                elapsedTime = 0.0f;
-                measuredTime = 0.0f;
+                elapsedTime = 0.0;
+                measuredTime = 0.0;
                 frameCount = 0;
 
                 std::cout << "Measuring...\n";
@@ -224,7 +224,7 @@ int main() {
         measuredTime += deltaTime;
 
         if (measuredTime >= TEST_TIME) {
-            const double averageFPS = static_cast<double>(frameCount) / (static_cast<double>(measuredTime) / 1000.0);
+            const double averageFPS = static_cast<double>(frameCount) / measuredTime;
 
             // 일단 평균 FPS를 최소 FPS로도 기록한다.
             // 이후 frame time 기반 측정으로 개선 가능.
@@ -250,9 +250,9 @@ int main() {
 
         const float t = static_cast<float>(measuredTime);
 
-        // TEST_TIME 동안 2 * M_PI 라디안을 도는 각속도 계산
+        // TEST_TIME(5.0초) 동안 2 * M_PI 라디안을 도는 각속도 계산
         constexpr float TWO_PI = 6.28318530717958647692f;
-        const float angularVelocity = TWO_PI / TEST_TIME;
+        const float angularVelocity = TWO_PI / static_cast<float>(TEST_TIME);
         const float angle = t * angularVelocity;
 
         camera.position.x = std::sin(angle) * 20.0f;

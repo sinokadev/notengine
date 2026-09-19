@@ -185,7 +185,7 @@ MovingCamera::MovingCamera(
     float farPlane
 )
     : PerspectiveCamera(startPos, fov, nearPlane, farPlane),
-      speed(0.005f),
+      speed(5.0f),
       sensitivity(0.1f) {
 }
 void MovingCamera::move(

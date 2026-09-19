@@ -33,17 +33,16 @@ struct Tween {
     void update(Object& obj, float dt) {
         if (is_finished) return;
 
-        elapsed_time += dt;
+        elapsed_time += dt * 1000.0f;
 
-        float progress = duration > 0.0f ? std::clamp(elapsed_time / duration, 0.0f, 1.0f) : 1.0f;
-        float t = ease_func ? ease_func(progress) : progress;
+        float t = std::clamp(elapsed_time / duration, 0.0f, 1.0f);
 
         Transform current = mixTransform(start, target, t);
         obj.position = current.position;
         obj.rotation = current.rotation;
         obj.scale = current.scale;
 
-        if (progress >= 1.0f) {
+        if (t >= 1.0f) {
             is_finished = true;
         }
     }

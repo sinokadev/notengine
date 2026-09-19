@@ -47,7 +47,7 @@ public:
     void setUpdateCallback(UpdateCallback callback);
 
     /** @brief Invokes the update callback when one is registered.
-     *  @param dt Elapsed frame time in milliseconds. */
+     *  @param dt Elapsed frame time in seconds. */
     void update(float dt);
 
     /** @brief Loads an equirectangular HDR environment and derives IBL maps. */
