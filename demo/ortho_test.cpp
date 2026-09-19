@@ -54,12 +54,12 @@ int main() {
 
     scene.setCamera(camera);
 
-    float totalTime = 0.0f;
+    int totalTime = 0;
 
     scene.setUpdateCallback([&](knot::Scene& currentScene, float deltaTime) {
-        totalTime += deltaTime;
+        totalTime += static_cast<int>(deltaTime * 1000.0f);
 
-        cubeObject->rotation = glm::quat(glm::vec3(sin(totalTime * 0.5f) * 0.2f, totalTime * 0.5f, 0.0f));
+        cubeObject->rotation = glm::quat(glm::vec3(sin(static_cast<float>(totalTime) * 0.0005f) * 0.2f, static_cast<float>(totalTime) * 0.0005f, 0.0f));
     });
 
     engine.setScene(scene);

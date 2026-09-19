@@ -96,9 +96,10 @@ int Engine::run() {
         return 1;
     }
 
+    lastFrame = glfwGetTime();
     while (!window.isClose() && !shouldQuit) {
         const double currentFrame = glfwGetTime();
-        deltaTime = currentFrame - lastFrame;
+        deltaTime = static_cast<float>(currentFrame - lastFrame);
         lastFrame = currentFrame;
         update();
         processTimer();
@@ -129,6 +130,9 @@ void Engine::shutdown() {
     afterTimerTasks.clear();
     repeatTimerTasks.clear();
 
+    deltaTime = 0.0f;
+    lastFrame = 0.0;
+
     window.shutdown();
 
     initialized = false;
@@ -153,10 +157,12 @@ void Engine::render() {
 }
 
 void Engine::processTimer() {
+    const int deltaTimeMs = static_cast<int>(deltaTime * 1000.0f);
+
     // after
     for (int i = 0; i < afterTimerTasks.size();) {
-        afterTimerTasks[i].time -= deltaTime * 1000;
-        if (afterTimerTasks[i].time <= 0.0f) {
+        afterTimerTasks[i].time -= deltaTimeMs;
+        if (afterTimerTasks[i].time <= 0) {
             pushUserEvent(afterTimerTasks[i].eventCode, afterTimerTasks[i].eventData);
             afterTimerTasks.erase(afterTimerTasks.begin() + i);
         } else {
@@ -166,8 +172,8 @@ void Engine::processTimer() {
 
     // repeat
     for (int i = 0; i < repeatTimerTasks.size(); i++) {
-        repeatTimerTasks[i].time -= deltaTime * 1000;
-        if (repeatTimerTasks[i].time <= 0.0f) {
+        repeatTimerTasks[i].time -= deltaTimeMs;
+        if (repeatTimerTasks[i].time <= 0) {
             pushUserEvent(repeatTimerTasks[i].eventCode, repeatTimerTasks[i].eventData);
             repeatTimerTasks[i].time += repeatTimerTasks[i].interval;
         }
@@ -193,10 +199,10 @@ bool Engine::setScene(Scene& s) {
     return true;
 }
 
-int Engine::after(double interval, uint32_t eventCode, std::any eventData) {
+int Engine::after(int interval, uint32_t eventCode, std::any eventData) {
     TimerTask afterTimerTask;
     afterTimerTask.time = interval;
-    afterTimerTask.interval = 0.0;
+    afterTimerTask.interval = 0;
     afterTimerTask.eventCode = eventCode;
     afterTimerTask.eventData = eventData;
     afterTimerTask.id = nextTimerTaskId++;
@@ -205,7 +211,7 @@ int Engine::after(double interval, uint32_t eventCode, std::any eventData) {
     return afterTimerTask.id;
 }
 
-int Engine::repeat(double interval, uint32_t eventCode, std::any eventData) {
+int Engine::repeat(int interval, uint32_t eventCode, std::any eventData) {
     TimerTask repeatTimerTask;
     repeatTimerTask.time = interval;
     repeatTimerTask.interval = interval;

@@ -23,9 +23,9 @@ inline Transform mixTransform(const Transform& start, const Transform& target, f
 
 struct Tween {
     Transform start;
-    Transform target; 
-    float duration = 0.0f;  // ms
-    float elapsed_time = 0.0f;
+    Transform target;
+    int duration = 0;  // ms
+    int elapsed_time = 0;
     bool is_finished = false;
 
     std::function<float(float)> ease_func = [](float t) { return t; };
@@ -33,16 +33,17 @@ struct Tween {
     void update(Object& obj, float dt) {
         if (is_finished) return;
 
-        elapsed_time += dt * 1000.0f;
+        elapsed_time += static_cast<int>(dt * 1000.0f);
 
-        float t = std::clamp(elapsed_time / duration, 0.0f, 1.0f);
+        float progress = duration > 0 ? std::clamp(static_cast<float>(elapsed_time) / static_cast<float>(duration), 0.0f, 1.0f) : 1.0f;
+        float t = ease_func ? ease_func(progress) : progress;
 
         Transform current = mixTransform(start, target, t);
         obj.position = current.position;
         obj.rotation = current.rotation;
         obj.scale = current.scale;
 
-        if (t >= 1.0f) {
+        if (progress >= 1.0f) {
             is_finished = true;
         }
     }
