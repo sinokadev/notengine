@@ -24,6 +24,21 @@ public:
      *  @return The object's ID, or 0 when @p newObject is null. */
     unsigned int registerObject(std::shared_ptr<Object> newObject, int id = -1);
 
+    /** @brief Adds an object, assigns it to a group, and assigns an ID.
+     *  @param newObject Object to manage; may be null.
+     *  @param group Group name to assign to the object.
+     *  @param id Explicit ID to assign, or -1 for automatic assignment.
+     *  @return The object's ID, or 0 when @p newObject is null. */
+    unsigned int registerObject(std::shared_ptr<Object> newObject, const std::string& group, int id = -1);
+
+    /** @brief Sets the group for an object by ID.
+     *  @return true when the object was found and updated. */
+    bool setObjectGroup(unsigned int id, const std::string& group);
+
+    /** @brief Adds an object to a group by ID.
+     *  @return true when the object was found and updated. */
+    bool addToGroup(const std::string& group, unsigned int id);
+
     /** @brief Removes the object with @p id.
      *  @return true when an object was removed. */
     bool removeObject(unsigned int id);
@@ -31,6 +46,33 @@ public:
     /** @brief Finds a managed object.
      *  @return The object, or nullptr if no object has @p id. */
     Object* getObject(unsigned int id);
+    /** @brief Finds a managed object (const overload).
+     *  @return The object, or nullptr if no object has @p id. */
+    const Object* getObject(unsigned int id) const;
+
+    /** @brief Returns all managed objects belonging to @p group. */
+    std::vector<Object*> getObjectsByGroup(const std::string& group) const;
+
+    /** @brief Returns all managed objects belonging to @p group as shared pointers. */
+    std::vector<std::shared_ptr<Object>> getSharedObjectsByGroup(const std::string& group) const;
+
+    /** @brief Returns all managed objects belonging to @p group. Alias for getObjectsByGroup(). */
+    std::vector<Object*> getGroup(const std::string& group) const {
+        return getObjectsByGroup(group);
+    }
+
+    /** @brief Returns all managed objects belonging to @p group. Overload of getObjects(). */
+    std::vector<Object*> getObjects(const std::string& group) const {
+        return getObjectsByGroup(group);
+    }
+
+    /** @brief Returns all managed objects belonging to @p group as shared pointers. Alias for getSharedObjectsByGroup(). */
+    std::vector<std::shared_ptr<Object>> getSharedGroup(const std::string& group) const {
+        return getSharedObjectsByGroup(group);
+    }
+
+    /** @brief Returns all unique group names among managed objects. */
+    std::vector<std::string> getGroups() const;
 
     /** @brief Removes every managed object and resets ID allocation. */
     void clear();
