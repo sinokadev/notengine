@@ -1,7 +1,7 @@
 [project]
 name = "pyusd2seno"
 version = "0.1.0"
-description = "This script converts a single-file USD to Seno. It supports only Seno V3."
+description = "This script converts a single-file USD to Seno. It exports Seno V8."
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [

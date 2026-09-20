@@ -11,10 +11,17 @@ int main() {
         auto j=emptyScene(); j["extension"]={{"custom",42}};
         j["meshes"].push_back("mesh.obj");j["materials"].push_back({{"shader","pbrShader"}});
         j["models"].push_back({{"mesh",0},{"material",0}});
-        j["objects"].push_back({{"id",100},{"model",0},{"position",{0,1,2}}});
+        j["objects"].push_back({{"id",100},{"model",0},{"position",{0,1,2}},{"pivot",{1,2,3}}});
         d.commit(j);check(d.dirty(),"Commit dirty"); d.undo();check(d.value==emptyScene(),"Undo");d.redo();check(d.value==j,"Redo");
         auto file=dir/"scene.seno";d.save(file);check(!d.dirty(),"Save clears dirty");
         Document loaded;loaded.open(file);check(loaded.value==j,"Lossless round trip");
+        for (Json version : {Json(7),Json(9),Json("8"),Json(8.0),Json(nullptr)}) {
+            auto invalid=j;invalid["version"]=version;fails([&]{validate(invalid);});
+        }
+        auto missing=j;missing.erase("version");fails([&]{validate(missing);});
+        for (Json pivot : {Json{1,2},Json{1,2,3,4},Json{1,"x",3},Json{1e100,0,0},Json(nullptr)}) {
+            auto invalid=j;invalid["objects"][0]["pivot"]=pivot;fails([&]{validate(invalid);});
+        }
         auto bad=j;bad["objects"][0]["model"]=2;fails([&]{d.commit(bad);});check(d.value==j,"Failed commit is transactional");
         bad=j;bad["objects"].push_back(bad["objects"][0]);fails([&]{validate(bad);});
         bad=j;bad["objects"][0]["rotation"]={0,0,0,0};fails([&]{validate(bad);});

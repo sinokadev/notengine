@@ -19,7 +19,7 @@ inline std::string read(const fs::path& path) {
     return out.str();
 }
 inline Json emptyScene() {
-    return Json{{"version",7},{"objects",Json::array()},{"lights",Json::array()},
+    return Json{{"version",8},{"objects",Json::array()},{"lights",Json::array()},
         {"meshes",Json::array()},{"materials",Json::array()},{"models",Json::array()}};
 }
 inline void require(bool ok, const std::string& message) {
@@ -27,7 +27,7 @@ inline void require(bool ok, const std::string& message) {
 }
 inline void validate(const Json& j) {
     require(j.is_object(), "Scene root must be an object");
-    if (j.contains("version")) require(j["version"].is_number_integer() && j["version"] == 7, "Only Seno version 7 is supported");
+    require(j.contains("version") && j["version"].is_number_integer() && j["version"] == 8, "Seno requires integer version 8");
     for (auto key : {"objects","lights","meshes","materials","models"})
         if (j.contains(key)) require(j[key].is_array(), std::string(key)+" must be an array");
     auto count = [&](const char* key) { return j.contains(key) ? j[key].size() : 0; };
@@ -44,13 +44,13 @@ inline void validate(const Json& j) {
         for (auto it=v.begin();it!=v.end();++it) {
             const auto& k=it.key(); const auto& x=it.value();
             int n=0;
-            if (k=="position"||k=="scale"||k=="normal"||k=="tangent"||k=="color"||k=="albedo"||k=="ambient"||k=="diffuse"||k=="specular") n=3;
+            if (k=="position"||k=="pivot"||k=="scale"||k=="normal"||k=="tangent"||k=="color"||k=="albedo"||k=="ambient"||k=="diffuse"||k=="specular") n=3;
             if (k=="rotation") n=4;
             if (k=="texcoord") n=2;
             if (n) {
                 require(x.is_array() && x.size()==static_cast<size_t>(n), k+" must have "+std::to_string(n)+" components");
                 double norm=0;
-                for (const auto& e:x) { require(e.is_number(),k+" components must be numeric"); norm+=e.get<double>()*e.get<double>(); }
+                for (const auto& e:x) { require(e.is_number(),k+" components must be numeric"); if (k=="pivot") require(std::isfinite(e.get<float>()),"pivot components must be finite floats"); norm+=e.get<double>()*e.get<double>(); }
                 if (k=="rotation") require(norm>1e-12,"Rotation quaternion cannot be zero (order: w,x,y,z)");
             }
             if (k=="intensity"||k=="metallic"||k=="roughness"||k=="ao"||k=="fov"||k=="near"||k=="far"||k=="size")

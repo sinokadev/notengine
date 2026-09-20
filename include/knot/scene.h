@@ -68,7 +68,9 @@ public:
         return prefilterMap;
     }
 
-    /** @brief Loads a scene from a Seno JSON file.
+    /** @brief Loads a scene from a Seno v8 JSON file.
+     *  Missing or non-integer/non-8 versions are rejected before clearing the scene.
+     *  Object pivot is an optional local-space [x,y,z] vector, defaulting to zero.
      *  @return true when the file is parsed and all referenced resources load. */
     bool loadSeno(const std::string& path);
 

@@ -109,7 +109,7 @@ public:
         Json item;
         if(collection=="objects") {
             if(next["models"].empty()) {message="Add a mesh, material and model first."; return;}
-            item={{"position",{0,0,0}},{"scale",{1,1,1}},{"rotation",{1,0,0,0}},{"model",0},{"group","new"}};
+            item={{"position",{0,0,0}},{"pivot",{0,0,0}},{"scale",{1,1,1}},{"rotation",{1,0,0,0}},{"model",0},{"group","new"}};
         } else if(collection=="lights") {
             item={{"type",kind},{"color",{1,1,1}},{"intensity",1.0}};
             if(kind=="DirLight") item["rotation"]={1,0,0,0}; else item["position"]={0,3,0};
@@ -408,6 +408,9 @@ public:
             ImGui::BeginDisabled(source!=sourceBase);
             if(selected>=0 && draft.contains(collection) && selected<static_cast<int>(draft[collection].size())) {
                 ImGui::Text("%s [%d]",collection.c_str(),selected);ImGui::Separator();
+                if(collection=="objects" && !draft[collection][selected].contains("pivot")) {
+                    if(ImGui::Button("Add pivot (0, 0, 0)"))draft[collection][selected]["pivot"]={0,0,0};
+                }
                 ImGui::PushItemWidth(-120);field("Properties",draft[collection][selected]);ImGui::PopItemWidth();
             } else ImGui::TextWrapped("Select an entry to edit. Add meshes and materials before models, then add objects.");
             ImGui::Separator();
