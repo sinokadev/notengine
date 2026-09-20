@@ -27,7 +27,7 @@ struct Tween {
     int duration = 0;  // ms
     int elapsed_time = 0;
     float millisecondRemainder = 0.0f;
-    bool is_finished = false;
+    bool is_finished = true;
 
     std::function<float(float)> ease_func = [](float t) { return t; };
 
