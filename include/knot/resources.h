@@ -487,10 +487,11 @@ public:
     glm::quat rotation{1.0f, 0.0f, 0.0f, 0.0f};
     /** @brief Per-axis scale. */
     glm::vec3 scale{1.0f};
+    /** @brief Local-space point that rotation and scale are applied around. */
+    glm::vec3 pivot{0.0f};
 
-    /** @brief Returns translation * rotation * scale. */
+    /** @brief Returns translation * pivot-corrected rotation & scale. */
     glm::mat4 getWorldMatrix() const;
-
     /** @brief Returns the rotation-derived forward direction. */
     glm::vec3 getFront() const;
     /** @brief Returns the rotation-derived right direction. */

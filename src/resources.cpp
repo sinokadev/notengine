@@ -262,10 +262,13 @@ void Model::calculateBounds() {
 }
 
 glm::mat4 Transform::getWorldMatrix() const {
-    const glm::mat4 translation = glm::translate(glm::mat4(1.0f), position);
-    const glm::mat4 rotationMatrix = glm::mat4_cast(rotation);
-    const glm::mat4 scaling = glm::scale(glm::mat4(1.0f), scale);
-    return translation * rotationMatrix * scaling;
+    glm::mat4 T = glm::translate(glm::mat4(1.0f), position);
+    glm::mat4 R = glm::mat4_cast(rotation);
+    glm::mat4 S = glm::scale(glm::mat4(1.0f), scale);
+    glm::mat4 toPivot   = glm::translate(glm::mat4(1.0f), pivot);
+    glm::mat4 fromPivot = glm::translate(glm::mat4(1.0f), -pivot);
+
+    return T * toPivot * R * S * fromPivot;
 }
 
 bool Object::isVisible(const Frustum& frustum) const {
