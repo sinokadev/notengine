@@ -63,6 +63,8 @@ int main() {
 
     auto cubeObject = std::make_shared<knot::Object>(model);
 
+    cubeObject->pivot = glm::vec3(1);
+
     scene.getObjectManager().registerObject(cubeObject);
 
     cubeObject->position = glm::vec3(0.0f, 0.0f, 0.0f);
