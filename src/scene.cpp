@@ -107,18 +107,6 @@ void Scene::update(float dt) {
     }
 }
 
-std::string resolveAssetPath(std::string path) {
-    const std::string token = "{assetRoot}";
-
-    const auto pos = path.find(token);
-
-    if (pos != std::string::npos) {
-        path.replace(pos, token.length(), getAssetRoot());
-    }
-
-    return path;
-}
-
 bool Scene::loadSeno(const std::string& path) {
     std::ifstream file(path);
 
@@ -128,6 +116,10 @@ bool Scene::loadSeno(const std::string& path) {
     }
 
     try {
+        const auto sceneDirectory = std::filesystem::absolute(path).parent_path();
+        const auto resolveAssetPath = [&sceneDirectory](const std::string& assetPath) {
+            return resolveSceneAssetPath(assetPath, sceneDirectory, getAssetRoot());
+        };
         nlohmann::json scene;
         file >> scene;
 

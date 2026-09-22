@@ -243,7 +243,7 @@ class EXPORT_SCENE_OT_seno(bpy.types.Operator):
     selected_only: BoolProperty(name='Selected Only', default=False)
     overwrite: BoolProperty(name='Overwrite Existing Files', default=False)
     path_mode: EnumProperty(name='OBJ Paths', items=[
-        ('RELATIVE', 'Relative', 'Portable folder; engine working directory must be this folder'),
+        ('RELATIVE', 'Relative', 'Portable folder; OBJ paths are relative to the Seno scene file'),
         ('ABSOLUTE', 'Absolute', 'Load from any working directory; re-export after moving folder'),
     ], default='RELATIVE')
 
