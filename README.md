@@ -81,6 +81,13 @@ Run the built demos:
 ./build/ninja-release/benchmark
 ```
 
+## Blender Exporter
+
+Export Blender scenes as Seno v8 with separate OBJ models, MTL materials, and
+textures in one folder using the [Seno exporter](script/blender_seno/README.md).
+Install `script/blender_seno/seno_exporter.py` as a Blender add-on, then choose
+**File → Export → Seno Scene (folder)**.
+
 ## Asset Source
 
 - skymap: https://ambientcg.com/view?id=DaySkyHDRI001A
