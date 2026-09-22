@@ -72,6 +72,7 @@ public:
      *  Missing or non-integer/non-8 versions are rejected before clearing the scene.
      *  Object pivot is an optional local-space [x,y,z] vector, defaulting to zero.
      *  @return true when the file is parsed and all referenced resources load. */
+    // Relative external assets are resolved against the .seno file's directory.
     bool loadSeno(const std::string& path);
 
 private:
