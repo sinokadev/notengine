@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright 2026 watta0
-
 #pragma once
 
 #include <memory>

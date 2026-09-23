@@ -1,7 +1,3 @@
-// camera.cpp
-// SPDX-License-Identifier: Apache-2.0
-// Copyright 2026 SinokaDev
-
 #include <knot/camera.h>
 
 #include <algorithm>
@@ -13,10 +9,7 @@
 
 namespace knot {
 
-bool Frustum::intersectsSphere(
-    const glm::vec3& center,
-    float radius
-) const {
+bool Frustum::intersectsSphere(const glm::vec3& center, float radius) const {
     for (const FrustumPlane& plane : planes) {
         if (plane.signedDistance(center) < -radius)
             return false;
@@ -25,10 +18,7 @@ bool Frustum::intersectsSphere(
     return true;
 }
 
-bool Frustum::intersectsAABB(
-    const glm::vec3& min,
-    const glm::vec3& max
-) const {
+bool Frustum::intersectsAABB(const glm::vec3& min, const glm::vec3& max) const {
     for (const FrustumPlane& plane : planes) {
         glm::vec3 positive = min;
 
@@ -48,13 +38,7 @@ bool Frustum::intersectsAABB(
     return true;
 }
 
-Camera::Camera(
-    glm::vec3 startPos,
-    float nearPlane,
-    float farPlane
-)
-    : nearPlane(nearPlane),
-      farPlane(farPlane) {
+Camera::Camera(glm::vec3 startPos, float nearPlane, float farPlane) : nearPlane(nearPlane), farPlane(farPlane) {
     position = startPos;
 }
 
@@ -66,10 +50,7 @@ void Camera::lookAtTarget(glm::vec3 targetPos) {
 
     const glm::vec3 direction = glm::normalize(delta);
 
-    rotation = glm::quatLookAt(
-        direction,
-        glm::vec3(0.0f, 1.0f, 0.0f)
-    );
+    rotation = glm::quatLookAt(direction, glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
 const Frustum& Camera::getFrustum(float aspectRatio) const {
@@ -78,64 +59,40 @@ const Frustum& Camera::getFrustum(float aspectRatio) const {
     const glm::mat4 clip = projection * view;
 
     // Left
-    frustum.planes[Frustum::Left].normal.x =
-        clip[0][3] + clip[0][0];
-    frustum.planes[Frustum::Left].normal.y =
-        clip[1][3] + clip[1][0];
-    frustum.planes[Frustum::Left].normal.z =
-        clip[2][3] + clip[2][0];
-    frustum.planes[Frustum::Left].distance =
-        clip[3][3] + clip[3][0];
+    frustum.planes[Frustum::Left].normal.x = clip[0][3] + clip[0][0];
+    frustum.planes[Frustum::Left].normal.y = clip[1][3] + clip[1][0];
+    frustum.planes[Frustum::Left].normal.z = clip[2][3] + clip[2][0];
+    frustum.planes[Frustum::Left].distance = clip[3][3] + clip[3][0];
 
     // Right
-    frustum.planes[Frustum::Right].normal.x =
-        clip[0][3] - clip[0][0];
-    frustum.planes[Frustum::Right].normal.y =
-        clip[1][3] - clip[1][0];
-    frustum.planes[Frustum::Right].normal.z =
-        clip[2][3] - clip[2][0];
-    frustum.planes[Frustum::Right].distance =
-        clip[3][3] - clip[3][0];
+    frustum.planes[Frustum::Right].normal.x = clip[0][3] - clip[0][0];
+    frustum.planes[Frustum::Right].normal.y = clip[1][3] - clip[1][0];
+    frustum.planes[Frustum::Right].normal.z = clip[2][3] - clip[2][0];
+    frustum.planes[Frustum::Right].distance = clip[3][3] - clip[3][0];
 
     // Bottom
-    frustum.planes[Frustum::Bottom].normal.x =
-        clip[0][3] + clip[0][1];
-    frustum.planes[Frustum::Bottom].normal.y =
-        clip[1][3] + clip[1][1];
-    frustum.planes[Frustum::Bottom].normal.z =
-        clip[2][3] + clip[2][1];
-    frustum.planes[Frustum::Bottom].distance =
-        clip[3][3] + clip[3][1];
+    frustum.planes[Frustum::Bottom].normal.x = clip[0][3] + clip[0][1];
+    frustum.planes[Frustum::Bottom].normal.y = clip[1][3] + clip[1][1];
+    frustum.planes[Frustum::Bottom].normal.z = clip[2][3] + clip[2][1];
+    frustum.planes[Frustum::Bottom].distance = clip[3][3] + clip[3][1];
 
     // Top
-    frustum.planes[Frustum::Top].normal.x =
-        clip[0][3] - clip[0][1];
-    frustum.planes[Frustum::Top].normal.y =
-        clip[1][3] - clip[1][1];
-    frustum.planes[Frustum::Top].normal.z =
-        clip[2][3] - clip[2][1];
-    frustum.planes[Frustum::Top].distance =
-        clip[3][3] - clip[3][1];
+    frustum.planes[Frustum::Top].normal.x = clip[0][3] - clip[0][1];
+    frustum.planes[Frustum::Top].normal.y = clip[1][3] - clip[1][1];
+    frustum.planes[Frustum::Top].normal.z = clip[2][3] - clip[2][1];
+    frustum.planes[Frustum::Top].distance = clip[3][3] - clip[3][1];
 
     // Near
-    frustum.planes[Frustum::Near].normal.x =
-        clip[0][3] + clip[0][2];
-    frustum.planes[Frustum::Near].normal.y =
-        clip[1][3] + clip[1][2];
-    frustum.planes[Frustum::Near].normal.z =
-        clip[2][3] + clip[2][2];
-    frustum.planes[Frustum::Near].distance =
-        clip[3][3] + clip[3][2];
+    frustum.planes[Frustum::Near].normal.x = clip[0][3] + clip[0][2];
+    frustum.planes[Frustum::Near].normal.y = clip[1][3] + clip[1][2];
+    frustum.planes[Frustum::Near].normal.z = clip[2][3] + clip[2][2];
+    frustum.planes[Frustum::Near].distance = clip[3][3] + clip[3][2];
 
     // Far
-    frustum.planes[Frustum::Far].normal.x =
-        clip[0][3] - clip[0][2];
-    frustum.planes[Frustum::Far].normal.y =
-        clip[1][3] - clip[1][2];
-    frustum.planes[Frustum::Far].normal.z =
-        clip[2][3] - clip[2][2];
-    frustum.planes[Frustum::Far].distance =
-        clip[3][3] - clip[3][2];
+    frustum.planes[Frustum::Far].normal.x = clip[0][3] - clip[0][2];
+    frustum.planes[Frustum::Far].normal.y = clip[1][3] - clip[1][2];
+    frustum.planes[Frustum::Far].normal.z = clip[2][3] - clip[2][2];
+    frustum.planes[Frustum::Far].distance = clip[3][3] - clip[3][2];
 
     for (FrustumPlane& plane : frustum.planes) {
         const float length = glm::length(plane.normal);
@@ -149,49 +106,22 @@ const Frustum& Camera::getFrustum(float aspectRatio) const {
     return frustum;
 }
 
-PerspectiveCamera::PerspectiveCamera(
-    glm::vec3 startPos,
-    float fov,
-    float nearPlane,
-    float farPlane
-)
-    : Camera(startPos, nearPlane, farPlane),
-      fov(fov) {
+PerspectiveCamera::PerspectiveCamera(glm::vec3 startPos, float fov, float nearPlane, float farPlane)
+    : Camera(startPos, nearPlane, farPlane), fov(fov) {
 }
 
 glm::mat4 PerspectiveCamera::getViewMatrix() const {
-    return glm::lookAt(
-        position,
-        position + getFront(),
-        getUp()
-    );
+    return glm::lookAt(position, position + getFront(), getUp());
 }
 
-glm::mat4 PerspectiveCamera::getProjectionMatrix(
-    float aspectRatio
-) const {
-    return glm::perspective(
-        glm::radians(fov),
-        aspectRatio,
-        nearPlane,
-        farPlane
-    );
+glm::mat4 PerspectiveCamera::getProjectionMatrix(float aspectRatio) const {
+    return glm::perspective(glm::radians(fov), aspectRatio, nearPlane, farPlane);
 }
 
-MovingCamera::MovingCamera(
-    glm::vec3 startPos,
-    float fov,
-    float nearPlane,
-    float farPlane
-)
-    : PerspectiveCamera(startPos, fov, nearPlane, farPlane),
-      speed(0.005f),
-      sensitivity(0.1f) {
+MovingCamera::MovingCamera(glm::vec3 startPos, float fov, float nearPlane, float farPlane)
+    : PerspectiveCamera(startPos, fov, nearPlane, farPlane), speed(0.005f), sensitivity(0.1f) {
 }
-void MovingCamera::move(
-    glm::vec3 direction,
-    float deltaTime
-) {
+void MovingCamera::move(glm::vec3 direction, float deltaTime) {
     position += direction * (speed * (deltaTime * 1000.0f));
 }
 
@@ -218,60 +148,33 @@ glm::vec3 MovingCamera::getFront() const {
 glm::vec3 MovingCamera::getRight() const {
     const glm::vec3 worldUp(0.0f, 1.0f, 0.0f);
 
-    return glm::normalize(
-        glm::cross(getFront(), worldUp)
-    );
+    return glm::normalize(glm::cross(getFront(), worldUp));
 }
 
 glm::vec3 MovingCamera::getUp() const {
     const glm::vec3 front = getFront();
     const glm::vec3 right = getRight();
 
-    return glm::normalize(
-        glm::cross(right, front)
-    );
+    return glm::normalize(glm::cross(right, front));
 }
 
 glm::mat4 MovingCamera::getViewMatrix() const {
-    return glm::lookAt(
-        position,
-        position + getFront(),
-        getUp()
-    );
+    return glm::lookAt(position, position + getFront(), getUp());
 }
 
-OrthographicCamera::OrthographicCamera(
-    glm::vec3 startPos,
-    float nearPlane,
-    float farPlane,
-    float size
-)
-    : Camera(startPos, nearPlane, farPlane),
-      size(size) {
+OrthographicCamera::OrthographicCamera(glm::vec3 startPos, float nearPlane, float farPlane, float size)
+    : Camera(startPos, nearPlane, farPlane), size(size) {
 }
 
 glm::mat4 OrthographicCamera::getViewMatrix() const {
-    return glm::lookAt(
-        position,
-        position + getFront(),
-        getUp()
-    );
+    return glm::lookAt(position, position + getFront(), getUp());
 }
 
-glm::mat4 OrthographicCamera::getProjectionMatrix(
-    float aspectRatio
-) const {
+glm::mat4 OrthographicCamera::getProjectionMatrix(float aspectRatio) const {
     const float halfHeight = size * 0.5f;
     const float halfWidth = halfHeight * aspectRatio;
 
-    return glm::ortho(
-        -halfWidth,
-        halfWidth,
-        -halfHeight,
-        halfHeight,
-        nearPlane,
-        farPlane
-    );
+    return glm::ortho(-halfWidth, halfWidth, -halfHeight, halfHeight, nearPlane, farPlane);
 }
 
 } // namespace knot

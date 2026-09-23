@@ -1,5 +1,3 @@
-#pragma once
-
 namespace knot {
 // Derived from SDL3 SDL_scancode.h:
 // https://github.com/libsdl-org/SDL/blob/72771ac0b41812065acda4b5c782000293d77ef5/include/SDL3/SDL_scancode.h
