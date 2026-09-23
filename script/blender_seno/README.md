@@ -1,5 +1,7 @@
 # Blender Seno Exporter
 
+이 애드온은 전부 ai가 개발했습니다.
+
 Blender 4.1 이상용 애드온입니다. Seno v8 장면과 모델별 OBJ·MTL, 이미지 텍스처를 **선택한 폴더에 함께** 저장합니다. 인라인 `meshes`는 만들지 않으며 `models[].obj`로 외부 모델을 참조합니다. 별도 OBJ 애드온이나 Python 패키지는 필요 없습니다.
 
 ## 설치와 사용
