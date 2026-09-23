@@ -86,3 +86,5 @@
 - [ ] tween.h 문서화
 
 - [ ] Image/Texture 클래스 만들기
+
+- [ ] OpenAL
