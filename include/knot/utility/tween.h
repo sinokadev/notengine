@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright 2026 SinokaDev
-
 #pragma once
 
 #include <glm/glm.hpp>
@@ -9,7 +6,6 @@
 #include <algorithm>
 #include <knot/resources.h>
 
-
 namespace knot {
 inline Transform mixTransform(const Transform& start, const Transform& target, float t) {
     Transform result;
@@ -17,14 +13,14 @@ inline Transform mixTransform(const Transform& start, const Transform& target, f
     result.position = glm::mix(start.position, target.position, t);
     result.rotation = glm::slerp(start.rotation, target.rotation, t);
     result.scale = glm::mix(start.scale, target.scale, t);
-    
+
     return result;
 }
 
 struct Tween {
     Transform start;
     Transform target;
-    int duration = 0;  // ms
+    int duration = 0; // ms
     int elapsed_time = 0;
     float millisecondRemainder = 0.0f;
     bool is_finished = true;
@@ -32,7 +28,8 @@ struct Tween {
     std::function<float(float)> ease_func = [](float t) { return t; };
 
     void update(Object& obj, float dt) {
-        if (is_finished) return;
+        if (is_finished)
+            return;
 
         millisecondRemainder += dt * 1000.0f;
         const int deltaTimeMs = static_cast<int>(millisecondRemainder);
@@ -53,4 +50,4 @@ struct Tween {
     }
 };
 
-}
+} // namespace knot

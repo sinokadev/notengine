@@ -124,15 +124,16 @@ bool Scene::loadSeno(const std::string& path) {
         file >> scene;
 
         // Reject incompatible documents before discarding the current scene or loading assets.
-        if (!scene.is_object() || !scene.contains("version") ||
-            !scene["version"].is_number_integer() || scene["version"] != 8) {
+        if (!scene.is_object() || !scene.contains("version") || !scene["version"].is_number_integer() || scene["version"] != 8) {
             std::cerr << "[Error] Seno requires integer version 8" << std::endl;
             return false;
         }
         if (scene.contains("objects")) {
-            if (!scene["objects"].is_array()) return false;
+            if (!scene["objects"].is_array())
+                return false;
             for (const auto& object : scene["objects"]) {
-                if (!object.contains("pivot")) continue;
+                if (!object.contains("pivot"))
+                    continue;
                 const auto& pivot = object["pivot"];
                 if (!pivot.is_array() || pivot.size() != 3) {
                     std::cerr << "[Error] Object pivot must contain three finite numbers" << std::endl;

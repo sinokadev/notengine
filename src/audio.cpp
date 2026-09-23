@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright 2026 watta0
-
 #include <knot/audio.h>
 
 #include <iostream>
@@ -127,7 +124,6 @@ bool Audio::load(const std::string& path, const std::string& name) {
     // Save audio
     Clip clip;
     clip.samples.resize(static_cast<std::size_t>(frameCount) * channels);
-
 
     ma_uint64 framesRead = 0;
     result = ma_decoder_read_pcm_frames(&decoder, clip.samples.data(), frameCount, &framesRead);

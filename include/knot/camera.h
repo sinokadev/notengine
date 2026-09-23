@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright 2026 SinokaDev
-
 #pragma once
 
 #include <glm/glm.hpp>
@@ -41,14 +38,7 @@ struct Frustum {
     FrustumPlane planes[6];
 
     /** @brief Indices of the six view-frustum clipping planes. */
-    enum Plane {
-        Left = 0,
-        Right,
-        Bottom,
-        Top,
-        Near,
-        Far
-    };
+    enum Plane { Left = 0, Right, Bottom, Top, Near, Far };
 
     /**
      * @brief Tests whether a sphere intersects the frustum.
@@ -57,10 +47,7 @@ struct Frustum {
      * @param radius The radius of the sphere.
      * @return true if the sphere intersects or is inside the frustum.
      */
-    bool intersectsSphere(
-        const glm::vec3& center,
-        float radius
-    ) const;
+    bool intersectsSphere(const glm::vec3& center, float radius) const;
 
     /**
      * @brief Tests whether an axis-aligned bounding box intersects the frustum.
@@ -69,10 +56,7 @@ struct Frustum {
      * @param max The maximum corner of the AABB.
      * @return true if the AABB intersects or is inside the frustum.
      */
-    bool intersectsAABB(
-        const glm::vec3& min,
-        const glm::vec3& max
-    ) const;
+    bool intersectsAABB(const glm::vec3& min, const glm::vec3& max) const;
 };
 
 /**
@@ -96,11 +80,7 @@ public:
      * @param nearPlane The near clipping plane distance.
      * @param farPlane The far clipping plane distance.
      */
-    Camera(
-        glm::vec3 startPos = glm::vec3(0.0f, 0.0f, 3.0f),
-        float nearPlane = kNearPlane,
-        float farPlane = kFarPlane
-    );
+    Camera(glm::vec3 startPos = glm::vec3(0.0f, 0.0f, 3.0f), float nearPlane = kNearPlane, float farPlane = kFarPlane);
 
     virtual ~Camera() = default;
 
@@ -164,12 +144,7 @@ public:
      * @param nearPlane The near clipping plane distance.
      * @param farPlane The far clipping plane distance.
      */
-    PerspectiveCamera(
-        glm::vec3 startPos = glm::vec3(0.0f, 0.0f, 3.0f),
-        float fov = 45.0f,
-        float nearPlane = kNearPlane,
-        float farPlane = kFarPlane
-    );
+    PerspectiveCamera(glm::vec3 startPos = glm::vec3(0.0f, 0.0f, 3.0f), float fov = 45.0f, float nearPlane = kNearPlane, float farPlane = kFarPlane);
 
     /**
      * @brief Gets the perspective view matrix.
@@ -211,12 +186,9 @@ public:
      * @param nearPlane The near clipping plane distance.
      * @param farPlane The far clipping plane distance.
      */
-    MovingCamera(
-        glm::vec3 startPos = glm::vec3(0.0f, 0.0f, 5.0f),
-        float fov = 45.0f,
-        float nearPlane = kNearPlane,
-        float farPlane = kFarPlane
-    ); // 솔직히 MovingCamera만 Transform::rotate를 안쓰고 yaw, pitch를 쓴다는거, 진짜 별로인 생각같지만 이렇게 안하면 어떻게 해야할지 모르겠어. 그치만 뭐... 버그가 난다면 누군가 고쳐주겠지.
+    MovingCamera(glm::vec3 startPos = glm::vec3(0.0f, 0.0f, 5.0f), float fov = 45.0f, float nearPlane = kNearPlane,
+                 float farPlane = kFarPlane); // 솔직히 MovingCamera만 Transform::rotate를 안쓰고 yaw, pitch를 쓴다는거, 진짜 별로인 생각같지만 이렇게
+                                              // 안하면 어떻게 해야할지 모르겠어. 그치만 뭐... 버그가 난다면 누군가 고쳐주겠지.
 
     /**
      * @brief Moves the camera.
@@ -224,10 +196,7 @@ public:
      * @param direction The movement direction.
      * @param deltaTime The elapsed time since the previous frame, in seconds.
      */
-    void move(
-        glm::vec3 direction,
-        float deltaTime
-    );
+    void move(glm::vec3 direction, float deltaTime);
 
     /**
      * @brief Rotates the camera.
@@ -235,10 +204,7 @@ public:
      * @param xOffset The horizontal rotation offset.
      * @param yOffset The vertical rotation offset.
      */
-    void rotate(
-        float xOffset,
-        float yOffset
-    );
+    void rotate(float xOffset, float yOffset);
 
     /**
      * @brief Gets the camera's view matrix.
@@ -300,12 +266,8 @@ public:
      * @param farPlane The far clipping plane distance.
      * @param size The vertical size of the orthographic view.
      */
-    OrthographicCamera(
-        glm::vec3 startPos = glm::vec3(0.0f, 0.0f, 3.0f),
-        float nearPlane = kNearPlane,
-        float farPlane = kFarPlane,
-        float size = 10.0f
-    );
+    OrthographicCamera(glm::vec3 startPos = glm::vec3(0.0f, 0.0f, 3.0f), float nearPlane = kNearPlane, float farPlane = kFarPlane,
+                       float size = 10.0f);
 
     /**
      * @brief Gets the orthographic view matrix.
