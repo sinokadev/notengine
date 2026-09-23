@@ -15,4 +15,5 @@ Not Engine의 문서에 오신 것을 환영합니다. 이 문서는 미완성�
    :maxdepth: 2
 
    getting-started
+   glossary
    api/index
