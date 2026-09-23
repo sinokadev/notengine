@@ -37,7 +37,7 @@ list(APPEND SOURCES "library/gl.c" "library/miniaudio.c")
 add_library(notengine STATIC ${SOURCES})
 
 # Shader embedding setup
-set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders")
+set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
 set(GENERATED_HEADER "${CMAKE_CURRENT_BINARY_DIR}/GeneratedShaders.h")
 file(GLOB SHADER_FILES CONFIGURE_DEPENDS "${SHADER_DIR}/*.glsl" "${SHADER_DIR}/*.vert" "${SHADER_DIR}/*.frag")
 

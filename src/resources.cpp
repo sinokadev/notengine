@@ -203,11 +203,11 @@ unsigned int Shader::getShaderProgram() const {
 }
 
 ShaderSource AlphaShader::GetSource() {
-    return ShaderSource(getAssetRoot() + "assets/shaders/alpha.vert", getAssetRoot() + "assets/shaders/alpha.frag");
+    return ShaderSource(getAssetRoot() + "shaders/alpha.vert", getAssetRoot() + "shaders/alpha.frag");
 }
 
 ShaderSource PbrShader::GetSource() {
-    return ShaderSource(getAssetRoot() + "assets/shaders/alpha.vert", getAssetRoot() + "assets/shaders/pbr.frag");
+    return ShaderSource(getAssetRoot() + "shaders/alpha.vert", getAssetRoot() + "shaders/pbr.frag");
 }
 
 Model::Model(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material) {
