@@ -43,7 +43,7 @@ bool Renderer::init(GLADloadfunc loadProc) {
 
     // Sky Map and IBL
     skyboxMesh = createCube();
-    auto skyboxSource = std::make_shared<ShaderSource>(getAssetRoot() + "assets/shaders/skybox.vert", getAssetRoot() + "assets/shaders/skybox.frag");
+    auto skyboxSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/skybox.vert", getAssetRoot() + "shaders/skybox.frag");
     skyboxShader = std::make_shared<Shader>(skyboxSource, SKYBOX_SHADER_ID);
 
     generateBRDFLUT();
@@ -77,7 +77,7 @@ bool Renderer::init(GLADloadfunc loadProc) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Shadow Shader
-    auto shadowSource = std::make_shared<ShaderSource>(getAssetRoot() + "assets/shaders/shadow.vert", getAssetRoot() + "assets/shaders/shadow.frag");
+    auto shadowSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/shadow.vert", getAssetRoot() + "shaders/shadow.frag");
 
     shadowShader = std::make_shared<Shader>(shadowSource, SHADOW_SHADER_ID);
 
@@ -165,7 +165,7 @@ void Renderer::generateBRDFLUT() {
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdfLUTTexture, 0);
 
     // 3. 셰이더 로드 및 렌더링
-    auto brdfSource = std::make_shared<ShaderSource>(getAssetRoot() + "assets/shaders/brdf.vert", getAssetRoot() + "assets/shaders/brdf.frag");
+    auto brdfSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/brdf.vert", getAssetRoot() + "shaders/brdf.frag");
     std::shared_ptr<Shader> brdfShader = std::make_shared<Shader>(brdfSource, BRDF_SHADER_ID);
 
     GLint prevViewport[4];
