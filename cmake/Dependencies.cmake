@@ -23,10 +23,27 @@ if(NOT TARGET glfw)
 
     message(STATUS "GLFW not found. Fetching GLFW...")
 
+    ### GLFW build options
     set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
     set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
     set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+
+    ### Linux backends
+    if(UNIX AND NOT APPLE)
+        find_package(X11 QUIET)
+
+        find_library(WAYLAND_LIBRARY wayland-client)
+        find_program(WAYLAND_SCANNER wayland-scanner)
+
+        if(NOT X11_FOUND)
+            set(GLFW_BUILD_X11 OFF CACHE BOOL "" FORCE)
+        endif()
+
+        if(NOT WAYLAND_LIBRARY OR NOT WAYLAND_SCANNER)
+            set(GLFW_BUILD_WAYLAND OFF CACHE BOOL "" FORCE)
+        endif()
+    endif()
 
     FetchContent_Declare(
         glfw
