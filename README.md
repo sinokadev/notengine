@@ -9,7 +9,7 @@ A code-first game engine built on OpenGL, empowering you to build everything fro
 
 **PRs and issues are welcome!**
 
-2026-09-25: do not use this engine. this is just trash
+2026-09-27: I just made this for my own use.
 
 <img width="1282" height="749" alt="image" src="/images/shadowmap.png" /><br>
 
