@@ -46,6 +46,8 @@ Renderer optimization improved performance from **1 FPS to 30 FPS** — approxim
 
 You will need the `cmake`, `ninja` (or `make`), and `glfw3` (development) packages to build this project.
 
+If you don't install third party libraries using package manager, then CMake installs libraries using `FetchContent` module through Git.
+
 ### Prerequisites (Linux/Ubuntu)
 
 ```bash

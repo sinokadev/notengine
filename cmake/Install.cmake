@@ -3,9 +3,7 @@ include_guard(GLOBAL)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-# ------------------------------------------------------------------------------
 # Install target
-# ------------------------------------------------------------------------------
 
 install(
     TARGETS notengine
@@ -16,30 +14,26 @@ install(
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-# ------------------------------------------------------------------------------
 # Install public headers
-# ------------------------------------------------------------------------------
 
 install(
     DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-# Generated shader header
+## Generated shader header
 install(
     FILES "${GENERATED_HEADER}"
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-# Generated version header
+## Generated version header
 install(
     FILES "${CMAKE_CURRENT_BINARY_DIR}/knot/version.h"
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/knot"
 )
 
-# ------------------------------------------------------------------------------
 # Export targets
-# ------------------------------------------------------------------------------
 
 set(
     NOTENGINE_INSTALL_CMAKEDIR
@@ -53,9 +47,7 @@ install(
     DESTINATION "${NOTENGINE_INSTALL_CMAKEDIR}"
 )
 
-# ------------------------------------------------------------------------------
 # Package configuration
-# ------------------------------------------------------------------------------
 
 set(
     NOTENGINE_CONFIG_TEMPLATE

@@ -10,7 +10,7 @@ option(
     ON
 )
 
-### GLFW ###
+## GLFW
 
 find_package(glfw3 CONFIG QUIET)
 
@@ -38,7 +38,7 @@ if(NOT TARGET glfw)
     FetchContent_MakeAvailable(glfw)
 endif()
 
-### GLM ###
+## GLM
 
 find_package(glm CONFIG QUIET)
 
@@ -65,11 +65,11 @@ if(NOT TARGET glm::glm)
     FetchContent_MakeAvailable(glm)
 endif()
 
-### OpenGL ###
+## OpenGL
 
 find_package(OpenGL REQUIRED)
 
-### OpenAL Soft ###
+## OpenAL Soft
 # Uncomment the following code to enable it.
 
 # find_package(OpenAL QUIET)
@@ -106,7 +106,7 @@ find_package(OpenGL REQUIRED)
 #     FetchContent_MakeAvailable(openal)
 # endif()
 
-### Platform dependencies ###
+## Platform dependencies
 
 if(UNIX AND NOT APPLE)
     find_package(Threads REQUIRED)
