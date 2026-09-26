@@ -30,7 +30,6 @@ jobs:
           sudo apt install -y \
             cmake \
             ninja-build \
-            libglfw3-dev \
             build-essential
 
       - name: Configure
@@ -76,15 +75,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Install GLFW
-        shell: pwsh
-        run: |
-          vcpkg install glfw3:x64-windows
-
       - name: Configure
         run: >
           cmake --preset vs2022
-          -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
 
       - name: Build Debug
         run: |
@@ -104,15 +97,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Install GLFW
-        shell: pwsh
-        run: |
-          vcpkg install glfw3:x64-windows
-
       - name: Configure
         run: >
           cmake --preset vs2026
-          -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
 
       - name: Build Debug
         run: |
