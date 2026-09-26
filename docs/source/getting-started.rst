@@ -14,10 +14,10 @@ Not Engine does not currently provide pre-built binaries, so you must build it y
 Requirements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- A graphics card that supports OpenGL 4.3 or later
+- A graphics card and drivers that supports OpenGL 4.3 or later
 - CMake
 - Git
-- A C and C++ compiler
+- A C/C++ compiler
 
 Building
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -94,6 +94,12 @@ so you do not need to build or install the library beforehand when you only want
 .. tip::
 
    You can also use Unix Makefiles presets (``make-release``, ``make-release-notengine``, ``make-release-all``) or Debug presets (``ninja-debug``, etc.).
+
+.. tip::
+   
+   If the build fails on Linux, the cause may be a missing graphics driver, graphics development package, or Linux window-system backend dependency such as X11 or Wayland.
+
+   You can install the required dependencies individually, or install libglfw3-dev, which usually pulls in the packages needed to build GLFW on a typical Linux desktop system.
 
 Windows
 --------------------------------
