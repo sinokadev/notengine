@@ -27,8 +27,7 @@ configure_file(
 )
 
 # Find dependencies
-find_package(glfw3 CONFIG REQUIRED)
-find_package(OpenGL REQUIRED)
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Dependencies.cmake")
 
 # Sources (CONFIGURE_DEPENDS 추가하여 파일 추가 감지)
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cpp")
@@ -90,13 +89,14 @@ target_include_directories(notengine PRIVATE
 
 # Link dependencies
 target_link_libraries(notengine PUBLIC
-    glfw
+    $<BUILD_INTERFACE:glfw>
+    $<BUILD_INTERFACE:glm::glm>
+    # "$<BUILD_INTERFACE:OpenAL::OpenAL>"
     OpenGL::GL
     ${CMAKE_DL_LIBS}
 )
 
 if(UNIX AND NOT APPLE)
-    find_package(Threads REQUIRED)
     target_link_libraries(notengine PUBLIC Threads::Threads m)
 elseif(APPLE)
     target_link_libraries(notengine PUBLIC
@@ -137,35 +137,5 @@ add_executable(test_group EXCLUDE_FROM_ALL demo/test_group.cpp)
 target_link_libraries(test_group PRIVATE notengine)
 set_target_properties(test_group PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
-install(TARGETS notengine
-    EXPORT notengineTargets
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
-
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-install(FILES ${GENERATED_HEADER} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/knot/version.h" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/knot)
-
-install(EXPORT notengineTargets
-    FILE notengineTargets.cmake
-    NAMESPACE notengine::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/notengine
-)
-
-# Config generation
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/notengineConfig.cmake" "
-include(CMakeFindDependencyMacro)
-find_dependency(glfw3 REQUIRED)
-find_dependency(OpenGL REQUIRED)
-if(UNIX AND NOT APPLE)
-find_dependency(Threads REQUIRED)
-endif()
-include(\"\${CMAKE_CURRENT_LIST_DIR}/notengineTargets.cmake\")
-")
-
-install(FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/notengineConfig.cmake"
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/notengine
-)
+# Install configuration
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Install.cmake")

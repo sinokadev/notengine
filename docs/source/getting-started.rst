@@ -14,7 +14,10 @@ Not Engine does not currently provide pre-built binaries, so you must build it y
 Requirements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- A graphics card that supports OpenGL 4.3 or later
+- A graphics card and drivers that supports OpenGL 4.3 or later
+- CMake
+- Git
+- A C/C++ compiler
 
 Building
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -27,7 +30,11 @@ Building
 Linux (Recommended)
 --------------------------------
 
-CMake, Ninja (or Make), and the ``glfw3`` package are required to build Not Engine.
+CMake, Git, Ninja (or Make), and a C/C++ compiler are required to build Not Engine.
+
+Not Engine manages third-party dependencies using CMake.
+If the required dependencies are already installed through a package manager, Not Engine uses them directly.
+Otherwise, CMake downloads them using Git during configuration.
 
 Debian/Ubuntu
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -35,14 +42,22 @@ Debian/Ubuntu
 .. code-block:: bash
 
    sudo apt update
-   sudo apt install cmake ninja-build libglfw3-dev build-essential
+   sudo apt install cmake ninja-build git build-essential
 
 Fedora
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
-   sudo dnf install cmake ninja-build glfw-devel @development-tools
+   sudo dnf install cmake ninja-build git @development-tools
+
+Arch Linux
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+   sudo pacman -Syu
+   sudo pacman -S cmake ninja git base-devel
 
 After installing the required packages, run the following commands to configure, build, and install the library using CMake presets.
 
@@ -80,30 +95,33 @@ so you do not need to build or install the library beforehand when you only want
 
    You can also use Unix Makefiles presets (``make-release``, ``make-release-notengine``, ``make-release-all``) or Debug presets (``ninja-debug``, etc.).
 
+.. tip::
+   
+   If the build fails on Linux, the cause may be a missing graphics driver, graphics development package, or Linux window-system backend dependency such as X11 or Wayland.
+
+   You can install the required dependencies individually, or install libglfw3-dev, which usually pulls in the packages needed to build GLFW on a typical Linux desktop system.
+
 Windows
 --------------------------------
 
-CMake and GLFW are required to build Not Engine. Visual Studio 2022 or 2026 with C++ development tools is recommended.
+CMake, Git, and Visual Studio 2022 or 2026 with C++ development tools are recommended to build Not Engine.
 
-- **CMake**: Available from `cmake.org <https://cmake.org/download/>`_
+Third-party dependencies may be installed beforehand using a package manager
+such as vcpkg. CMake will use an installed dependency if it can be located through ``find_package()``.
 
-- **GLFW**:
+If a required dependency cannot be found, CMake automatically downloads and
+builds it using ``FetchContent``. Git is required when dependencies need to be fetched.
 
-  - Using vcpkg (recommended):
+Fetched dependencies are stored under ``_deps`` in the corresponding build directory.
 
-    .. code-block:: powershell
+For example:
 
-       vcpkg install glfw3:x64-windows
+.. code-block:: text
 
-  - Official binaries:
-    Download the pre-built Windows binaries from
-    `glfw.org <https://www.glfw.org/download.html>`_
+   build/vs2022/_deps/
+   build/vs2026/_deps/
 
-.. tip::
-
-   If you installed GLFW using vcpkg, run ``vcpkg integrate install`` so CMake can automatically locate installed packages.
-
-After installing the required tools and dependencies, run the following commands to configure, build, and install the library using CMake presets.
+After installing the required tools, run the following commands to configure, build, and install the library using CMake presets.
 
 .. code-block:: powershell
 
@@ -134,6 +152,31 @@ To build and run the demos, run the following commands.
 
 The demo build preset (``vs2022-release-all``) automatically builds the library dependency as well,
 so you do not need to build or install the library beforehand when you only want to run the demos.
+
+Dependency Management
+--------------------------------
+
+Not Engine manages supported third-party dependencies through CMake.
+
+During configuration, CMake first attempts to locate an existing installation
+of each dependency using ``find_package()``. This allows dependencies installed
+through system package managers or tools such as vcpkg to be used directly.
+
+If a dependency cannot be found, Not Engine uses CMake's ``FetchContent`` module to download and build the required library automatically.
+
+Dependencies downloaded through ``FetchContent`` are stored under ``_deps`` in the corresponding build directory.
+
+Git is required to download dependencies through ``FetchContent``.
+
+Automatic dependency fetching can be disabled by setting
+``NOTENGINE_FETCH_DEPENDENCIES`` to ``OFF``.
+
+.. code-block:: bash
+
+   cmake -S . -B build -DNOTENGINE_FETCH_DEPENDENCIES=OFF
+
+When automatic fetching is disabled, the required dependencies must be
+installed and discoverable by CMake before configuring Not Engine.
 
 CMake Presets Reference
 --------------------------------
