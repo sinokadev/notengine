@@ -91,6 +91,8 @@ Install `script/blender_seno/seno_exporter.py` as a Blender add-on, then choose
 ## Asset Source
 
 - skymap: https://ambientcg.com/view?id=DaySkyHDRI001A
+- test audio (wav): https://commons.wikimedia.org/wiki/File%3AAudio.wav
+- test audio (mp3): https://commons.wikimedia.org/wiki/File%3AUncleSigmund_-_ahhh_(cc0)_(freesound).mp3
 
 ## Star History
 
