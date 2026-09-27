@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 project(NotEngine LANGUAGES C CXX)
 
 include(GNUInstallDirs)
+include(CTest)
 
 # C++ Standard configuration
 set(CMAKE_CXX_STANDARD 17)
@@ -139,6 +140,11 @@ set_target_properties(test_group PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMA
 
 # Install configuration
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Install.cmake")
+
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
+
 # Integration tests require an OpenGL 4.3 context (a display or xvfb-run).
 add_executable(test_gltf EXCLUDE_FROM_ALL tests/gltf_test.cpp)
 target_link_libraries(test_gltf PRIVATE notengine)

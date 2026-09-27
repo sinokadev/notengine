@@ -3,6 +3,24 @@
 
     "configurePresets": [
         {
+            "name": "unit-debug",
+            "displayName": "Unit tests - Debug",
+            "inherits": "ninja-debug",
+            "binaryDir": "${sourceDir}/build/unit-debug",
+            "cacheVariables": {
+                "BUILD_TESTING": "ON"
+            }
+        },
+        {
+            "name": "unit-release",
+            "displayName": "Unit tests - Release",
+            "inherits": "ninja-release",
+            "binaryDir": "${sourceDir}/build/unit-release",
+            "cacheVariables": {
+                "BUILD_TESTING": "ON"
+            }
+        },
+        {
             "name": "ninja-debug",
             "displayName": "Ninja - Debug",
             "description": "Configure using Ninja (Debug)",
@@ -78,6 +96,20 @@
     ],
 
     "buildPresets": [
+        {
+            "name": "unit-debug",
+            "configurePreset": "unit-debug",
+            "targets": [
+                "unit_tests"
+            ]
+        },
+        {
+            "name": "unit-release",
+            "configurePreset": "unit-release",
+            "targets": [
+                "unit_tests"
+            ]
+        },
         {
             "name": "ninja-debug-notengine",
             "displayName": "Ninja Debug - notengine",
@@ -283,6 +315,39 @@
                 "scene_render",
                 "ortho_test"
             ]
+        }
+    ],
+
+    "testPresets": [
+        {
+            "name": "unit-debug",
+            "configurePreset": "unit-debug",
+            "output": {
+                "outputOnFailure": true
+            },
+            "filter": {
+                "include": {
+                    "label": "^unit$"
+                }
+            },
+            "execution": {
+                "noTestsAction": "error"
+            }
+        },
+        {
+            "name": "unit-release",
+            "configurePreset": "unit-release",
+            "output": {
+                "outputOnFailure": true
+            },
+            "filter": {
+                "include": {
+                    "label": "^unit$"
+                }
+            },
+            "execution": {
+                "noTestsAction": "error"
+            }
         }
     ]
 }
