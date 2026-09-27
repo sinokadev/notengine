@@ -7,8 +7,6 @@
 #include <unordered_set>
 #include <knot/mesh.h>
 
-#define AMBIENT_INTENSITY 1.0f
-#define SHADOW_RESOLUTION 2048
 #define DISABLE_SKYMAP false
 #define DISABLE_SHADOW false
 
@@ -149,7 +147,7 @@ void Renderer::renderQuad() {
 }
 
 void Renderer::generateBRDFLUT() {
-    // 1. 2D RG16F 텍스처 생성
+    // gen texture
     glGenTextures(1, &brdfLUTTexture);
     glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, nullptr);
@@ -158,25 +156,27 @@ void Renderer::generateBRDFLUT() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    // 2. 임시 Framebuffer 생성 후 텍스처 바인딩
+    // attach texture to framebuffer
     GLuint captureFBO;
     glGenFramebuffers(1, &captureFBO);
     glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdfLUTTexture, 0);
 
-    // 3. 셰이더 로드 및 렌더링
+    // get shader
     auto brdfSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/brdf.vert", getAssetRoot() + "shaders/brdf.frag");
     std::shared_ptr<Shader> brdfShader = std::make_shared<Shader>(brdfSource, BRDF_SHADER_ID);
 
+    // viewport backup
     GLint prevViewport[4];
-    glGetIntegerv(GL_VIEWPORT, prevViewport); // 기존 뷰포트 백업
+    glGetIntegerv(GL_VIEWPORT, prevViewport);
 
+    // render
     glViewport(0, 0, 512, 512);
     brdfShader->use();
     glClear(GL_COLOR_BUFFER_BIT);
     renderQuad();
 
-    // 4. 복구 및 자원 정리
+    // clean
     glViewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3]);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDeleteFramebuffers(1, &captureFBO);
@@ -240,7 +240,7 @@ void Renderer::processPointLights(const std::vector<const PbrPointLight*>& point
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightSSBO);
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind buffer
 }
 
 void Renderer::renderInstanced(const std::shared_ptr<Model>& model, const std::vector<VisibleInstance>& instances, const Camera& camera,
@@ -268,14 +268,12 @@ void Renderer::renderInstanced(const std::shared_ptr<Model>& model, const std::v
         if (!shader || !shader->isValid())
             continue;
 
-        subMesh.material->bind();
-
         shader->use();
-        shader->set("u_IsInstanced", true);
+        shader->set("isInstanced", true);
 
         shader->set("view", camera.getViewMatrix());
         shader->set("projection", camera.getProjectionMatrix(aspectRatio));
-        shader->set("u_CameraPos", camera.position);
+        shader->set("cameraPos", camera.position);
 
         subMesh.mesh->setupInstanceAttributes(instanceVBO);
 
@@ -302,12 +300,12 @@ void Renderer::renderSingle(const std::shared_ptr<Model>& model, const glm::mat4
         shader->use();
         subMesh.material->bind();
 
-        shader->set("u_IsInstanced", false);
+        shader->set("isInstanced", false);
 
         shader->set("model", worldMatrix);
         shader->set("view", camera.getViewMatrix());
         shader->set("projection", camera.getProjectionMatrix(aspectRatio));
-        shader->set("u_CameraPos", camera.position);
+        shader->set("cameraPos", camera.position);
 
         glBindVertexArray(subMesh.mesh->vao);
 
@@ -344,9 +342,11 @@ bool Renderer::renderObject(const Object& object, const Camera& camera, float as
 void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio) {
     if (DISABLE_SKYMAP)
         return;
+    
     glDepthMask(GL_FALSE);
     glDepthFunc(GL_LEQUAL);
     glDisable(GL_CULL_FACE);
+
     skyboxShader->use();
 
     glm::mat4 view = glm::mat4(glm::mat3(camera.getViewMatrix()));
@@ -354,12 +354,12 @@ void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float 
 
     skyboxShader->set("view", view);
     skyboxShader->set("projection", projection);
+    skyboxShader->set("exposure", AMBIENT_INTENSITY);
 
     glBindVertexArray(skyboxMesh->vao);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
     skyboxShader->set("skybox", 0);
-    skyboxShader->set("exposure", AMBIENT_INTENSITY);
 
     glDrawElements(GL_TRIANGLES, skyboxMesh->indexCount, GL_UNSIGNED_INT, nullptr);
 
@@ -381,15 +381,15 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     const auto dirLights = lightManager.getDirLights();
     const auto pointLights = lightManager.getPointLights();
 
-    // render
+    // ssbo upload point lights
     processPointLights(pointLights);
 
-    // object render
+    // render
     std::unordered_map<const Model*, std::vector<VisibleInstance>> instanceGroups;
 
     const Frustum& frustum = camera.getFrustum(aspectRatio);
 
-    // 인스턴스하는것만 골라내기
+    // Extract instanced objects only
     for (const auto& object : objectManager.getObjects()) {
         if (!object->model || object->model->subMeshes.empty())
             continue;
@@ -402,10 +402,12 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
         instanceGroups[object->model.get()].push_back(VisibleInstance{object.get(), worldMatrix});
     }
 
+    // render etc
     renderShadow(scene, instanceGroups);
 
     renderSkybox(scene.getCubeMap(), camera, aspectRatio);
 
+    // setup uniforms function
     auto setupSceneUniforms = [&](const std::shared_ptr<Shader>& shader) {
         if (!shader || !shader->isValid())
             return;
@@ -414,7 +416,7 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
 
         processDirLights(shader, dirLights);
 
-        shader->set("u_ActivePointLightCount", static_cast<int>(pointLights.size()));
+        shader->set("activePointLightCount", static_cast<int>(pointLights.size()));
 
         // Irradiance Map
         glActiveTexture(GL_TEXTURE8);
@@ -431,21 +433,21 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
         glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
         shader->set("brdfLUT", 10);
 
-        // 유니폼
-        shader->set("u_MaxReflectionLOD", 4.0f);
-
-        shader->set("u_AmbientIntensity", AMBIENT_INTENSITY);
-
-        // Shadow Map
+        // Shadow map
         glActiveTexture(GL_TEXTURE11);
         glBindTexture(GL_TEXTURE_2D, depthMap);
-
         shader->set("shadowMap", 11);
+
+        shader->set("aaxReflectionLOD", 4.0f);
+
+        shader->set("ambientIntensity", AMBIENT_INTENSITY);
+
         shader->set("lightSpaceMatrix", lightSpaceMatrix);
     };
 
-    // 실제 오브젝트 렌더
+    // render object
     for (const auto& [modelKey, instances] : instanceGroups) {
+        // validation
         if (instances.empty())
             continue;
 
@@ -453,6 +455,7 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
         if (!model || model->subMeshes.empty())
             continue;
 
+        // get submesh shaders
         std::unordered_set<unsigned int> preparedShaders;
         for (const auto& subMesh : model->subMeshes) {
             if (!subMesh.material)
@@ -467,9 +470,9 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
             }
         }
 
-        if (instances.size() >= INSTANCE_THRESHOLD) { // 인스턴싱 할때
+        if (instances.size() >= INSTANCE_THRESHOLD) { // instanced objects render
             renderInstanced(model, instances, camera, aspectRatio);
-        } else { // 인스턴싱 안 할때
+        } else { // just render
             for (const auto& inst : instances) {
                 renderObject(inst, camera, aspectRatio);
             }
@@ -487,15 +490,20 @@ void Renderer::renderShadow(Scene& scene, const std::unordered_map<const Model*,
 
     const auto dirLights = scene.getLightManager().getDirLights();
     glm::vec3 lightDir(0.0f, -1.0f, 0.0f);
+
     if (!dirLights.empty()) {
         lightDir = dirLights.front()->getDirection();
     }
-    if (glm::length(lightDir) < 0.0001f) {
-        lightDir = glm::vec3(0.0f, -1.0f, 0.0f);
+
+    // light normalize
+    if (glm::length(lightDir) < 0.0001f) { // is 0 vector?
+        lightDir = glm::vec3(0.0f, -1.0f, 0.0f); 
     } else {
         lightDir = glm::normalize(lightDir);
     }
 
+    // just ignore this part
+    // NOTE: https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping 
     glm::mat4 lightProjection = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, 0.1f, 30.0f);
 
     glm::vec3 lightPos = -lightDir * 10.0f;
@@ -509,6 +517,7 @@ void Renderer::renderShadow(Scene& scene, const std::unordered_map<const Model*,
 
     lightSpaceMatrix = lightProjection * lightView;
 
+    // shadow map render
     glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
     glClear(GL_DEPTH_BUFFER_BIT);
@@ -518,35 +527,35 @@ void Renderer::renderShadow(Scene& scene, const std::unordered_map<const Model*,
 
     shadowShader->set("lightSpaceMatrix", lightSpaceMatrix);
 
+    // rendering
     for (const auto& [modelKey, instances] : instanceGroups) {
-        if (instances.empty()) continue;
+        if (instances.empty())
+            continue;
         const auto& model = instances.front().object->model;
-        if (!model || model->subMeshes.empty()) continue;
+        if (!model || model->subMeshes.empty())
+            continue;
 
-        if (instances.size() >= INSTANCE_THRESHOLD) {
-            // 인스턴싱 드로우 — 드로우콜 1개
+        if (instances.size() >= INSTANCE_THRESHOLD) { // instance
             std::vector<InstanceData> instanceData;
             instanceData.reserve(instances.size());
             for (const auto& inst : instances)
                 instanceData.push_back({inst.worldMatrix});
 
             glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-            glBufferData(GL_ARRAY_BUFFER, instanceData.size() * sizeof(InstanceData),
-                         instanceData.data(), GL_STREAM_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, instanceData.size() * sizeof(InstanceData), instanceData.data(), GL_STREAM_DRAW);
 
             for (const auto& subMesh : model->subMeshes) {
-                if (!subMesh.mesh || !subMesh.mesh->isReady()) continue;
+                if (!subMesh.mesh || !subMesh.mesh->isReady())
+                    continue;
                 subMesh.mesh->setupInstanceAttributes(instanceVBO);
                 glBindVertexArray(subMesh.mesh->vao);
-                glDrawElementsInstanced(GL_TRIANGLES, subMesh.mesh->indexCount,
-                                         GL_UNSIGNED_INT, nullptr,
-                                         static_cast<GLsizei>(instanceData.size()));
+                glDrawElementsInstanced(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr, static_cast<GLsizei>(instanceData.size()));
             }
-        } else {
-            // 개수 적으면 기존처럼 하나씩
+        } else { // not instance
             for (const auto& inst : instances) {
                 for (const auto& subMesh : inst.object->model->subMeshes) {
-                    if (!subMesh.mesh || !subMesh.mesh->isReady()) continue;
+                    if (!subMesh.mesh || !subMesh.mesh->isReady())
+                        continue;
                     shadowShader->set("model", inst.worldMatrix);
                     glBindVertexArray(subMesh.mesh->vao);
                     glDrawElements(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr);
