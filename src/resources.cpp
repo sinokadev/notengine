@@ -31,24 +31,6 @@ std::string assetRoot = []() {
 std::string assetRoot = "";
 #endif
 
-unsigned int compileShader(unsigned int type, const char* source, const char* label) {
-    unsigned int shader = glCreateShader(type);
-    glShaderSource(shader, 1, &source, nullptr);
-    glCompileShader(shader);
-
-    int success = 0;
-    char log[512];
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(shader, 512, nullptr, log);
-        std::cerr << "[Error] Failed to compile " << label << " shader\n" << log << std::endl;
-        glDeleteShader(shader);
-        return 0;
-    }
-
-    return shader;
-}
-
 } // namespace
 
 void setAssetRoot(const std::string& root) {
@@ -85,121 +67,12 @@ bool ShaderSource::isValid() const {
 }
 
 Shader::Shader(std::shared_ptr<ShaderSource> ss, unsigned int shaderId) : id(shaderId) {
-    if (!ss || !ss->isValid()) {
-        return;
-    }
-
-    const char* vertexCode = ss->vertexSourceCode.c_str();
-    const char* fragmentCode = ss->fragmentSourceCode.c_str();
-
-    unsigned int vertexShader = compileShader(GL_VERTEX_SHADER, vertexCode, "vertex");
-    if (vertexShader == 0) {
-        return;
-    }
-
-    unsigned int fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragmentCode, "fragment");
-    if (fragmentShader == 0) {
-        glDeleteShader(vertexShader);
-        return;
-    }
-
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-
-    int success = 0;
-    char log[512];
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(shaderProgram, 512, nullptr, log);
-        std::cerr << "[Error] Failed to link shaders\n" << log << std::endl;
-        glDeleteProgram(shaderProgram);
-        shaderProgram = 0;
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
-        return;
-    }
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-    valid = true;
-}
-
-Shader::~Shader() {
-    if (shaderProgram != 0) {
-        if (glfwGetCurrentContext() != nullptr) {
-            glDeleteProgram(shaderProgram);
-        }
-        shaderProgram = 0;
-    }
-}
-
-void Shader::use() {
-    if (valid) {
-        glUseProgram(shaderProgram);
-    }
-}
-
-int Shader::uniformLocation(const std::string& name) const {
-    auto cached = uniformLocations.find(name);
-    if (cached != uniformLocations.end()) {
-        return cached->second;
-    }
-
-    const int location = glGetUniformLocation(shaderProgram, name.c_str());
-    uniformLocations.emplace(name, location);
-    return location;
-}
-
-void Shader::set(const std::string& name, bool value) const {
-    const int location = uniformLocation(name);
-    if (location >= 0) {
-        glUniform1i(location, static_cast<int>(value));
-    }
-}
-
-void Shader::set(const std::string& name, int value) const {
-    const int location = uniformLocation(name);
-    if (location >= 0) {
-        glUniform1i(location, value);
-    }
-}
-
-void Shader::set(const std::string& name, float value) const {
-    const int location = uniformLocation(name);
-    if (location >= 0) {
-        glUniform1f(location, value);
-    }
-}
-
-void Shader::set(const std::string& name, const glm::vec2& value) const {
-    const int location = uniformLocation(name);
-    if (location >= 0) {
-        glUniform2fv(location, 1, &value[0]);
-    }
-}
-
-void Shader::set(const std::string& name, const glm::vec3& value) const {
-    const int location = uniformLocation(name);
-    if (location >= 0) {
-        glUniform3fv(location, 1, &value[0]);
-    }
-}
-
-void Shader::set(const std::string& name, const glm::mat4& value) const {
-    const int location = uniformLocation(name);
-    if (location >= 0) {
-        glUniformMatrix4fv(location, 1, GL_FALSE, &value[0][0]);
-    }
-}
-
-unsigned int Shader::getId() const {
-    return id;
-}
-
-unsigned int Shader::getShaderProgram() const {
-    return shaderProgram;
+    if (!ss || !ss->isValid()) return;
+    const auto vertex = std::filesystem::path(ss->vertexPath).filename().string();
+    const auto fragment = std::filesystem::path(ss->fragmentPath).filename().string();
+    pbr = fragment == "pbr.frag";
+    valid = vertex == "alpha.vert" && (pbr || fragment == "alpha.frag");
+    if (!valid) std::cerr << "[Error] Vulkan material shaders must use alpha.vert with alpha.frag or pbr.frag\n";
 }
 
 ShaderSource AlphaShader::GetSource() {

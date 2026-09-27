@@ -15,61 +15,36 @@
  * limitations under the License.
  */
 
-#version 430 core
-out vec4 FragColor;
+#version 450
+layout(location=0) out vec4 FragColor;
+layout(location=0) in vec3 FragPos;
+layout(location=1) in vec2 TexCoords;
+layout(location=2) in vec3 Normal;
+layout(location=3) in mat3 TBN;
+layout(location=6) in vec4 LightSpaceFragPos;
+layout(set=0,binding=0,std140) uniform SceneUniform {
+    mat4 viewProjection;
+    mat4 lightSpaceMatrix;
+    mat4 skyViewProjection;
+    vec4 cameraPosition;
+    vec4 lightDirection;
+    vec4 lightDiffuse;
+    vec4 lightAmbient;
+    ivec4 counts;
+} scene;
+layout(push_constant) uniform MaterialUniform { vec4 albedo; vec4 factors; } params;
 
-in vec3 FragPos;
-in vec3 Normal;
-in vec2 TexCoords;
-in mat3 TBN;
-in vec4 LightSpaceFragPos;
-
-// structs and uniforms
-
-// dir lightColorRaw
-struct DirLight {
-    vec3 direction;
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-};
-uniform DirLight dirLight;
-
-// point lights
-struct PointLight {
-    vec4 position;
-    vec4 color;
-    float radius;
-    float constant;
-    float linear;
-    float quadratic;
-};
-
-layout(std430, binding = 0) readonly buffer LightBuffer {
-    PointLight pointLights[];
-};
-
-uniform int activePointLightCount;
-
-// material
-struct Material {
-    sampler2D albedoMap;
-    sampler2D normalMap;
-    sampler2D metallicMap;
-    sampler2D roughnessMap;
-    sampler2D aoMap;
-};
-uniform Material material;
-
-// just uniform
-uniform vec3 cameraPos;
-uniform float maxReflectionLOD;
-uniform float ambientIntensity;
-uniform sampler2D brdfLUT;
-uniform sampler2D shadowMap;
-uniform samplerCube irradianceMap;
-uniform samplerCube prefilterMap;
-
+struct PointLight { vec4 position; vec4 color; float radius; float constant; float linear; float quadratic; };
+layout(set=0,binding=1,std430) readonly buffer LightBuffer { PointLight pointLights[]; };
+layout(set=1,binding=0) uniform sampler2D albedoMap;
+layout(set=1,binding=1) uniform sampler2D metallicMap;
+layout(set=1,binding=2) uniform sampler2D roughnessMap;
+layout(set=1,binding=3) uniform sampler2D aoMap;
+layout(set=1,binding=4) uniform sampler2D normalMap;
+layout(set=1,binding=5) uniform samplerCube irradianceMap;
+layout(set=1,binding=6) uniform samplerCube prefilterMap;
+layout(set=1,binding=7) uniform sampler2D brdfLUT;
+layout(set=1,binding=8) uniform sampler2D shadowMap;
 #define PI 3.14159265359
 
 float pow5(float x) {
@@ -132,9 +107,9 @@ vec3 calcPbrLight(vec3 N, vec3 V, vec3 L, vec3 lightColor, vec3 albedo, float me
 float calcShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
     vec3 projCoords = lightSpaceFragPos.xyz / lightSpaceFragPos.w;
 
-    projCoords = projCoords * 0.5 + 0.5;
+    projCoords.xy = projCoords.xy * 0.5 + 0.5;
 
-    if (projCoords.z > 1.0) {
+    if (scene.counts.y == 0 || projCoords.z > 1.0 || projCoords.z < 0.0 || any(lessThan(projCoords.xy,vec2(0))) || any(greaterThan(projCoords.xy,vec2(1)))) {
         return 0.0;
     }
 
@@ -161,17 +136,17 @@ float calcShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
     return shadow;
 }
 void main() {
-    vec3 V = normalize(cameraPos - FragPos);
+    vec3 V = normalize(scene.cameraPosition.xyz - FragPos);
 
     // Texture Map
-    vec3 albedo = texture(material.albedoMap, TexCoords).rgb;
-    float metallic = texture(material.metallicMap, TexCoords).r;
-    float roughness = texture(material.roughnessMap, TexCoords).r;
-    float ao = texture(material.aoMap, TexCoords).r;
+    vec3 albedo = texture(albedoMap, TexCoords).rgb * params.albedo.rgb;
+    float metallic = texture(metallicMap, TexCoords).r * params.factors.x;
+    float roughness = texture(roughnessMap, TexCoords).r * params.factors.y;
+    float ao = texture(aoMap, TexCoords).r * params.factors.z;
 
     // Normal Map
-    vec3 normalMap = texture(material.normalMap, TexCoords).rgb;
-    vec3 N = normalize(normalMap * 2.0 - 1.0);
+    vec3 sampledNormal = texture(normalMap, TexCoords).rgb;
+    vec3 N = normalize(sampledNormal * 2.0 - 1.0);
     N = normalize(TBN * N);
 
     float alphaRoughness = max(roughness * roughness, 0.002);
@@ -180,8 +155,8 @@ void main() {
     vec3 f0 = mix(vec3(0.04), albedo, metallic);
 
     // Directional Light
-    vec3 L_dir = normalize(-dirLight.direction);
-    vec3 directLighting = calcPbrLight(N, V, L_dir, dirLight.diffuse, albedo, metallic, alphaRoughness, f0, calcShadow(LightSpaceFragPos, N, L_dir));
+    vec3 L_dir = normalize(-scene.lightDirection.xyz);
+    vec3 directLighting = calcPbrLight(N, V, L_dir, scene.lightDiffuse.xyz, albedo, metallic, alphaRoughness, f0, calcShadow(LightSpaceFragPos, N, L_dir));
 
     // Fresnel
     float NoV = max(dot(N, V), 0.0);
@@ -194,16 +169,16 @@ void main() {
 
     // Specular IBL
     vec3 R = reflect(-V, N);
-    float mipLevel = roughness * maxReflectionLOD;
+    float mipLevel = roughness * 4.0;
     vec3 prefilteredColor = textureLod(prefilterMap, R, mipLevel).rgb;
     vec2 brdf = texture(brdfLUT, vec2(NoV, roughness)).rg;
     vec3 specular = prefilteredColor * (kS * brdf.x + brdf.y);
 
     // Ambient
-    vec3 ambient = (kD * diffuse + specular) * ao * ambientIntensity;
+    vec3 ambient = (kD * diffuse + specular + scene.lightAmbient.rgb * albedo) * ao;
 
     // Point Light
-    for (int i = 0; i < activePointLightCount; ++i) {
+    for (int i = 0; i < scene.counts.x; ++i) {
         vec3 lightPos = pointLights[i].position.xyz;
         vec3 lightColorRaw = pointLights[i].color.rgb;
         float brightness = pointLights[i].color.a;

@@ -31,7 +31,7 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Dependencies.cmake")
 
 # Sources (CONFIGURE_DEPENDS 추가하여 파일 추가 감지)
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cpp")
-list(APPEND SOURCES "library/gl.c" "library/miniaudio.c")
+list(APPEND SOURCES "library/volk.c" "library/miniaudio.c")
 
 add_library(notengine STATIC ${SOURCES})
 
@@ -74,6 +74,29 @@ endfunction()
 
 embed_shaders_to_header("${SHADER_FILES}" "${GENERATED_HEADER}")
 
+# Compile Vulkan GLSL during the build; shader edits regenerate the embedded SPIR-V.
+find_program(NOTENGINE_GLSLANG glslangValidator HINTS "$ENV{VULKAN_SDK}/bin" "$ENV{VULKAN_SDK}/Bin")
+if(NOT NOTENGINE_GLSLANG)
+    message(FATAL_ERROR "glslangValidator is required; install glslang-tools or the Vulkan SDK")
+endif()
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+set(SPIRV_FILES)
+foreach(shader ${SHADER_FILES})
+    get_filename_component(shader_name "${shader}" NAME)
+    set(spirv "${CMAKE_CURRENT_BINARY_DIR}/spirv/${shader_name}.spv")
+    add_custom_command(OUTPUT "${spirv}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/spirv"
+        COMMAND "${NOTENGINE_GLSLANG}" -V --target-env vulkan1.1 "${shader}" -o "${spirv}"
+        DEPENDS "${shader}" VERBATIM)
+    list(APPEND SPIRV_FILES "${spirv}")
+endforeach()
+add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/VulkanShaders.h"
+    COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/script/embed_spirv.py"
+        "${CMAKE_CURRENT_BINARY_DIR}/VulkanShaders.h" ${SPIRV_FILES}
+    DEPENDS ${SPIRV_FILES} "${CMAKE_CURRENT_SOURCE_DIR}/script/embed_spirv.py" VERBATIM)
+target_sources(notengine PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/VulkanShaders.h")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${SHADER_FILES})
+
 # Include directories
 target_include_directories(notengine PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
@@ -85,6 +108,7 @@ target_include_directories(notengine PUBLIC
 # implementation-only include path private; users include <miniaudio/miniaudio.h>.
 target_include_directories(notengine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include/miniaudio
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/volk
 )
 
 # Link dependencies
@@ -92,7 +116,7 @@ target_link_libraries(notengine PUBLIC
     $<BUILD_INTERFACE:glfw>
     $<BUILD_INTERFACE:glm::glm>
     # "$<BUILD_INTERFACE:OpenAL::OpenAL>"
-    OpenGL::GL
+    Vulkan::Headers
     ${CMAKE_DL_LIBS}
 )
 
@@ -109,6 +133,7 @@ elseif(WIN32)
 endif()
 
 target_compile_definitions(notengine PUBLIC
+    VK_NO_PROTOTYPES GLFW_INCLUDE_NONE
     NOTENGINE_ASSET_ROOT="${CMAKE_SOURCE_DIR}"
 )
 
@@ -139,3 +164,11 @@ set_target_properties(test_group PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMA
 
 # Install configuration
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Install.cmake")
+add_executable(vulkan_smoke EXCLUDE_FROM_ALL demo/vulkan_smoke.cpp)
+target_link_libraries(vulkan_smoke PRIVATE notengine)
+option(NOTENGINE_GPU_TESTS "Register Vulkan tests (requires a desktop session and Vulkan driver)" OFF)
+if(NOTENGINE_GPU_TESTS)
+    enable_testing()
+    add_test(NAME vulkan_smoke COMMAND vulkan_smoke "${CMAKE_CURRENT_BINARY_DIR}/vulkan-smoke.ppm")
+    set_tests_properties(vulkan_smoke PROPERTIES ENVIRONMENT "KNOT_VULKAN_VALIDATION=1" TIMEOUT 180)
+endif()

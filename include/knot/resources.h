@@ -5,8 +5,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include <glad/gl.h>
-#include <GLFW/glfw3.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -47,52 +45,17 @@ public:
 private:
 };
 
-/** @brief Compiled OpenGL shader program with cached uniform locations. */
+/** @brief Built-in Vulkan shader selection. SPIR-V is compiled and embedded at build time. */
 class Shader {
 public:
-    /** @brief Compiles and links sources into a program associated with @p id. */
-    Shader(std::shared_ptr<ShaderSource> ss, unsigned int id);
-    /** @brief Deletes the OpenGL program when a context is current. */
-    ~Shader();
-
-    Shader(const Shader&) = delete;
-    Shader& operator=(const Shader&) = delete;
-
-    /** @brief Reports whether shader compilation and linking succeeded. */
-    bool isValid() const {
-        return valid;
-    }
-
-    /** @brief Binds this program for subsequent draw calls. */
-    void use();
-    /** @name Uniform setters
-     *  @brief Set a uniform in the currently linked program by name. */
-    ///@{
-    /** @brief Sets a boolean uniform. */
-    void set(const std::string& name, bool value) const;
-    /** @brief Sets an integer uniform. */
-    void set(const std::string& name, int value) const;
-    /** @brief Sets a floating-point uniform. */
-    void set(const std::string& name, float value) const;
-    /** @brief Sets a two-component vector uniform. */
-    void set(const std::string& name, const glm::vec2& value) const;
-    /** @brief Sets a three-component vector uniform. */
-    void set(const std::string& name, const glm::vec3& value) const;
-    /** @brief Sets a 4x4 matrix uniform. */
-    void set(const std::string& name, const glm::mat4& value) const;
-    ///@}
-    /** @brief Returns the resource-manager ID assigned to this shader. */
-    unsigned int getId() const;
-    /** @brief Returns the underlying OpenGL program ID. */
-    unsigned int getShaderProgram() const;
-
+    Shader(std::shared_ptr<ShaderSource> source, unsigned int id);
+    bool isValid() const { return valid; }
+    unsigned int getId() const { return id; }
+    bool isPbr() const { return pbr; }
 private:
-    int uniformLocation(const std::string& name) const;
-
     bool valid = false;
-    unsigned int shaderProgram = 0;
+    bool pbr = false;
     unsigned int id = 0;
-    mutable std::unordered_map<std::string, int> uniformLocations;
 };
 
 /** @brief Factory for the engine's built-in PBR shader sources. */
@@ -109,7 +72,7 @@ public:
     static ShaderSource GetSource();
 };
 
-/** @brief Base material that binds an associated shader program. */
+/** @brief Base material that binds an associated Vulkan shader selection. */
 class Material {
 public:
     /** @brief Creates a material using @p shader. */
@@ -117,13 +80,6 @@ public:
     }
 
     virtual ~Material() = default;
-
-    /** @brief Binds the material's shader program when available. */
-    virtual void bind() {
-        if (shader) {
-            shader->use();
-        }
-    }
 
     /** @brief Returns the shader used by this material. */
     std::shared_ptr<Shader> getShader() const {
@@ -140,33 +96,14 @@ class TextureMaterial : public Material {
 public:
     /** @brief Creates a material using a 2D texture.
      *  @param s Shader to use.
-     *  @param textureId OpenGL 2D texture ID.
+     *  @param textureId Engine texture handle.
      *  @param ownsTexture Whether this material deletes @p textureId on destruction. */
     TextureMaterial(std::shared_ptr<Shader> s, unsigned int textureId, bool ownsTexture = false)
         : Material(std::move(s)), textureId(textureId), ownsTexture(ownsTexture) {
     }
 
-    ~TextureMaterial() override {
-        if (ownsTexture && textureId != 0) {
-            if (glfwGetCurrentContext() != nullptr) {
-                glDeleteTextures(1, &textureId);
-            }
-            textureId = 0;
-        }
-    }
-
-    /** @brief Binds the texture to unit 0 and sets material.diffuse. */
-    void bind() override {
-        if (!shader)
-            return;
-
-        shader->use();
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textureId);
-
-        shader->set("material.diffuse", 0);
-    }
+    ~TextureMaterial() override { if (ownsTexture) destroyTexture(textureId); }
+    unsigned int getTextureId() const { return textureId; }
 
 private:
     unsigned int textureId;
@@ -208,28 +145,28 @@ public:
         if (albedoM != 0) {
             albedoMap = albedoM;
         } else {
-            albedoMap = createSolidColorTexture(baseAlbedo);
+            albedoMap = createSolidColorTexture(glm::vec3(1.0f));
             isAlbedoAllocated = true;
         }
 
         if (metallicM != 0) {
             metallicMap = metallicM;
         } else {
-            metallicMap = createSolidColorTexture(glm::vec3(baseMetallic));
+            metallicMap = createSolidColorTexture(glm::vec3(1.0f));
             isMetallicAllocated = true;
         }
 
         if (roughnessM != 0) {
             roughnessMap = roughnessM;
         } else {
-            roughnessMap = createSolidColorTexture(glm::vec3(baseRoughness));
+            roughnessMap = createSolidColorTexture(glm::vec3(1.0f));
             isRoughnessAllocated = true;
         }
 
         if (aoM != 0) {
             aoMap = aoM;
         } else {
-            aoMap = createSolidColorTexture(glm::vec3(baseAo));
+            aoMap = createSolidColorTexture(glm::vec3(1.0f));
             isAoAllocated = true;
         }
 
@@ -242,39 +179,29 @@ public:
     }
 
     ~PbrMaterial() override {
-        const bool hasContext = (glfwGetCurrentContext() != nullptr);
+
         if (isAlbedoAllocated && albedoMap != 0) {
-            if (hasContext) {
-                glDeleteTextures(1, &albedoMap);
-            }
+            destroyTexture(albedoMap);
             albedoMap = 0;
             isAlbedoAllocated = false;
         }
         if (isMetallicAllocated && metallicMap != 0) {
-            if (hasContext) {
-                glDeleteTextures(1, &metallicMap);
-            }
+            destroyTexture(metallicMap);
             metallicMap = 0;
             isMetallicAllocated = false;
         }
         if (isRoughnessAllocated && roughnessMap != 0) {
-            if (hasContext) {
-                glDeleteTextures(1, &roughnessMap);
-            }
+            destroyTexture(roughnessMap);
             roughnessMap = 0;
             isRoughnessAllocated = false;
         }
         if (isAoAllocated && aoMap != 0) {
-            if (hasContext) {
-                glDeleteTextures(1, &aoMap);
-            }
+            destroyTexture(aoMap);
             aoMap = 0;
             isAoAllocated = false;
         }
         if (isNormalAllocated && normalMap != 0) {
-            if (hasContext) {
-                glDeleteTextures(1, &normalMap);
-            }
+            destroyTexture(normalMap);
             normalMap = 0;
             isNormalAllocated = false;
         }
@@ -283,7 +210,7 @@ public:
     /** @brief Replaces the albedo map; an owned fallback texture is released. */
     void setAlbedoMap(unsigned int texID) {
         if (isAlbedoAllocated && albedoMap != 0) {
-            glDeleteTextures(1, &albedoMap);
+            destroyTexture(albedoMap);
             isAlbedoAllocated = false;
         }
         albedoMap = texID;
@@ -292,7 +219,7 @@ public:
     /** @brief Replaces the metallic map; an owned fallback texture is released. */
     void setMetallicMap(unsigned int texID) {
         if (isMetallicAllocated && metallicMap != 0) {
-            glDeleteTextures(1, &metallicMap);
+            destroyTexture(metallicMap);
             isMetallicAllocated = false;
         }
         metallicMap = texID;
@@ -301,7 +228,7 @@ public:
     /** @brief Replaces the roughness map; an owned fallback texture is released. */
     void setRoughnessMap(unsigned int texID) {
         if (isRoughnessAllocated && roughnessMap != 0) {
-            glDeleteTextures(1, &roughnessMap);
+            destroyTexture(roughnessMap);
             isRoughnessAllocated = false;
         }
         roughnessMap = texID;
@@ -310,7 +237,7 @@ public:
     /** @brief Replaces the ambient-occlusion map; an owned fallback texture is released. */
     void setAoMap(unsigned int texID) {
         if (isAoAllocated && aoMap != 0) {
-            glDeleteTextures(1, &aoMap);
+            destroyTexture(aoMap);
             isAoAllocated = false;
         }
         aoMap = texID;
@@ -319,7 +246,7 @@ public:
     /** @brief Replaces the normal map; an owned fallback texture is released. */
     void setNormalMap(unsigned int texID) {
         if (isNormalAllocated && normalMap != 0) {
-            glDeleteTextures(1, &normalMap);
+            destroyTexture(normalMap);
             isNormalAllocated = false;
         }
         normalMap = texID;
@@ -345,33 +272,6 @@ public:
         baseAo = ao;
     }
 
-    /** @brief Binds PBR maps to texture units 0 through 4. */
-    void bind() override {
-        if (!shader)
-            return;
-
-        shader->use();
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, albedoMap);
-        shader->set("material.albedoMap", 0);
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, metallicMap);
-        shader->set("material.metallicMap", 1);
-
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, roughnessMap);
-        shader->set("material.roughnessMap", 2);
-
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, aoMap);
-        shader->set("material.aoMap", 3);
-
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, normalMap);
-        shader->set("material.normalMap", 4);
-    }
 
 public:
     /** @brief Albedo texture ID. */
@@ -393,6 +293,14 @@ public:
     float baseRoughness;
     /** @brief Fallback ambient-occlusion value used when no map is provided. */
     float baseAo;
+
+    /** @brief Preserve fallback-factor semantics when external maps are supplied. */
+    glm::vec3 albedoFactor() const { return isAlbedoAllocated || !albedoMap ? baseAlbedo : glm::vec3(1.f); }
+    glm::vec3 scalarFactors() const {
+        return {isMetallicAllocated || !metallicMap ? baseMetallic : 1.f,
+                isRoughnessAllocated || !roughnessMap ? baseRoughness : 1.f,
+                isAoAllocated || !aoMap ? baseAo : 1.f};
+    }
 
 private:
     bool isAlbedoAllocated = false;

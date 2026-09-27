@@ -5,7 +5,7 @@
 #include <imgui.h>
 #include <imgui_stdlib.h>
 #include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
+#include <imgui_impl_vulkan.h>
 #include <algorithm>
 #include <iostream>
 #include <memory>
@@ -39,7 +39,8 @@ class Editor {
     std::unique_ptr<knot::Scene> scene;
     std::shared_ptr<ViewportCamera> camera=std::make_shared<ViewportCamera>();
     bool navigating=false;
-    GLuint texture=0;
+    VkDescriptorSet texture=VK_NULL_HANDLE;
+    VkImageView textureView=VK_NULL_HANDLE;
     int texWidth=0, texHeight=0;
     float yaw=0.65f, pitch=0.35f, distance=12.f;
     glm::vec3 target{0,0,0};
@@ -47,11 +48,11 @@ class Editor {
     fs::path previewFile;
 public:
     explicit Editor(GLFWwindow* w):window(w) {
-        glGenTextures(1,&texture);
         previewFile=fs::temp_directory_path()/("seno-preview-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count())+".seno");
     }
     ~Editor() {
-        scene.reset(); glDeleteTextures(1,&texture);
+        knot::Renderer::get().waitIdle();
+        scene.reset(); if(texture)ImGui_ImplVulkan_RemoveTexture(texture);
         std::error_code ec; fs::remove(previewFile,ec);
     }
     bool done() const { return quit; }
@@ -217,18 +218,14 @@ public:
         camera->rotation=glm::quatLookAt(glm::normalize(target-camera->position),viewUp);
         camera->farPlane=10000.f;
         camera->span=2.f*distance*std::tan(glm::radians(camera->fov)*.5f);
-        glBindFramebuffer(GL_FRAMEBUFFER,0);glEnable(GL_DEPTH_TEST);glDepthMask(GL_TRUE);
-        glClearColor(.055f,.065f,.085f,1);glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-        auto& renderer=knot::Renderer::get();renderer.beginFrame(width,height);
-        if(scene) renderer.renderScene(*scene,static_cast<float>(width)/height);
-        glBindTexture(GL_TEXTURE_2D,texture);
-        if(width!=texWidth || height!=texHeight) {
-            texWidth=width;texHeight=height;
-            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,nullptr);
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+        auto& renderer=knot::Renderer::get();
+        auto image=renderer.renderSceneToTexture(scene.get(),width,height);
+        if(image.imageView!=textureView || width!=texWidth || height!=texHeight) {
+            if(texture)ImGui_ImplVulkan_RemoveTexture(texture);
+            texture=ImGui_ImplVulkan_AddTexture(image.sampler,image.imageView,image.imageLayout);
+            textureView=image.imageView;texWidth=width;texHeight=height;
         }
-        glCopyTexSubImage2D(GL_TEXTURE_2D,0,0,0,0,0,width,height);
-        ImGui::Image(static_cast<ImTextureID>(texture),size,ImVec2(0,1),ImVec2(1,0));
+        ImGui::Image((ImTextureID)texture,size);
         const bool hovered=ImGui::IsItemHovered();
         // A drag belongs to the viewport only if it started here; retain it at the edges.
         if(hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Middle))navigating=true;
@@ -451,18 +448,15 @@ public:
 int main(int argc,char** argv) {
     glfwSetErrorCallback([](int,const char* text){std::cerr<<text<<'\n';});
     if(!glfwInit())return 1;
-    // Knot's shaders and point-light SSBOs require OpenGL 4.3.
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR,4);glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR,3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_CLIENT_API,GLFW_NO_API);
     bool smoke=argc>1 && std::string(argv[1])=="--smoke-test";
     if(smoke)glfwWindowHint(GLFW_VISIBLE,GLFW_FALSE);
     auto* window=glfwCreateWindow(1440,900,"Seno Editor",nullptr,nullptr);
     if(!window){glfwTerminate();return 1;}
     glfwSetWindowSizeLimits(window,960,600,GLFW_DONT_CARE,GLFW_DONT_CARE);
-    glfwMakeContextCurrent(window);glfwSwapInterval(1);
     knot::setAssetRoot(fs::absolute(SENO_ASSET_ROOT).lexically_normal().string());
     auto& renderer=knot::Renderer::get();
-    if(!renderer.init(reinterpret_cast<GLADloadfunc>(glfwGetProcAddress))) {glfwDestroyWindow(window);glfwTerminate();return 1;}
+    if(!renderer.init(window)) {glfwDestroyWindow(window);glfwTerminate();return 1;}
     IMGUI_CHECKVERSION();ImGui::CreateContext();
     ImGui::GetIO().ConfigFlags|=ImGuiConfigFlags_NavEnableKeyboard;
     ImGui::GetIO().IniFilename=nullptr;
@@ -476,7 +470,18 @@ int main(int argc,char** argv) {
     }
     ImGui::StyleColorsDark();auto& style=ImGui::GetStyle();style.WindowRounding=0;style.FrameRounding=4;style.FramePadding=ImVec2(7,5);
     style.Colors[ImGuiCol_CheckMark]=ImVec4(.35f,.8f,.7f,1);style.Colors[ImGuiCol_Header]=ImVec4(.16f,.35f,.34f,1);
-    ImGui_ImplGlfw_InitForOpenGL(window,true);ImGui_ImplOpenGL3_Init("#version 430");
+    ImGui_ImplGlfw_InitForVulkan(window,true);
+    ImGui_ImplVulkan_LoadFunctions(VK_API_VERSION_1_1,[](const char* name,void* user){
+        return vkGetInstanceProcAddr(static_cast<knot::Renderer*>(user)->getInstance(),name);
+    },&renderer);
+    ImGui_ImplVulkan_InitInfo vkInfo{};
+    vkInfo.ApiVersion=VK_API_VERSION_1_1;vkInfo.Instance=renderer.getInstance();
+    vkInfo.PhysicalDevice=renderer.getPhysicalDevice();vkInfo.Device=renderer.getDevice();
+    vkInfo.QueueFamily=renderer.getQueueFamily();vkInfo.Queue=renderer.getQueue();
+    vkInfo.RenderPass=renderer.getRenderPass();vkInfo.MinImageCount=2;vkInfo.ImageCount=renderer.getImageCount();
+    vkInfo.DescriptorPoolSize=64;vkInfo.MSAASamples=renderer.getSampleCount();
+    vkInfo.CheckVkResultFn=[](VkResult result){if(result!=VK_SUCCESS)throw std::runtime_error("ImGui Vulkan error: "+std::to_string(result));};
+    ImGui_ImplVulkan_Init(&vkInfo);
     int result=0;
     try {
         Editor editor(window);
@@ -487,22 +492,16 @@ int main(int argc,char** argv) {
         while(!editor.done()) {
             glfwPollEvents();int width,height;glfwGetFramebufferSize(window,&width,&height);
             if(width==0||height==0){glfwWaitEventsTimeout(.1);continue;}
-            ImGui_ImplOpenGL3_NewFrame();ImGui_ImplGlfw_NewFrame();ImGui::NewFrame();
+            if(!renderer.beginFrame(width,height))continue;
+            ImGui_ImplVulkan_NewFrame();ImGui_ImplGlfw_NewFrame();ImGui::NewFrame();
             editor.frame();ImGui::Render();
-            glBindFramebuffer(GL_FRAMEBUFFER,0);glViewport(0,0,width,height);
-            glClearColor(.055f,.065f,.085f,1);glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-            if(smoke && frames==4 && argc>3) {
-                std::vector<unsigned char> pixels(width*height*3);
-                glPixelStorei(GL_PACK_ALIGNMENT,1);glReadBuffer(GL_BACK);
-                glReadPixels(0,0,width,height,GL_RGB,GL_UNSIGNED_BYTE,pixels.data());
-                std::ofstream shot(argv[3],std::ios::binary);shot<<"P6\n"<<width<<" "<<height<<"\n255\n";
-                for(int row=height-1;row>=0;--row)shot.write(reinterpret_cast<char*>(pixels.data()+row*width*3),width*3);
-            }
-            glfwSwapBuffers(window);
+            if(smoke && frames==4 && argc>3)renderer.requestScreenshot(argv[3]);
+            renderer.endFrame([](VkCommandBuffer cmd){ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(),cmd);});
+            if(smoke && frames==1)glfwSetWindowSize(window,1200,800);
             if(smoke && ++frames>=5)break;
         }
     } catch(const std::exception& e){std::cerr<<e.what()<<'\n';result=1;}
-    ImGui_ImplOpenGL3_Shutdown();ImGui_ImplGlfw_Shutdown();ImGui::DestroyContext();
-    renderer.shutdown();glfwDestroyWindow(window);glfwTerminate();return result;
+    renderer.waitIdle();
+    ImGui_ImplVulkan_Shutdown();ImGui_ImplGlfw_Shutdown();ImGui::DestroyContext();
+    renderer.shutdown();if(renderer.getValidationErrorCount())result=1;glfwDestroyWindow(window);glfwTerminate();return result;
 }
