@@ -9,7 +9,7 @@
 project = 'Not Engine'
 copyright = '2026, SinokaDev'
 author = 'SinokaDev'
-release = '0.2.0'
+release = '0.2.1'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
