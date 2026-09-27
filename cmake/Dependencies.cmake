@@ -82,9 +82,12 @@ if(NOT TARGET glm::glm)
     FetchContent_MakeAvailable(glm)
 endif()
 
-## OpenGL
-
-find_package(OpenGL REQUIRED)
+## Vulkan headers only: volk loads the runtime dynamically.
+find_package(Vulkan REQUIRED)
+if(NOT TARGET Vulkan::Headers)
+    add_library(Vulkan::Headers INTERFACE IMPORTED)
+    set_target_properties(Vulkan::Headers PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${Vulkan_INCLUDE_DIRS}")
+endif()
 
 ## OpenAL Soft
 # Uncomment the following code to enable it.
