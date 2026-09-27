@@ -3,7 +3,7 @@
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec2 aTexCoords;
 layout (location = 2) in vec3 aNormal;
-layout (location = 3) in vec4 aTangent;
+layout (location = 3) in vec3 aTangent;
 
 // Instance transform
 layout (location = 4) in mat4 instanceModel;
@@ -34,13 +34,13 @@ void main()
     vec3 N = normalize(normalMatrix * aNormal);
 
     // World-space tangent
-    vec3 T = normalize(mat3(modelMatrix) * aTangent.xyz);
+    vec3 T = normalize(normalMatrix * aTangent);
 
     // Orthogonalize tangent against normal
     T = normalize(T - dot(T, N) * N);
 
     // Bitangent
-    vec3 B = normalize(cross(N, T)) * aTangent.w * sign(determinant(mat3(modelMatrix)));
+    vec3 B = normalize(cross(N, T));
 
     Normal = N;
     TBN = mat3(T, B, N);

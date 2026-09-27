@@ -20,7 +20,6 @@ A code-first game engine built on OpenGL, empowering you to build everything fro
 - Event system
 - OBJ file import
 - MTL material import (albedo, roughness, metallic, normal maps)
-- glTF/GLB static model and scene import via cgltf
 - Submesh support
 - Play Audio
 

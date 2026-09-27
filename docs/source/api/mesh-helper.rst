@@ -17,4 +17,3 @@ Mesh helpers API
 
 .. doxygenfunction:: knot::loadModelOBJWithMTL
 
-.. doxygenfunction:: knot::loadModelGLTF
