@@ -81,7 +81,7 @@ public:
      *  @return false when the renderer has not been initialized. */
     bool renderScene(Scene& scene, float aspectRatio);
     /** @brief Renders a Shadows. */
-    void renderShadow(Scene& scene);
+    void renderShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups);
 
     /** @brief Writes the first directional light, or zero lighting, to a shader. */
     void processDirLights(const std::shared_ptr<Shader>& shader, const std::vector<const DirLight*>& dirLights);
