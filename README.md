@@ -24,28 +24,6 @@ A code-first game engine built on OpenGL, empowering you to build everything fro
 - Submesh support
 - Play Audio
 
-### glTF import
-
-With an initialized engine/OpenGL context:
-
-```cpp
-auto shader = scene.getResourceManager().getShader("pbrShader");
-auto model = knot::loadModelGLTF("assets/model.glb", shader);
-if (model)
-    scene.getObjectManager().registerObject(std::make_shared<knot::Object>(model));
-
-// Replace scene contents with the default glTF scene (or pass a scene index).
-bool loaded = scene.loadGLTF("assets/world.gltf");
-```
-
-Model import reads mesh resources and materials, ignoring node placements.
-Use scene import for scene assets; loading those with the model API is not supported.
-Scene import creates objects from mesh nodes, applies hierarchy transforms,
-and imports the first camera plus point/directional lights. A failed import
-retains the current scene. These are static importers, without animation playback,
-skinning or morph targets. See [glTF import details](docs/source/api/gltf.rst)
-for supported materials and limitations.
-
 ## Performance
 
 | Version | Objects | Model | FPS | VSync |
