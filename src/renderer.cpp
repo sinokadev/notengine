@@ -1,5 +1,5 @@
 #include <knot/renderer.h>
-#include <volk/volk.h>
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
@@ -9,29 +9,6 @@
 
 #define DISABLE_SKYMAP false
 #define DISABLE_SHADOW false
-
-static inline void chk(VkResult result) {
-	if (result != VK_SUCCESS) {
-		std::cerr << "Vulkan call returned an error (" << result << ")\n";
-		exit(result);
-	}
-}
-static inline void chkSwapchain(VkResult result) {
-	if (result < VK_SUCCESS) {
-		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-			updateSwapchain = true;
-			return;
-		}
-		std::cerr << "Vulkan call returned an error (" << result << ")\n";
-		exit(result);
-	}
-}
-static inline void chk(bool result) {
-	if (!result) {
-		std::cerr << "Call returned an error\n";
-		exit(result);
-	}
-}
 
 namespace knot {
 
@@ -47,56 +24,55 @@ Renderer::~Renderer() {
 bool Renderer::init(GLADloadfunc loadProc) {
     std::cout << "[Info] Not Engine Renderer Init" << std::endl;
 
-    volkInitialize();
-
-    VkApplicationInfo appInfo{
-        .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-        .pApplicationName = "notengine",
-        .apiVersion = VK_API_VERSION_1_3
-    };
-
-    uint32_t instanceExtensionsCount{ 0 };
-	char const* const* instanceExtensions{ SDL_Vulkan_GetInstanceExtensions(&instanceExtensionsCount) };
-	VkInstanceCreateInfo instanceCI{
-		.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-		.pApplicationInfo = &appInfo,
-		.enabledExtensionCount = instanceExtensionsCount,
-		.ppEnabledExtensionNames = instanceExtensions,
-	};
-
-	chk(vkCreateInstance(&instanceCI, nullptr, &instance));
-	
-    volkLoadInstance(instance);
-
-    uint32_t deviceCount{ 0 };
-	chk(vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr));
-	std::vector<VkPhysicalDevice> devices(deviceCount);
-	chk(vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data()));
-
-    uint32_t deviceIndex{ 0 };
-    if (argc > 1) {
-        deviceIndex = std::stoi(argv[1]);
-        assert(deviceIndex < deviceCount);
+    // Load GL
+    if (!gladLoadGL(loadProc)) {
+        std::cerr << "[Error] Failed to load OpenGL functions" << std::endl;
+        return false;
     }
 
-    VkPhysicalDeviceProperties2 deviceProperties{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
-    vkGetPhysicalDeviceProperties2(devices[deviceIndex], &deviceProperties);
-    std::cout << "Selected device: " << deviceProperties.properties.deviceName <<  "\n";
+    // GL Config
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_MULTISAMPLE);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
 
-	uint32_t queueFamilyCount{ 0 };
-	vkGetPhysicalDeviceQueueFamilyProperties(devices[deviceIndex], &queueFamilyCount, nullptr);
-	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(devices[deviceIndex], &queueFamilyCount, queueFamilies.data());
-	uint32_t queueFamily{ 0 };
-	for (size_t i = 0; i < queueFamilies.size(); i++) {
-		if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-			queueFamily = i;
-			break;
-		}
-	}
-	chk(SDL_Vulkan_GetPresentationSupport(instance, devices[deviceIndex], queueFamily));
+    glGenBuffers(1, &lightSSBO);
+    glGenBuffers(1, &instanceVBO);
 
-    
+    // Sky Map and IBL
+    skyboxMesh = createCube();
+    auto skyboxSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/skybox.vert", getAssetRoot() + "shaders/skybox.frag");
+    skyboxShader = std::make_shared<Shader>(skyboxSource, SKYBOX_SHADER_ID);
+
+    generateBRDFLUT();
+
+    // Shadow Map
+    glGenFramebuffers(1, &depthMapFBO);
+
+    // depth map texture gen
+    glGenTextures(1, &depthMap);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+    // depth map bind
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cerr << "[Error] Shadow framebuffer is not complete!\n";
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Shadow Shader
     auto shadowSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/shadow.vert", getAssetRoot() + "shaders/shadow.frag");
