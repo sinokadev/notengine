@@ -382,10 +382,6 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     const auto pointLights = lightManager.getPointLights();
 
     // render
-    renderShadow(scene);
-
-    renderSkybox(scene.getCubeMap(), camera, aspectRatio);
-
     processPointLights(pointLights);
 
     // object render
@@ -405,6 +401,10 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
 
         instanceGroups[object->model.get()].push_back(VisibleInstance{object.get(), worldMatrix});
     }
+
+    renderShadow(scene, instanceGroups);
+
+    renderSkybox(scene.getCubeMap(), camera, aspectRatio);
 
     auto setupSceneUniforms = [&](const std::shared_ptr<Shader>& shader) {
         if (!shader || !shader->isValid())
@@ -479,7 +479,7 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     return true;
 }
 
-void Renderer::renderShadow(Scene& scene) {
+void Renderer::renderShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups) {
     if (DISABLE_SHADOW)
         return;
     if (!shadowShader || !shadowShader->isValid())
@@ -507,15 +507,10 @@ void Renderer::renderShadow(Scene& scene) {
 
     glm::mat4 lightView = glm::lookAt(lightPos, target, up);
 
-    // Main Pass에서도 사용할 행렬
     lightSpaceMatrix = lightProjection * lightView;
 
-    // Shadow map 크기로 변경
     glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
-
-    // Shadow FBO
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-
     glClear(GL_DEPTH_BUFFER_BIT);
 
     // Shadow shader
@@ -523,21 +518,40 @@ void Renderer::renderShadow(Scene& scene) {
 
     shadowShader->set("lightSpaceMatrix", lightSpaceMatrix);
 
-    // 모든 오브젝트를 광원 시점에서 렌더
-    for (const auto& object : scene.getObjectManager().getObjects()) {
+    for (const auto& [modelKey, instances] : instanceGroups) {
+        if (instances.empty()) continue;
+        const auto& model = instances.front().object->model;
+        if (!model || model->subMeshes.empty()) continue;
 
-        if (!object->model)
-            continue;
+        if (instances.size() >= INSTANCE_THRESHOLD) {
+            // 인스턴싱 드로우 — 드로우콜 1개
+            std::vector<InstanceData> instanceData;
+            instanceData.reserve(instances.size());
+            for (const auto& inst : instances)
+                instanceData.push_back({inst.worldMatrix});
 
-        for (const auto& subMesh : object->model->subMeshes) {
-            if (!subMesh.mesh || !subMesh.mesh->isReady())
-                continue;
+            glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+            glBufferData(GL_ARRAY_BUFFER, instanceData.size() * sizeof(InstanceData),
+                         instanceData.data(), GL_STREAM_DRAW);
 
-            shadowShader->set("model", object->getWorldMatrix());
-
-            glBindVertexArray(subMesh.mesh->vao);
-
-            glDrawElements(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr);
+            for (const auto& subMesh : model->subMeshes) {
+                if (!subMesh.mesh || !subMesh.mesh->isReady()) continue;
+                subMesh.mesh->setupInstanceAttributes(instanceVBO);
+                glBindVertexArray(subMesh.mesh->vao);
+                glDrawElementsInstanced(GL_TRIANGLES, subMesh.mesh->indexCount,
+                                         GL_UNSIGNED_INT, nullptr,
+                                         static_cast<GLsizei>(instanceData.size()));
+            }
+        } else {
+            // 개수 적으면 기존처럼 하나씩
+            for (const auto& inst : instances) {
+                for (const auto& subMesh : inst.object->model->subMeshes) {
+                    if (!subMesh.mesh || !subMesh.mesh->isReady()) continue;
+                    shadowShader->set("model", inst.worldMatrix);
+                    glBindVertexArray(subMesh.mesh->vao);
+                    glDrawElements(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr);
+                }
+            }
         }
     }
 
