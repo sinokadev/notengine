@@ -1,15 +1,9 @@
-#version 450
-layout(location=0) in vec3 aPos;
-layout(location=4) in mat4 model;
-layout(set=0,binding=0,std140) uniform SceneUniform {
-    mat4 viewProjection;
-    mat4 lightSpaceMatrix;
-    mat4 skyViewProjection;
-    vec4 cameraPosition;
-    vec4 lightDirection;
-    vec4 lightDiffuse;
-    vec4 lightAmbient;
-    ivec4 counts;
-} scene;
-layout(push_constant) uniform MaterialUniform { vec4 albedo; vec4 factors; } params;
-void main(){gl_Position=scene.lightSpaceMatrix*model*vec4(aPos,1);}
+#version 330 core
+layout(location = 0) in vec3 aPos;
+
+uniform mat4 lightSpaceMatrix;
+uniform mat4 model;
+
+void main() {
+    gl_Position = lightSpaceMatrix * model * vec4(aPos, 1.0);
+}

@@ -20,29 +20,33 @@ struct Vertex {
     glm::vec3 Tangent;
 };
 
-/** @brief CPU mesh data and its Vulkan vertex/index buffers. */
+/** @brief CPU mesh data and its OpenGL vertex/index buffers. */
 struct Mesh {
     /** @brief Vertex data retained on the CPU. */
     std::vector<Vertex> vertices;
     /** @brief Triangle index data retained on the CPU. */
     std::vector<unsigned int> indices;
 
-    /** @brief Renderer-managed Vulkan geometry handle. */
-    unsigned int gpuId = 0;
-    Mesh() = default;
-    Mesh(const Mesh&) = delete;
-    Mesh& operator=(const Mesh&) = delete;
+    /** @brief OpenGL vertex-array object. */
+    unsigned int vao = 0;
+    /** @brief OpenGL vertex-buffer object. */
+    unsigned int vbo = 0;
+    /** @brief OpenGL element-buffer object. */
+    unsigned int ebo = 0;
     /** @brief Number of indices submitted for drawing. */
     unsigned int indexCount = 0;
 
-    /** @brief Deletes owned Vulkan buffers while the renderer is alive. */
+    /** @brief Deletes owned OpenGL buffers when a context is current. */
     ~Mesh();
-    /** @brief Uploads vertices and indices and creates GPU buffers. */
+    /** @brief Uploads vertices and indices and configures the mesh VAO. */
     void setup();
     /** @brief Reports whether GPU buffers were created and contain indices. */
     bool isReady() const {
-        return gpuId != 0 && indexCount > 0;
+        return vao != 0 && indexCount > 0;
     }
+    /** @brief Configures mat4 per-instance attributes from an OpenGL VBO.
+     *  @param instanceVBO Buffer containing one model matrix per instance. */
+    void setupInstanceAttributes(unsigned int instanceVBO);
 };
 
 } // namespace knot

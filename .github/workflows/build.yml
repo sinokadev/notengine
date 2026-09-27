@@ -38,7 +38,7 @@ jobs:
             cmake \
             ninja-build \
             build-essential \
-            libglfw3-dev libglm-dev libvulkan-dev glslang-tools python3
+            libglfw3-dev
 
       - name: Configure
         run: cmake --preset ${{ matrix.preset }}
@@ -83,13 +83,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Install Vulkan headers and shader compiler
-        shell: pwsh
-        run: |
-          vcpkg install vulkan-headers:x64-windows vulkan-loader:x64-windows "glslang[tools]:x64-windows"
-          "VULKAN_SDK=$env:VCPKG_INSTALLATION_ROOT/installed/x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Append
-          "$env:VCPKG_INSTALLATION_ROOT/installed/x64-windows/tools/glslang" | Out-File -FilePath $env:GITHUB_PATH -Append
-
       - name: Configure
         run: >
           cmake --preset vs2022
@@ -111,13 +104,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-
-      - name: Install Vulkan headers and shader compiler
-        shell: pwsh
-        run: |
-          vcpkg install vulkan-headers:x64-windows vulkan-loader:x64-windows "glslang[tools]:x64-windows"
-          "VULKAN_SDK=$env:VCPKG_INSTALLATION_ROOT/installed/x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Append
-          "$env:VCPKG_INSTALLATION_ROOT/installed/x64-windows/tools/glslang" | Out-File -FilePath $env:GITHUB_PATH -Append
 
       - name: Configure
         run: >

@@ -2,7 +2,7 @@
 
 namespace knot {
 /** @brief Converts an equirectangular HDR texture into a cubemap.
- *  @param hdrTexture2D Source engine HDR texture.
+ *  @param hdrTexture2D Source OpenGL 2D texture.
  *  @param size Width and height of each cubemap face.
  *  @return The generated cubemap texture ID. */
 unsigned int bakeHDRMapToCubemap(unsigned int hdrTexture2D, int size);

@@ -1,6 +1,6 @@
 #include <iostream>
 #include <cassert>
-#include <knot/renderer.h>
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <knot/resources.h>
 #include <knot/utility/mesh_helper.h>
@@ -12,7 +12,9 @@ int main() {
     }
 
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     GLFWwindow* window = glfwCreateWindow(640, 480, "SubMesh Test", nullptr, nullptr);
     if (!window) {
@@ -21,9 +23,10 @@ int main() {
         return 1;
     }
 
-    if (!knot::Renderer::get().init(window)) {
-        std::cerr << "Failed to init Vulkan\n";
-        knot::Renderer::get().shutdown();
+    glfwMakeContextCurrent(window);
+
+    if (!gladLoadGL(glfwGetProcAddress)) {
+        std::cerr << "Failed to init GLAD\n";
         glfwDestroyWindow(window);
         glfwTerminate();
         return 1;
@@ -97,7 +100,6 @@ int main() {
 
     std::cout << "[INFO] Runtime material replacement and property modification API passed!\n";
 
-    knot::Renderer::get().shutdown();
     glfwDestroyWindow(window);
     glfwTerminate();
     std::cout << "[SUCCESS] All submesh checks passed!\n";

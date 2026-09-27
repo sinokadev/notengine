@@ -52,7 +52,7 @@
 
 - [ ] resources.h 분리
 
-- [x] Vulkan
+- [ ] Vulkan
 
 - [x] Seno (ScEne format for NOt engine) 로딩
 

@@ -1,3 +1,10 @@
-#version 450
-layout(location=0) out vec2 TexCoords;
-void main(){vec2 p=vec2((gl_VertexIndex<<1)&2,gl_VertexIndex&2);TexCoords=p;gl_Position=vec4(p*2-1,0,1);}
+#version 430 core
+layout(location = 0) in vec3 aPos;
+layout(location = 1) in vec2 aTexCoords;
+
+out vec2 TexCoords;
+
+void main() {
+    TexCoords = aTexCoords;
+    gl_Position = vec4(aPos, 1.0);
+}

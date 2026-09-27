@@ -106,7 +106,7 @@ public:
      * @brief Shuts down the engine.
      *
      * Releases scene resources, renderer resources, timer tasks,
-     * callbacks, and finally the window and Vulkan renderer.
+     * callbacks, and finally the window and OpenGL context.
      *
      * Calling shutdown() on an already shut down engine has no effect.
      *

@@ -4,14 +4,15 @@
 #include <nlohmann/json.hpp>
 
 #include <knot/scene.h>
-#include <knot/renderer.h>
+#include <glad/gl.h>
+#include <GLFW/glfw3.h>
 
 #include <knot/mesh.h>
 #include <knot/utility.h>
 
 namespace knot {
-Scene::Scene() : camera(std::make_shared<PerspectiveCamera>(glm::vec3(0,0,5))) {
-    if (Renderer::get().isInitialized()) {
+Scene::Scene() {
+    if (glad_glCreateShader != nullptr) {
         resourceManager.init();
     }
 }
@@ -25,19 +26,22 @@ void Scene::clear() {
     lightManager.clear();
 
     if (cubeMap != 0) {
-            destroyTexture(cubeMap);
+        if (glfwGetCurrentContext() != nullptr)
+            glDeleteTextures(1, &cubeMap);
 
         cubeMap = 0;
     }
 
     if (irradianceMap != 0) {
-            destroyTexture(irradianceMap);
+        if (glfwGetCurrentContext() != nullptr)
+            glDeleteTextures(1, &irradianceMap);
 
         irradianceMap = 0;
     }
 
     if (prefilterMap != 0) {
-            destroyTexture(prefilterMap);
+        if (glfwGetCurrentContext() != nullptr)
+            glDeleteTextures(1, &prefilterMap);
 
         prefilterMap = 0;
     }
@@ -52,11 +56,11 @@ void Scene::shutdown() {
 
 void Scene::loadHDRMap(const std::string& path) {
     if (cubeMap != 0)
-        destroyTexture(cubeMap);
+        glDeleteTextures(1, &cubeMap);
     if (irradianceMap != 0)
-        destroyTexture(irradianceMap);
+        glDeleteTextures(1, &irradianceMap);
     if (prefilterMap != 0)
-        destroyTexture(prefilterMap);
+        glDeleteTextures(1, &prefilterMap);
 
     unsigned int tempHdrMap = loadHDRTexture(path);
 
@@ -66,7 +70,7 @@ void Scene::loadHDRMap(const std::string& path) {
 
     prefilterMap = bakeCubemapToPrefilterMap(cubeMap, 128);
 
-    destroyTexture(tempHdrMap);
+    glDeleteTextures(1, &tempHdrMap);
 }
 
 void Scene::setUpdateCallback(UpdateCallback callback) {

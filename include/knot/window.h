@@ -1,8 +1,6 @@
 #pragma once
 
-#ifndef GLFW_INCLUDE_NONE
-#define GLFW_INCLUDE_NONE
-#endif
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
 #include <knot/key.h>
@@ -12,7 +10,7 @@
 
 namespace knot {
 
-/** @brief GLFW-backed Vulkan window and input callback adapter. */
+/** @brief GLFW-backed OpenGL window and input callback adapter. */
 class Window {
 public:
     /** @brief Called after the framebuffer dimensions change. */
@@ -29,16 +27,16 @@ public:
     /** @brief Destroys the window and terminates GLFW when necessary. */
     ~Window();
 
-    /** @brief Initializes GLFW and creates a GLFW_NO_API window.
+    /** @brief Initializes GLFW and creates a 3.3 core-profile window.
      *  @return true if the window is created successfully. */
     bool init(int width, int height, const std::string& title);
     /** @brief Releases the GLFW window, callbacks, and GLFW state. */
     void shutdown();
 
-    /** @brief Checks that this window exists.
+    /** @brief Makes this window's OpenGL context current.
      *  @return false if no window has been created. */
     bool active();
-    /** @brief Polls GLFW events. */
+    /** @brief Swaps buffers and polls GLFW events. */
     void loop();
 
     /** @brief Reports whether GLFW has requested window closure. */
@@ -47,6 +45,9 @@ public:
     void enableVsync();
     /** @brief Disables buffer-swap synchronization. */
     void disableVsync();
+
+    /** @brief Returns the GLAD-compatible GLFW procedure loader. */
+    GLADloadfunc getProcAddress() const;
 
     /** @brief Returns the current framebuffer width in pixels. */
     int getFramebufferWidth() const {
