@@ -39,7 +39,7 @@ unsigned int createTexture(unsigned char* data, int width, int height, GLenum fo
 
 unsigned int loadTextureFromFile(const std::string& path) {
     int width, height, nrComponents;
-    stbi_set_flip_vertically_on_load_thread(true);
+    stbi_set_flip_vertically_on_load(true);
     unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrComponents, 4);
 
     if (!data) {
@@ -55,7 +55,7 @@ unsigned int loadTextureFromFile(const std::string& path) {
 
 unsigned int loadHDRTexture(const std::string& path) {
     int width, height, nrComponents;
-    stbi_set_flip_vertically_on_load_thread(true);
+    stbi_set_flip_vertically_on_load(true);
     float* data = stbi_loadf(path.c_str(), &width, &height, &nrComponents, 3);
 
     if (!data) {
