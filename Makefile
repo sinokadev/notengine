@@ -8,3 +8,4 @@ format:
 	clang-format -i src/*.cpp
 	clang-format -i include/knot/*.h
 	clang-format -i include/knot/utility/*.h
+	clang-format -i tests/*.cpp
