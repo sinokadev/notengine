@@ -9,5 +9,5 @@ cubemap helper APIs.
 
    texture
    mesh-helper
+   gltf
    cubemap-baker
-

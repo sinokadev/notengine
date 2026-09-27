@@ -16,8 +16,10 @@ struct Vertex {
     glm::vec2 TexCoords;
     /** @brief Object-space surface normal. */
     glm::vec3 Normal;
-    /** @brief Object-space tangent. */
+    /** @brief Object-space tangent (attribute 3 xyz; TangentSign supplies w). */
     glm::vec3 Tangent;
+    /** @brief Bitangent handedness, used with cross(normal, tangent). */
+    float TangentSign = 1.0f;
 };
 
 /** @brief CPU mesh data and its OpenGL vertex/index buffers. */

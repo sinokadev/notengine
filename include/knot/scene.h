@@ -72,6 +72,16 @@ public:
     // Relative external assets are resolved against the .seno file's directory.
     bool loadSeno(const std::string& path);
 
+    /** @brief Replaces this scene with a static glTF/GLB scene.
+     *  -1 selects the default scene, or the first scene if no default is declared.
+     *  Without scenes, all root nodes are imported. Other negative indices are invalid.
+     *  Creates one object per mesh node, baking hierarchy rotation/scale/shear into
+     *  geometry and retaining world translation as Object::position. Node names become groups.
+     *  Imports the first camera and punctual point/directional lights; animation is not played.
+     *  Requires initialized OpenGL. On import failure the current scene is retained.
+     *  If the asset has no camera, the current camera is retained. */
+    bool loadGLTF(const std::string& path, int sceneIndex = -1);
+
 private:
     ObjectManager objectManager;
     LightManager lightManager;

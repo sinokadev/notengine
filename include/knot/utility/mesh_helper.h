@@ -40,4 +40,12 @@ std::shared_ptr<Mesh> loadModelOBJ(const std::string& filePath);
  *  @param pbrShader Shader assigned to every created material.
  *  @return A Model containing one sub-mesh per material group, or nullptr on failure. */
 std::shared_ptr<Model> loadModelOBJWithMTL(const std::string& filePath, std::shared_ptr<Shader> pbrShader);
+
+/** @brief Loads all glTF/GLB mesh resources as one static model with PBR materials.
+ *  Nodes, transforms, scenes, cameras and lights are intentionally ignored.
+ *  Use Scene::loadGLTF for scene assets; loading a scene asset as a model is not supported.
+ *  Requires a current OpenGL context and a PBR shader. Returns nullptr on failure.
+ *  Supports triangle lists/strips/fans, PNG/JPEG textures and TEXCOORD_0.
+ *  Skinning, morph targets and required unsupported extensions are rejected. */
+std::shared_ptr<Model> loadModelGLTF(const std::string& filePath, std::shared_ptr<Shader> pbrShader);
 } // namespace knot
