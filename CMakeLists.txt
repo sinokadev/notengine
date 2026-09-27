@@ -139,3 +139,6 @@ set_target_properties(test_group PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMA
 
 # Install configuration
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Install.cmake")
+# Integration tests require an OpenGL 4.3 context (a display or xvfb-run).
+add_executable(test_gltf EXCLUDE_FROM_ALL tests/gltf_test.cpp)
+target_link_libraries(test_gltf PRIVATE notengine)

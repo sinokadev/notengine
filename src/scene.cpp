@@ -342,6 +342,15 @@ bool Scene::loadSeno(const std::string& path) {
         if (scene.contains("models")) {
             for (const auto& modelData : scene["models"]) {
 
+                if (modelData.contains("gltf")) {
+                    const auto modelPath = resolveAssetPath(modelData.at("gltf").get<std::string>());
+                    auto loadedModel = loadModelGLTF(modelPath, resourceManager.getShader("pbrShader"));
+                    if (!loadedModel)
+                        return false;
+                    models.push_back(std::move(loadedModel));
+                    continue;
+                }
+
                 // --------------------------------------------------------
                 // External OBJ (+ optional MTL)
                 // --------------------------------------------------------
