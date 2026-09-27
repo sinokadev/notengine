@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <cassert>
-#include <knot/renderer.h>
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <knot/resources.h>
 #include <knot/manager.h>
@@ -137,7 +137,9 @@ int main() {
         }
 
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
         GLFWwindow* window = glfwCreateWindow(640, 480, "Group Test", nullptr, nullptr);
         if (!window) {
@@ -146,9 +148,10 @@ int main() {
             return 1;
         }
 
-        if (!knot::Renderer::get().init(window)) {
-            std::cerr << "Failed to init Vulkan\n";
-            knot::Renderer::get().shutdown();
+        glfwMakeContextCurrent(window);
+
+        if (!gladLoadGL(glfwGetProcAddress)) {
+            std::cerr << "Failed to init GLAD\n";
             glfwDestroyWindow(window);
             glfwTerminate();
             return 1;
@@ -181,7 +184,6 @@ int main() {
         assert(ground[0]->group == "ground");
         assert(ground[0]->scale.x == 200.0f);
 
-        knot::Renderer::get().shutdown();
         glfwDestroyWindow(window);
         glfwTerminate();
 

@@ -5,7 +5,7 @@
 
 > Everything as code!
 
-A code-first game engine built on Vulkan 1.1, empowering you to build everything from scratch with clean, simple code.
+A code-first game engine built on OpenGL, empowering you to build everything from scratch with clean, simple code.
 
 **PRs and issues are welcome!**
 
@@ -23,7 +23,7 @@ A code-first game engine built on Vulkan 1.1, empowering you to build everything
 - Submesh support
 - Play Audio
 
-## Historical OpenGL Performance
+## Performance
 
 | Version | Objects | Model | FPS | VSync |
 |---|---:|---|---:|---|
@@ -44,7 +44,7 @@ Renderer optimization improved performance from **1 FPS to 30 FPS** — approxim
 
 ## Build
 
-You need CMake, a C++17 compiler, Python 3, GLFW and GLM development packages, Vulkan headers, and `glslangValidator` (Vulkan SDK or `glslang-tools`). Running requires a Vulkan 1.1 graphics driver. Volk is bundled; shaders are compiled to SPIR-V and embedded during the build.
+You will need the `cmake`, `ninja` (or `make`), and `glfw3` (development) packages to build this project.
 
 If you don't install third party libraries using package manager, then CMake installs libraries using `FetchContent` module through Git.
 
@@ -52,7 +52,7 @@ If you don't install third party libraries using package manager, then CMake ins
 
 ```bash
 sudo apt update
-sudo apt install cmake ninja-build libglfw3-dev libglm-dev libvulkan-dev glslang-tools python3 build-essential
+sudo apt install cmake ninja-build libglfw3-dev build-essential
 ```
 
 ### Instructions
@@ -82,33 +82,6 @@ Run the built demos:
 # Benchmark
 ./build/ninja-release/benchmark
 ```
-
-## Vulkan validation
-
-```bash
-cmake -S . -B build/vulkan -G Ninja -DCMAKE_BUILD_TYPE=Debug -DNOTENGINE_GPU_TESTS=ON
-cmake --build build/vulkan --target vulkan_smoke
-ctest --test-dir build/vulkan --output-on-failure
-```
-
-The GPU test requires a desktop session, a Vulkan driver, and the Khronos validation layer
-(`vulkan-validationlayers` on Ubuntu). It renders in a hidden window and checks resize,
-minimized-frame skipping, VSync changes, instancing, offscreen rendering, orthographic
-projection, resource cleanup/reinitialization, and screenshot readback.
-Set `KNOT_VULKAN_VALIDATION=1` when running any demo or the editor to enable validation.
-
-The renderer currently uses one frame in flight and up to 4x MSAA (2x/1x fallback). HDR
-cubemap conversion and diffuse/specular convolution run on the CPU at load time;
-scene rendering and the BRDF integration pass run on Vulkan. The historical benchmark
-numbers above do not measure this backend. Linux/RADV has been tested; Windows and
-MoltenVK paths still need platform testing.
-
-Low-level API migration: `Renderer::init()` now takes a `GLFWwindow*` created with
-`GLFW_NO_API`. Pair a successful `beginFrame()` with `endFrame()`; `Engine` handles
-this automatically. Use `PixelFormat::RGB/RGBA` and `destroyTexture()` instead of GL
-constants/functions. Texture IDs are engine handles valid for one renderer lifetime.
-`Shader` selects the embedded alpha/PBR pipelines; GL program IDs, uniform setters,
-VAO/VBO fields, and manual material binding have been removed.
 
 ## Blender Exporter
 

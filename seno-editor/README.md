@@ -11,9 +11,8 @@ Knot의 `.seno` v8 장면을 편집하는 C++17 / Dear ImGui 데스크톱 에디
 
 ## 빌드 및 실행
 
-저장소 루트에서 실행합니다. CMake, Python 3, C++17 컴파일러, GLFW/GLM 개발 패키지, Vulkan SDK(헤더 및 glslangValidator), Vulkan 1.1 GPU/드라이버가 필요합니다.
-Linux/RADV에서 검증했습니다. macOS에서는 MoltenVK가 필요하며 아직 실행 검증하지 않았습니다.
-UI에는 ImGui Vulkan 백엔드를 사용하고 3D 미리보기는 별도 Vulkan 렌더 타깃에 그립니다.
+저장소 루트에서 실행합니다. CMake, C++17 컴파일러, GLFW 개발 패키지, OpenGL 4.3을 지원하는 GPU/드라이버가 필요합니다.
+Linux에서 검증했습니다. macOS 기본 OpenGL은 4.3을 지원하지 않습니다.
 최초 구성 때 Dear ImGui v1.91.9b의 고정 커밋을 GitHub에서 받습니다.
 
 ```sh

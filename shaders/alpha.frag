@@ -1,6 +1,16 @@
-#version 450
-layout(location=0) out vec4 FragColor;
-layout(location=1) in vec2 TexCoords;
-layout(set=1,binding=0) uniform sampler2D diffuse;
-layout(push_constant) uniform MaterialUniform { vec4 albedo; vec4 factors; } params;
-void main(){FragColor=texture(diffuse,TexCoords)*params.albedo;if(FragColor.a<0.01)discard;}
+#version 430 core
+out vec4 FragColor;
+
+in vec3 FragPos;
+in vec3 Normal;
+in vec2 TexCoords;
+in mat3 TBN;
+
+struct Material {
+    sampler2D diffuse;
+};
+uniform Material material;
+
+void main() {
+    FragColor = texture(material.diffuse, TexCoords);
+}

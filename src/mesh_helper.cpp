@@ -1,3 +1,4 @@
+#include <glad/gl.h>
 #include <knot/resources.h>
 #include <knot/utility/mesh_helper.h>
 #include <iostream>

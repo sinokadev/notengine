@@ -14,9 +14,7 @@ Not Engine does not currently provide pre-built binaries, so you must build it y
 Requirements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- A graphics card and driver supporting Vulkan 1.1 or later
-- Vulkan development headers and glslangValidator (Vulkan SDK or glslang-tools)
-- Python 3
+- A graphics card and drivers that supports OpenGL 4.3 or later
 - CMake
 - Git
 - A C/C++ compiler
@@ -44,14 +42,14 @@ Debian/Ubuntu
 .. code-block:: bash
 
    sudo apt update
-   sudo apt install cmake ninja-build git build-essential libglfw3-dev libglm-dev libvulkan-dev glslang-tools python3
+   sudo apt install cmake ninja-build git build-essential
 
 Fedora
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
-   sudo dnf install cmake ninja-build git @development-tools glfw-devel glm-devel vulkan-headers vulkan-loader-devel glslang python3
+   sudo dnf install cmake ninja-build git @development-tools
 
 Arch Linux
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -59,7 +57,7 @@ Arch Linux
 .. code-block:: bash
 
    sudo pacman -Syu
-   sudo pacman -S cmake ninja git base-devel glfw glm vulkan-headers vulkan-icd-loader glslang python
+   sudo pacman -S cmake ninja git base-devel
 
 After installing the required packages, run the following commands to configure, build, and install the library using CMake presets.
 
@@ -106,7 +104,7 @@ so you do not need to build or install the library beforehand when you only want
 Windows
 --------------------------------
 
-The Vulkan SDK, Python 3, CMake, Git, and Visual Studio 2022 or 2026 with C++ development tools are recommended to build Not Engine.
+CMake, Git, and Visual Studio 2022 or 2026 with C++ development tools are recommended to build Not Engine.
 
 Third-party dependencies may be installed beforehand using a package manager
 such as vcpkg. CMake will use an installed dependency if it can be located through ``find_package()``.
@@ -207,8 +205,7 @@ macOS
 
 .. warning::
 
-   Vulkan on macOS requires MoltenVK and the Vulkan SDK. Portability enumeration
-   is enabled when available, but this platform has not yet been runtime-tested.
+   Due to Apple's restrictive platform policies, macOS supports OpenGL only up to version 4.1. Not Engine requires OpenGL 4.3 or later and therefore cannot be used on macOS.
 
 .. toctree::
    :maxdepth: 2

@@ -19,7 +19,7 @@ int main() {
         check(resolve(file.string()) == file.string(), "Absolute path changed");
         check(resolve("{assetRoot}/model.obj") == "assets//model.obj", "Asset-root reference rebased onto scene directory");
         check(resolve("").empty(), "Empty path became a directory");
-        // Empty submeshes let us exercise the real loader without an Vulkan renderer.
+        // Empty submeshes let us exercise the real loader without an OpenGL context.
         Json input={{"version",8},{"models",Json::array({{{"submeshes",Json::array()}}})},
             {"objects",Json::array({{{"id",12},{"model",0},{"position",{4,5,6}},
                 {"pivot",{1,2,3}},{"scale",{2,3,4}},{"rotation",{0.70710678,0,0.70710678,0}}}})}};
@@ -44,7 +44,7 @@ int main() {
         }
         input["objects"][0].erase("pivot");check(load(scene,input),"Optional pivot rejected");
         check(scene.getObjectManager().getObject(12)->pivot==glm::vec3(0),"Default pivot not zero");
-        // Exercise the actual loader without requiring Vulkan: a missing OBJ
+        // Exercise the actual loader without requiring OpenGL: a missing OBJ
         // reports the resolved path before GPU allocation can take place.
         Json missing = {{"version",8},{"meshes",Json::array({"missing-model.obj"})}};
         { std::ofstream out(file); out << missing.dump(); }

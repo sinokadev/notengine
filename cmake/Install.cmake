@@ -64,11 +64,7 @@ include(CMakeFindDependencyMacro)
 
 find_dependency(glfw3 CONFIG REQUIRED)
 find_dependency(glm CONFIG REQUIRED)
-find_dependency(Vulkan REQUIRED)
-if(NOT TARGET Vulkan::Headers)
-    add_library(Vulkan::Headers INTERFACE IMPORTED)
-    set_target_properties(Vulkan::Headers PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${Vulkan_INCLUDE_DIRS}")
-endif()
+find_dependency(OpenGL REQUIRED)
 # find_dependency(OpenAL REQUIRED)
 
 if(UNIX AND NOT APPLE)

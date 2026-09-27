@@ -1,5 +1,4 @@
 #include <knot/window.h>
-#include <knot/renderer.h>
 
 #include <iostream>
 
@@ -18,7 +17,10 @@ bool Window::init(int width, int height, const std::string& title) {
         return false;
     }
 
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_SAMPLES, 4);
 
     windowHandle = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
     if (!windowHandle) {
@@ -67,10 +69,12 @@ bool Window::active() {
         return false;
     }
 
+    glfwMakeContextCurrent(windowHandle);
     return true;
 }
 
 void Window::loop() {
+    glfwSwapBuffers(windowHandle);
     glfwPollEvents();
 }
 
@@ -79,11 +83,15 @@ bool Window::isClose() const {
 }
 
 void Window::enableVsync() {
-    Renderer::get().setVsync(true);
+    glfwSwapInterval(1);
 }
 
 void Window::disableVsync() {
-    Renderer::get().setVsync(false);
+    glfwSwapInterval(0);
+}
+
+GLADloadfunc Window::getProcAddress() const {
+    return reinterpret_cast<GLADloadfunc>(glfwGetProcAddress);
 }
 
 void Window::setResizeCallback(ResizeCallback callback) {

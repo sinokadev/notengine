@@ -15,7 +15,7 @@ public:
     /** @brief Callback invoked by update() once per engine frame. */
     using UpdateCallback = std::function<void(Scene&, float)>;
 
-    /** @brief Creates a scene and initializes default shaders when Vulkan is ready. */
+    /** @brief Creates a scene and initializes default shaders when OpenGL is ready. */
     Scene();
     /** @brief Releases scene-owned objects, shaders, and environment textures. */
     ~Scene();
