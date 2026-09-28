@@ -514,16 +514,14 @@ std::vector<unsigned int> cgltfReadIndices(const cgltf_accessor* accessor) {
 }
 
 /** @brief Loads a glTF texture, optionally extracting a packed channel and applying its factor. */
-unsigned int cgltfLoadTexture(const cgltf_texture_view& view, const std::string& gltfDir,
-                             std::unordered_map<std::string, unsigned int>& cache,
-                             int channel = -1, glm::vec3 factor = glm::vec3(1.0f)) {
+unsigned int cgltfLoadTexture(const cgltf_texture_view& view, const std::string& gltfDir, std::unordered_map<std::string, unsigned int>& cache,
+                              int channel = -1, glm::vec3 factor = glm::vec3(1.0f)) {
     if (!view.texture || !view.texture->image)
         return 0;
 
     const cgltf_image* image = view.texture->image;
-    const std::string key = std::to_string(reinterpret_cast<uintptr_t>(image)) + ":" +
-                            std::to_string(channel) + ":" + std::to_string(factor.x) + ":" +
-                            std::to_string(factor.y) + ":" + std::to_string(factor.z);
+    const std::string key = std::to_string(reinterpret_cast<uintptr_t>(image)) + ":" + std::to_string(channel) + ":" + std::to_string(factor.x) +
+                            ":" + std::to_string(factor.y) + ":" + std::to_string(factor.z);
     auto it = cache.find(key);
     if (it != cache.end())
         return it->second;
@@ -544,8 +542,7 @@ unsigned int cgltfLoadTexture(const cgltf_texture_view& view, const std::string&
     }
 
     if (!pixels) {
-        std::cerr << "[Warning] GLTF: failed to decode texture: "
-                  << (image->uri ? image->uri : "embedded image") << "\n";
+        std::cerr << "[Warning] GLTF: failed to decode texture: " << (image->uri ? image->uri : "embedded image") << "\n";
         cache.emplace(key, 0u);
         return 0;
     }
@@ -647,8 +644,7 @@ std::shared_ptr<knot::Mesh> cgltfPrimitiveToMesh(const cgltf_primitive& prim) {
 
 /** @brief Creates a PbrMaterial from a cgltf_material. */
 std::shared_ptr<knot::PbrMaterial> cgltfMakeMaterial(const cgltf_material* mat, const std::string& gltfDir,
-                                                       std::unordered_map<std::string, unsigned int>& texCache,
-                                                       std::shared_ptr<knot::Shader> shader) {
+                                                     std::unordered_map<std::string, unsigned int>& texCache, std::shared_ptr<knot::Shader> shader) {
     glm::vec3 albedoColor(1.0f);
     float metallicFactor = 1.0f;
     float roughnessFactor = 1.0f;
@@ -674,8 +670,8 @@ std::shared_ptr<knot::PbrMaterial> cgltfMakeMaterial(const cgltf_material* mat, 
         aoMap = cgltfLoadTexture(mat->occlusion_texture, gltfDir, texCache);
     }
 
-    return std::make_shared<knot::PbrMaterial>(shader, albedoColor, metallicFactor, roughnessFactor, 1.0f,
-                                                albedoMap, metallicMap, roughnessMap, aoMap, normalMap);
+    return std::make_shared<knot::PbrMaterial>(shader, albedoColor, metallicFactor, roughnessFactor, 1.0f, albedoMap, metallicMap, roughnessMap,
+                                               aoMap, normalMap);
 }
 
 } // anonymous namespace

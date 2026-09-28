@@ -37,9 +37,7 @@ int main() {
     // ----------------------------------------------------------------
     // Cube — loadModelGLTF로 로드 (서브메시+PBR 머티리얼 포함)
     // ----------------------------------------------------------------
-    auto cubeModel = knot::loadModelGLTF(
-        knot::getAssetRoot() + "assets/Cube/glTF/Cube.gltf",
-        pbrShader);
+    auto cubeModel = knot::loadModelGLTF(knot::getAssetRoot() + "assets/Cube/glTF/Cube.gltf", pbrShader);
 
     if (!cubeModel) {
         std::cerr << "[Error] Failed to load Cube.gltf\n";
@@ -48,42 +46,36 @@ int main() {
 
     auto cubeObj = std::make_shared<knot::Object>(cubeModel);
     cubeObj->position = glm::vec3(0.0f);
-    cubeObj->scale    = glm::vec3(1.0f);
+    cubeObj->scale = glm::vec3(1.0f);
     cubeObj->setGroup("cube");
     scene.getObjectManager().registerObject(cubeObj);
 
     // ----------------------------------------------------------------
     // 조명
     // ----------------------------------------------------------------
-    auto dirLight = std::make_shared<knot::DirLight>(
-        glm::vec3(-0.3f, -1.0f, -0.5f),
-        glm::vec3(0.08f),
-        glm::vec3(1.0f),
-        glm::vec3(1.0f));
+    auto dirLight = std::make_shared<knot::DirLight>(glm::vec3(-0.3f, -1.0f, -0.5f), glm::vec3(0.08f), glm::vec3(1.0f), glm::vec3(1.0f));
     scene.getLightManager().registerLight(dirLight);
 
-    auto pointLight = std::make_shared<knot::PbrPointLight>(
-        glm::vec3(0.0f, 3.0f, 3.0f), glm::vec3(1.0f, 0.95f, 0.85f), 5.0f);
+    auto pointLight = std::make_shared<knot::PbrPointLight>(glm::vec3(0.0f, 3.0f, 3.0f), glm::vec3(1.0f, 0.95f, 0.85f), 5.0f);
     scene.getLightManager().registerLight(pointLight);
 
     // ----------------------------------------------------------------
     // 카메라
     // ----------------------------------------------------------------
-    auto camera = std::make_shared<knot::MovingCamera>(
-        glm::vec3(0.0f, 0.5f, 6.0f));
+    auto camera = std::make_shared<knot::MovingCamera>(glm::vec3(0.0f, 0.5f, 6.0f));
     scene.setCamera(camera);
 
     // ----------------------------------------------------------------
     // 입력 상태
     // ----------------------------------------------------------------
     std::unordered_map<knot::ScanCode, bool> keys;
-    float lastX  = 640.0f;
-    float lastY  = 360.0f;
+    float lastX = 640.0f;
+    float lastY = 360.0f;
     bool firstMouse = true;
-    bool  paused = false;
-    bool  showCube = true;
-    int   frameCount = 0;
-    float totalTime  = 0.0f;
+    bool paused = false;
+    bool showCube = true;
+    int frameCount = 0;
+    float totalTime = 0.0f;
 
     engine.repeat(1000, PRINT_FPS);
 
@@ -93,10 +85,7 @@ int main() {
                 if (ev.key == knot::ScanCode::ESCAPE) {
                     paused = !paused;
                     firstMouse = true;
-                    glfwSetInputMode(
-                        engine.getWindow().getHandle(),
-                        GLFW_CURSOR,
-                        paused ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+                    glfwSetInputMode(engine.getWindow().getHandle(), GLFW_CURSOR, paused ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
                     ev.handled = true;
                 }
                 if (ev.key == knot::ScanCode::NUM_1) {
@@ -117,9 +106,7 @@ int main() {
                 lastY = static_cast<float>(ev.y);
                 firstMouse = false;
             }
-            camera->rotate(
-                static_cast<float>(ev.x) - lastX,
-                lastY - static_cast<float>(ev.y));
+            camera->rotate(static_cast<float>(ev.x) - lastX, lastY - static_cast<float>(ev.y));
             lastX = static_cast<float>(ev.x);
             lastY = static_cast<float>(ev.y);
             ev.handled = true;
@@ -143,10 +130,14 @@ int main() {
         cubeObj->rotation = glm::quat(glm::vec3(0.0f, totalTime * 0.8f, 0.0f));
 
         glm::vec3 moveDir(0.0f);
-        if (keys[knot::ScanCode::W]) moveDir += camera->getFront();
-        if (keys[knot::ScanCode::S]) moveDir -= camera->getFront();
-        if (keys[knot::ScanCode::A]) moveDir -= camera->getRight();
-        if (keys[knot::ScanCode::D]) moveDir += camera->getRight();
+        if (keys[knot::ScanCode::W])
+            moveDir += camera->getFront();
+        if (keys[knot::ScanCode::S])
+            moveDir -= camera->getFront();
+        if (keys[knot::ScanCode::A])
+            moveDir -= camera->getRight();
+        if (keys[knot::ScanCode::D])
+            moveDir += camera->getRight();
 
         if (glm::length(moveDir) > 0.0f)
             camera->move(glm::normalize(moveDir), dt);

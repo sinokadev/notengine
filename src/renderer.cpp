@@ -4,6 +4,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <cassert>
+#include <algorithm>
 #include <unordered_set>
 #include <knot/mesh.h>
 
@@ -75,9 +76,17 @@ bool Renderer::init(GLADloadfunc loadProc) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Shadow Shader
-    auto shadowSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/shadow.vert", getAssetRoot() + "shaders/shadow.frag");
+    auto dirShadowSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/dir_shadow.vert", getAssetRoot() + "shaders/dir_shadow.frag");
 
-    shadowShader = std::make_shared<Shader>(shadowSource, SHADOW_SHADER_ID);
+    dirShadowShader = std::make_shared<Shader>(dirShadowSource, SHADOW_SHADER_ID);
+
+    auto pointShadowSource =
+        std::make_shared<ShaderSource>(getAssetRoot() + "shaders/point_shadow.vert", getAssetRoot() + "shaders/point_shadow.frag");
+
+    pointShadowShader = std::make_shared<Shader>(pointShadowSource, SHADOW_SHADER_ID - 1);
+
+    glGenFramebuffers(1, &pointDepthFBO);
+    glGenTextures(1, &pointDepthMap);
 
     initialized = true;
     return true;
@@ -118,6 +127,17 @@ void Renderer::shutdown() {
         quadVAO = 0;
         quadVBO = 0;
     }
+
+    if (hasContext) {
+        glDeleteFramebuffers(1, &depthMapFBO);
+        glDeleteFramebuffers(1, &pointDepthFBO);
+        glDeleteTextures(1, &depthMap);
+        glDeleteTextures(1, &pointDepthMap);
+    }
+    depthMapFBO = depthMap = pointDepthFBO = pointDepthMap = 0;
+    pointShadowCount = 0;
+    dirShadowShader.reset();
+    pointShadowShader.reset();
 
     skyboxMesh.reset();
     skyboxShader.reset();
@@ -269,7 +289,7 @@ void Renderer::renderInstanced(const std::shared_ptr<Model>& model, const std::v
             continue;
 
         shader->use();
-        shader->set("isInstanced", true);
+        shader->set("u_IsInstanced", true);
 
         shader->set("view", camera.getViewMatrix());
         shader->set("projection", camera.getProjectionMatrix(aspectRatio));
@@ -300,7 +320,7 @@ void Renderer::renderSingle(const std::shared_ptr<Model>& model, const glm::mat4
         shader->use();
         subMesh.material->bind();
 
-        shader->set("isInstanced", false);
+        shader->set("u_IsInstanced", false);
 
         shader->set("model", worldMatrix);
         shader->set("view", camera.getViewMatrix());
@@ -369,45 +389,10 @@ void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float 
     glDepthMask(GL_TRUE);
 }
 
-bool Renderer::renderScene(Scene& scene, float aspectRatio) {
-    if (!initialized)
-        return false;
-
-    // var
+void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, float aspectRatio) {
     const auto& camera = scene.getCamera();
-    auto& objectManager = scene.getObjectManager();
-    auto& lightManager = scene.getLightManager();
-
-    const auto dirLights = lightManager.getDirLights();
-    const auto pointLights = lightManager.getPointLights();
-
-    // ssbo upload point lights
-    processPointLights(pointLights);
-
-    // render
-    std::unordered_map<const Model*, std::vector<VisibleInstance>> instanceGroups;
-
-    const Frustum& frustum = camera.getFrustum(aspectRatio);
-
-    // Extract instanced objects only
-    for (const auto& object : objectManager.getObjects()) {
-        if (!object->model || object->model->subMeshes.empty())
-            continue;
-
-        glm::mat4 worldMatrix = object->getWorldMatrix();
-
-        if (!object->isVisible(frustum, worldMatrix))
-            continue;
-
-        instanceGroups[object->model.get()].push_back(VisibleInstance{object.get(), worldMatrix});
-    }
-
-    // render etc
-    renderShadow(scene, instanceGroups);
-
-    renderSkybox(scene.getCubeMap(), camera, aspectRatio);
-
-    // setup uniforms function
+    const auto dirLights = scene.getLightManager().getDirLights();
+    const auto pointLights = scene.getLightManager().getPointLights();
     auto setupSceneUniforms = [&](const std::shared_ptr<Shader>& shader) {
         if (!shader || !shader->isValid())
             return;
@@ -438,6 +423,11 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
         glBindTexture(GL_TEXTURE_2D, depthMap);
         shader->set("shadowMap", 11);
 
+        glActiveTexture(GL_TEXTURE12);
+        glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointDepthMap);
+        shader->set("pointShadowMap", 12);
+        shader->set("pointShadowCount", pointShadowCount);
+
         shader->set("aaxReflectionLOD", 4.0f);
 
         shader->set("ambientIntensity", AMBIENT_INTENSITY);
@@ -445,7 +435,6 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
         shader->set("lightSpaceMatrix", lightSpaceMatrix);
     };
 
-    // render object
     for (const auto& [modelKey, instances] : instanceGroups) {
         // validation
         if (instances.empty())
@@ -478,14 +467,58 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
             }
         }
     }
+}
+
+bool Renderer::renderScene(Scene& scene, float aspectRatio) {
+    if (!initialized)
+        return false;
+
+    // var
+    const auto& camera = scene.getCamera();
+    auto& objectManager = scene.getObjectManager();
+    auto& lightManager = scene.getLightManager();
+
+    const auto dirLights = lightManager.getDirLights();
+    const auto pointLights = lightManager.getPointLights();
+
+    // ssbo upload point lights
+    processPointLights(pointLights);
+
+    // render
+    std::unordered_map<const Model*, std::vector<VisibleInstance>> instanceGroups;
+
+    std::unordered_map<const Model*, std::vector<VisibleInstance>> shadowGroups;
+    const Frustum& frustum = camera.getFrustum(aspectRatio);
+
+    // Extract instanced objects only
+    for (const auto& object : objectManager.getObjects()) {
+        if (!object->model || object->model->subMeshes.empty())
+            continue;
+
+        glm::mat4 worldMatrix = object->getWorldMatrix();
+
+        shadowGroups[object->model.get()].push_back(VisibleInstance{object.get(), worldMatrix});
+
+        if (!object->isVisible(frustum, worldMatrix))
+            continue;
+
+        instanceGroups[object->model.get()].push_back(VisibleInstance{object.get(), worldMatrix});
+    }
+
+    // render
+    renderShadow(scene, shadowGroups);
+
+    renderSkybox(scene.getCubeMap(), camera, aspectRatio);
+
+    renderObjects(scene, instanceGroups, aspectRatio);
 
     return true;
 }
 
-void Renderer::renderShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups) {
+void Renderer::renderDirShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups) {
     if (DISABLE_SHADOW)
         return;
-    if (!shadowShader || !shadowShader->isValid())
+    if (!dirShadowShader || !dirShadowShader->isValid())
         return;
 
     const auto dirLights = scene.getLightManager().getDirLights();
@@ -523,51 +556,89 @@ void Renderer::renderShadow(Scene& scene, const std::unordered_map<const Model*,
     glClear(GL_DEPTH_BUFFER_BIT);
 
     // Shadow shader
-    shadowShader->use();
+    dirShadowShader->use();
 
-    shadowShader->set("lightSpaceMatrix", lightSpaceMatrix);
+    dirShadowShader->set("lightSpaceMatrix", lightSpaceMatrix);
 
     // rendering
-    for (const auto& [modelKey, instances] : instanceGroups) {
-        if (instances.empty())
-            continue;
-        const auto& model = instances.front().object->model;
-        if (!model || model->subMeshes.empty())
-            continue;
-
-        if (instances.size() >= INSTANCE_THRESHOLD) { // instance
-            std::vector<InstanceData> instanceData;
-            instanceData.reserve(instances.size());
-            for (const auto& inst : instances)
-                instanceData.push_back({inst.worldMatrix});
-
-            glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-            glBufferData(GL_ARRAY_BUFFER, instanceData.size() * sizeof(InstanceData), instanceData.data(), GL_STREAM_DRAW);
-
-            for (const auto& subMesh : model->subMeshes) {
-                if (!subMesh.mesh || !subMesh.mesh->isReady())
-                    continue;
-                subMesh.mesh->setupInstanceAttributes(instanceVBO);
-                glBindVertexArray(subMesh.mesh->vao);
-                glDrawElementsInstanced(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr, static_cast<GLsizei>(instanceData.size()));
-            }
-        } else { // not instance
-            for (const auto& inst : instances) {
-                for (const auto& subMesh : inst.object->model->subMeshes) {
-                    if (!subMesh.mesh || !subMesh.mesh->isReady())
-                        continue;
-                    shadowShader->set("model", inst.worldMatrix);
-                    glBindVertexArray(subMesh.mesh->vao);
-                    glDrawElements(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr);
-                }
-            }
-        }
-    }
+    renderShadowObjects(instanceGroups, dirShadowShader);
 
     glBindVertexArray(0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    glViewport(0, 0, framebufferWidth, framebufferHeight);
+}
+
+void Renderer::renderShadowObjects(const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups,
+                                   const std::shared_ptr<Shader>& shader) {
+    for (const auto& [model, instances] : instanceGroups) {
+        for (const auto& instance : instances) {
+            shader->set("model", instance.worldMatrix);
+            for (const auto& subMesh : model->subMeshes) {
+                if (!subMesh.mesh || !subMesh.mesh->isReady())
+                    continue;
+                glBindVertexArray(subMesh.mesh->vao);
+                glDrawElements(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr);
+            }
+        }
+    }
+}
+
+void Renderer::renderShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups) {
+    renderDirShadow(scene, instanceGroups);
+    renderPointShadow(scene, instanceGroups);
+}
+
+void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups) {
+    if (DISABLE_SHADOW || !pointShadowShader || !pointShadowShader->isValid()) {
+        pointShadowCount = 0;
+        return;
+    }
+
+    const auto lights = scene.getLightManager().getPointLights();
+    GLint maxLayers = 0;
+    glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &maxLayers);
+    const int count = static_cast<int>(std::min(lights.size(), static_cast<std::size_t>(maxLayers / 6)));
+    glActiveTexture(GL_TEXTURE12);
+    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointDepthMap);
+    if (count != pointShadowCount && count > 0) {
+        glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT24, SHADOW_RESOLUTION, SHADOW_RESOLUTION, count * 6, 0, GL_DEPTH_COMPONENT,
+                     GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    }
+    pointShadowCount = count;
+    if (count == 0)
+        return;
+
+    const glm::vec3 directions[] = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
+    const glm::vec3 up[] = {{0, -1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}, {0, -1, 0}, {0, -1, 0}};
+    glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
+    glBindFramebuffer(GL_FRAMEBUFFER, pointDepthFBO);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    pointShadowShader->use();
+
+    for (int light = 0; light < count; ++light) {
+        const auto& position = lights[light]->position;
+        const float farPlane = std::max(kNearPlane * 2.0f, 5.0f * std::sqrt(std::max(0.0f, lights[light]->intensity)));
+        const auto projection = glm::perspective(glm::radians(90.0f), 1.0f, kNearPlane, farPlane);
+        pointShadowShader->set("lightPos", position);
+        pointShadowShader->set("farPlane", farPlane);
+        for (int face = 0; face < 6; ++face) {
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, pointDepthMap, 0, light * 6 + face);
+            glClear(GL_DEPTH_BUFFER_BIT);
+            pointShadowShader->set("lightSpaceMatrix", projection * glm::lookAt(position, position + directions[face], up[face]));
+            renderShadowObjects(instanceGroups, pointShadowShader);
+        }
+    }
+
+    glBindVertexArray(0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, framebufferWidth, framebufferHeight);
 }
 } // namespace knot

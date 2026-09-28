@@ -19,10 +19,15 @@ void require(bool value, const char* message) {
 }
 
 struct Fixtures {
-    fs::path directory = fs::temp_directory_path() /
-        ("knot-seno-gltf-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
-    Fixtures() { fs::create_directories(directory); }
-    ~Fixtures() { std::error_code error; fs::remove_all(directory, error); }
+    fs::path directory =
+        fs::temp_directory_path() / ("knot-seno-gltf-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+    Fixtures() {
+        fs::create_directories(directory);
+    }
+    ~Fixtures() {
+        std::error_code error;
+        fs::remove_all(directory, error);
+    }
     fs::path write(const char* name, const Json& value) {
         auto path = directory / name;
         std::ofstream(path) << value.dump();
@@ -52,25 +57,30 @@ void runTests() {
     std::string binary((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
     cube["buffers"][0].erase("uri");
     std::string json = cube.dump();
-    while (json.size() % 4) json.push_back(' ');
-    while (binary.size() % 4) binary.push_back('\0');
+    while (json.size() % 4)
+        json.push_back(' ');
+    while (binary.size() % 4)
+        binary.push_back('\0');
     {
         std::ofstream glb(fixtures.directory / "cube.glb", std::ios::binary);
-        writeU32(glb, 0x46546c67); writeU32(glb, 2);
+        writeU32(glb, 0x46546c67);
+        writeU32(glb, 2);
         writeU32(glb, static_cast<uint32_t>(28 + json.size() + binary.size()));
-        writeU32(glb, static_cast<uint32_t>(json.size())); writeU32(glb, 0x4e4f534a);
+        writeU32(glb, static_cast<uint32_t>(json.size()));
+        writeU32(glb, 0x4e4f534a);
         glb.write(json.data(), json.size());
-        writeU32(glb, static_cast<uint32_t>(binary.size())); writeU32(glb, 0x004e4942);
+        writeU32(glb, static_cast<uint32_t>(binary.size()));
+        writeU32(glb, 0x004e4942);
         glb.write(binary.data(), binary.size());
     }
 
     knot::Scene scene;
     auto document = [](const std::string& path) {
-        return Json{{"version", 8}, {"models", Json::array({{{"obj", path}}})},
+        return Json{{"version", 8},
+                    {"models", Json::array({{{"obj", path}}})},
                     {"objects", Json::array({{{"model", 0}}, {{"model", 0}, {"position", {3, 0, 0}}}})}};
     };
-    for (const auto& path : {std::string("cube.GLTF"), std::string("cube.glb"),
-                            std::string("{assetRoot}/assets/Cube/glTF/Cube.gltf")}) {
+    for (const auto& path : {std::string("cube.GLTF"), std::string("cube.glb"), std::string("{assetRoot}/assets/Cube/glTF/Cube.gltf")}) {
         require(scene.loadSeno(fixtures.write("valid.seno", document(path)).string()), "glTF/GLB Seno load failed");
         const auto& objects = scene.getObjectManager().getObjects();
         require(objects.size() == 2, "object instances missing");
@@ -79,8 +89,8 @@ void runTests() {
         const auto& model = objects.front()->model;
         require(!model->subMeshes.empty() && model->boundsRadius > 0, "geometry missing");
         auto material = std::dynamic_pointer_cast<knot::PbrMaterial>(model->subMeshes.front().material);
-        require(material && glIsTexture(material->albedoMap) && glIsTexture(material->metallicMap) &&
-                glIsTexture(material->roughnessMap), "glTF materials missing");
+        require(material && glIsTexture(material->albedoMap) && glIsTexture(material->metallicMap) && glIsTexture(material->roughnessMap),
+                "glTF materials missing");
     }
 
     for (const auto* field : {"mesh", "material", "submeshes"}) {
@@ -108,13 +118,17 @@ void runTests() {
 } // namespace
 
 int main() {
-    if (!glfwInit()) return 1;
+    if (!glfwInit())
+        return 1;
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     auto* window = glfwCreateWindow(320, 240, "Seno glTF test", nullptr, nullptr);
-    if (!window) { glfwTerminate(); return 1; }
+    if (!window) {
+        glfwTerminate();
+        return 1;
+    }
     glfwMakeContextCurrent(window);
     int result = 0;
     try {
