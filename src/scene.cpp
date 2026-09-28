@@ -1,4 +1,6 @@
 #include <fstream>
+#include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -9,8 +11,18 @@
 
 #include <knot/mesh.h>
 #include <knot/utility.h>
+#include <knot/utility/mesh_helper.h>
 
 namespace knot {
+namespace {
+bool isGLTFPath(const std::string& path) {
+    std::string extension = std::filesystem::path(path).extension().string();
+    std::transform(extension.begin(), extension.end(), extension.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return extension == ".gltf" || extension == ".glb";
+}
+} // namespace
+
 Scene::Scene() {
     if (glad_glCreateShader != nullptr) {
         resourceManager.init();
@@ -190,6 +202,12 @@ bool Scene::loadSeno(const std::string& path) {
                     std::string meshPath = meshData.get<std::string>();
                     meshPath = resolveAssetPath(meshPath);
 
+                    if (isGLTFPath(meshPath)) {
+                        std::cerr << "[Error] glTF includes materials; use models[{\"obj\": \"path.gltf\"}] instead of meshes"
+                                  << std::endl;
+                        return false;
+                    }
+
                     mesh = loadModelOBJ(meshPath);
 
                     if (!mesh) {
@@ -343,18 +361,25 @@ bool Scene::loadSeno(const std::string& path) {
             for (const auto& modelData : scene["models"]) {
 
                 // --------------------------------------------------------
-                // External OBJ (+ optional MTL)
+                // External OBJ (+ optional MTL), or glTF with its own materials
                 // --------------------------------------------------------
 
                 if (modelData.contains("obj")) {
                     std::string objPath = modelData.value("obj", "");
 
                     if (objPath.empty()) {
-                        std::cerr << "[Error] Model OBJ path is empty" << std::endl;
+                        std::cerr << "[Error] Model asset path is empty" << std::endl;
                         return false;
                     }
 
                     objPath = resolveAssetPath(objPath);
+
+                    const bool isGLTF = isGLTFPath(objPath);
+                    if (isGLTF && (modelData.contains("mesh") || modelData.contains("material") || modelData.contains("submeshes"))) {
+                        std::cerr << "[Error] glTF models use only 'obj'; mesh, material and submeshes overrides are not supported"
+                                  << std::endl;
+                        return false;
+                    }
 
                     auto shader = resourceManager.getShader("pbrShader");
 
@@ -364,10 +389,10 @@ bool Scene::loadSeno(const std::string& path) {
                         return false;
                     }
 
-                    auto loadedModel = loadModelOBJWithMTL(objPath, shader);
+                    auto loadedModel = isGLTF ? loadModelGLTF(objPath, shader) : loadModelOBJWithMTL(objPath, shader);
 
                     if (!loadedModel) {
-                        std::cerr << "[Error] Failed to load OBJ: " << objPath << std::endl;
+                        std::cerr << "[Error] Failed to load model: " << objPath << std::endl;
                         return false;
                     }
 
@@ -628,5 +653,25 @@ bool Scene::loadSeno(const std::string& path) {
         std::cerr << "[Error] Failed to parse Seno scene: " << e.what() << std::endl;
         return false;
     }
+}
+
+bool Scene::loadGLTF(const std::string& path) {
+    auto shader = resourceManager.getShader("pbrShader");
+    if (!shader) {
+        std::cerr << "[Error] GLTF: pbrShader not found in ResourceManager\n";
+        return false;
+    }
+
+    auto objects = loadSceneGLTF(path, shader);
+    if (objects.empty()) {
+        std::cerr << "[Error] GLTF: No objects loaded from: " << path << "\n";
+        return false;
+    }
+
+    for (auto& obj : objects) {
+        objectManager.registerObject(obj);
+    }
+
+    return true;
 }
 } // namespace knot
