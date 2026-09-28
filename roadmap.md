@@ -38,7 +38,7 @@
 - [x] IBL Diffuse
 - [x] IBL Specular
 - [x] Dir Shadow Map
-- [ ] Point Shadow Map
+- [x] Point Shadow Map
 - [ ] Cascaded Shadow Maps
 - [ ] PCSS
 - [ ] Cascaded PCSS
