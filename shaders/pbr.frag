@@ -116,7 +116,8 @@ vec3 evaluateSurfaceLighting(vec3 surfaceNormal, vec3 viewDir, vec3 lightDir, ve
 }
 
 float calcPointShadow(int index, vec3 normal, vec3 lightDir) {
-    if (index >= pointShadowCount)
+    int shadowLayer = int(pointLights[index].position.w);
+    if (shadowLayer < 0 || shadowLayer >= pointShadowCount)
         return 0.0;
     vec3 fromLight = FragPos - pointLights[index].position.xyz;
     float distanceToLight = length(fromLight);
@@ -135,7 +136,7 @@ float calcPointShadow(int index, vec3 normal, vec3 lightDir) {
     for (int x = -1; x <= 1; ++x) {
         for (int y = -1; y <= 1; ++y) {
             vec3 sampleDirection = direction + (tangent * float(x) + bitangent * float(y)) * texelSize;
-            float closestDepth = texture(pointShadowMap, vec4(sampleDirection, float(index))).r * farPlane;
+            float closestDepth = texture(pointShadowMap, vec4(sampleDirection, float(shadowLayer))).r * farPlane;
             shadow += distanceToLight - bias > closestDepth ? 1.0 : 0.0;
         }
     }
