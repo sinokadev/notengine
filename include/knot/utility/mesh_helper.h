@@ -8,6 +8,7 @@ namespace knot {
 class Mesh;
 class Shader;
 class Model;
+class Object;
 
 /** @brief Calculates orthogonalized vertex tangents for indexed triangles.
  *  @pre @p indices is a multiple of three and all indices are valid. */
@@ -40,4 +41,29 @@ std::shared_ptr<Mesh> loadModelOBJ(const std::string& filePath);
  *  @param pbrShader Shader assigned to every created material.
  *  @return A Model containing one sub-mesh per material group, or nullptr on failure. */
 std::shared_ptr<Model> loadModelOBJWithMTL(const std::string& filePath, std::shared_ptr<Shader> pbrShader);
+
+/** @brief Loads all meshes from a glTF (.gltf / .glb) file and merges them into a single Model.
+ *
+ *  Each glTF primitive becomes a sub-mesh with a default PbrMaterial.
+ *  glTF animations are not imported or played back.
+ *  Only triangle primitives are processed; other topology is skipped.
+ *  If the glTF file has no NORMAL attribute the normals default to (0,1,0).
+ *  Tangents are calculated when the TANGENT attribute is absent.
+ *  @param filePath Absolute or relative path to the .gltf or .glb file.
+ *  @param pbrShader PBR shader assigned to every created material.
+ *  @return A Model containing one sub-mesh per primitive, or nullptr on failure. */
+std::shared_ptr<Model> loadModelGLTF(const std::string& filePath, std::shared_ptr<Shader> pbrShader);
+
+/** @brief Loads a glTF file as a vector of Objects, one per glTF node that has a mesh.
+ *
+ *  Node transforms (translation, rotation, scale) are applied to each Object.
+ *  glTF animations are not imported or played back.
+ *  PBR material parameters (baseColorFactor, metallicFactor, roughnessFactor) and
+ *  textures (baseColorTexture, metallicRoughnessTexture, normalTexture, occlusionTexture)
+ *  are read from each glTF primitive's material.
+ *  Only triangle primitives are processed; other topology is skipped.
+ *  @param filePath Absolute or relative path to the .gltf or .glb file.
+ *  @param pbrShader PBR shader assigned to every created material.
+ *  @return A list of Objects preserving the scene node hierarchy, or empty on failure. */
+std::vector<std::shared_ptr<Object>> loadSceneGLTF(const std::string& filePath, std::shared_ptr<Shader> pbrShader);
 } // namespace knot

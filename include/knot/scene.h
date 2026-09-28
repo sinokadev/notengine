@@ -68,9 +68,23 @@ public:
     /** @brief Loads a scene from a Seno v8 JSON file.
      *  Missing or non-integer/non-8 versions are rejected before clearing the scene.
      *  Object pivot is an optional local-space [x,y,z] vector, defaulting to zero.
+     *  models[].obj accepts OBJ/MTL and glTF/GLB with file-provided materials.
+     *  glTF is not accepted in meshes or with mesh/material/submeshes overrides.
+     *  glTF animations are not imported or played back.
      *  @return true when the file is parsed and all referenced resources load. */
     // Relative external assets are resolved against the .seno file's directory.
     bool loadSeno(const std::string& path);
+
+    /** @brief Loads a glTF (.gltf / .glb) file as a scene.
+     *
+     *  All mesh nodes in the default glTF scene are converted into knot::Objects
+     *  and registered with the ObjectManager.  Each node's name (if present) is
+     *  assigned as the object's primary group.  PBR materials and textures are
+     *  loaded from the file.
+     *  glTF animations are not imported or played back.
+     *  @param path Absolute or relative path to the .gltf or .glb file.
+     *  @return true when the file is parsed and at least one object is created. */
+    bool loadGLTF(const std::string& path);
 
 private:
     ObjectManager objectManager;

@@ -1,0 +1,16 @@
+{
+    "version": 8,
+    "sky": {
+        "type": "HDR",
+        "path": "DaySkyHDRI015A_2K_HDR.hdr"
+    },
+    "models": [
+        { "obj": "Cube/glTF/Cube.gltf" }
+    ],
+    "objects": [
+        { "model": 0, "position": [0, 0, 0] }
+    ],
+    "lights": [
+        { "type": "PbrPointLight", "position": [0, 3, 3], "color": [1, 0.95, 0.85], "intensity": 5 }
+    ]
+}

@@ -137,5 +137,11 @@ add_executable(test_group EXCLUDE_FROM_ALL demo/test_group.cpp)
 target_link_libraries(test_group PRIVATE notengine)
 set_target_properties(test_group PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
+foreach(gltf_demo IN ITEMS gltf_model gltf_scene test_seno_gltf)
+    add_executable(${gltf_demo} EXCLUDE_FROM_ALL demo/${gltf_demo}.cpp)
+    target_link_libraries(${gltf_demo} PRIVATE notengine)
+    set_target_properties(${gltf_demo} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+endforeach()
+
 # Install configuration
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Install.cmake")

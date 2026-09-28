@@ -102,7 +102,9 @@
                 "demo",
                 "benchmark",
                 "scene_render",
-                "ortho_test"
+                "ortho_test",
+                "gltf_model",
+                "gltf_scene"
             ]
         },
         {
@@ -113,7 +115,9 @@
                 "demo",
                 "benchmark",
                 "scene_render",
-                "ortho_test"
+                "ortho_test",
+                "gltf_model",
+                "gltf_scene"
             ]
         },
 
@@ -144,7 +148,9 @@
                 "demo",
                 "benchmark",
                 "scene_render",
-                "ortho_test"
+                "ortho_test",
+                "gltf_model",
+                "gltf_scene"
             ]
         },
         {
@@ -156,7 +162,9 @@
                 "demo",
                 "benchmark",
                 "scene_render",
-                "ortho_test"
+                "ortho_test",
+                "gltf_model",
+                "gltf_scene"
             ]
         },
 
@@ -184,7 +192,9 @@
                 "demo",
                 "benchmark",
                 "scene_render",
-                "ortho_test"
+                "ortho_test",
+                "gltf_model",
+                "gltf_scene"
             ]
         },
         {
@@ -195,7 +205,9 @@
                 "demo",
                 "benchmark",
                 "scene_render",
-                "ortho_test"
+                "ortho_test",
+                "gltf_model",
+                "gltf_scene"
             ]
         },
 
@@ -226,7 +238,9 @@
                 "demo",
                 "benchmark",
                 "scene_render",
-                "ortho_test"
+                "ortho_test",
+                "gltf_model",
+                "gltf_scene"
             ]
         },
         {
@@ -238,7 +252,9 @@
                 "demo",
                 "benchmark",
                 "scene_render",
-                "ortho_test"
+                "ortho_test",
+                "gltf_model",
+                "gltf_scene"
             ]
         },
 
@@ -269,7 +285,9 @@
                 "demo",
                 "benchmark",
                 "scene_render",
-                "ortho_test"
+                "ortho_test",
+                "gltf_model",
+                "gltf_scene"
             ]
         },
         {
@@ -281,7 +299,9 @@
                 "demo",
                 "benchmark",
                 "scene_render",
-                "ortho_test"
+                "ortho_test",
+                "gltf_model",
+                "gltf_scene"
             ]
         }
     ]

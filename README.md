@@ -79,6 +79,12 @@ Run the built demos:
 # Scene file rendering demo
 ./build/ninja-release/scene_render
 
+# glTF model demo (Cube)
+./build/ninja-release/gltf_model
+
+# glTF scene demo (Sponza)
+./build/ninja-release/gltf_scene
+
 # Benchmark
 ./build/ninja-release/benchmark
 ```
@@ -95,6 +101,7 @@ Install `script/blender_seno/seno_exporter.py` as a Blender add-on, then choose
 - skymap: https://ambientcg.com/view?id=DaySkyHDRI001A
 - test audio (wav): https://commons.wikimedia.org/wiki/File%3AAudio.wav
 - test audio (mp3): https://commons.wikimedia.org/wiki/File%3AUncleSigmund_-_ahhh_(cc0)_(freesound).mp3
+- test gltf models: https://github.com/KhronosGroup/glTF-Sample-Models
 
 ## Star History
 
