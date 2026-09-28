@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: CC0 or Unlicense
 // Copyright 2026 SinokaDev
 
 #include <glm/gtc/matrix_transform.hpp>
