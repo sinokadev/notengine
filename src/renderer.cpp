@@ -135,8 +135,7 @@ void Renderer::shutdown() {
         glDeleteTextures(1, &pointDepthMap);
     }
     depthMapFBO = depthMap = pointDepthFBO = pointDepthMap = 0;
-    pointShadowCount = pointShadowCapacity = 0;
-    shadowedPointLights.clear();
+    pointShadowCount = 0;
     dirShadowShader.reset();
     pointShadowShader.reset();
 
@@ -240,9 +239,7 @@ void Renderer::processPointLights(const std::vector<const PbrPointLight*>& point
     for (const auto* light : pointLights) {
         GPUMovingPointLight gpuLight;
 
-        const auto shadow = std::find(shadowedPointLights.begin(), shadowedPointLights.end(), light);
-        const float shadowLayer = shadow == shadowedPointLights.end() ? -1.0f : static_cast<float>(shadow - shadowedPointLights.begin());
-        gpuLight.position = glm::vec4(light->position, shadowLayer);
+        gpuLight.position = glm::vec4(light->position, 1.0f);
 
         gpuLight.color = glm::vec4(light->color, light->intensity);
 
@@ -484,6 +481,9 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     const auto dirLights = lightManager.getDirLights();
     const auto pointLights = lightManager.getPointLights();
 
+    // ssbo upload point lights
+    processPointLights(pointLights);
+
     // render
     std::unordered_map<const Model*, std::vector<VisibleInstance>> instanceGroups;
 
@@ -507,8 +507,6 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
 
     // render
     renderShadow(scene, shadowGroups);
-    // Upload the shadow-layer mapping after selecting this frame's shadow lights.
-    processPointLights(pointLights);
 
     renderSkybox(scene.getCubeMap(), camera, aspectRatio);
 
@@ -595,46 +593,16 @@ void Renderer::renderShadow(Scene& scene, const std::unordered_map<const Model*,
 void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups) {
     if (DISABLE_SHADOW || !pointShadowShader || !pointShadowShader->isValid()) {
         pointShadowCount = 0;
-        shadowedPointLights.clear();
         return;
     }
 
     const auto lights = scene.getLightManager().getPointLights();
     GLint maxLayers = 0;
     glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &maxLayers);
-    const int budget = std::min(MAX_POINT_SHADOWS, maxLayers / 6);
-    const auto& camera = scene.getCamera();
-    const auto& frustum = camera.getFrustum(static_cast<float>(framebufferWidth) / framebufferHeight);
-    struct Candidate {
-        const PbrPointLight* light;
-        float contribution;
-    };
-    std::vector<Candidate> candidates;
-    candidates.reserve(lights.size());
-    for (const auto* light : lights) {
-        const float intensity = std::max(0.0f, light->intensity);
-        const float radius = 5.0f * std::sqrt(intensity);
-        if (radius <= kNearPlane || !frustum.intersectsSphere(light->position, radius))
-            continue;
-        const float luminance = glm::dot(glm::max(light->color, glm::vec3(0.0f)), glm::vec3(0.2126f, 0.7152f, 0.0722f));
-        const auto offset = light->position - camera.position;
-        float contribution = intensity * luminance / (1.0f + glm::dot(offset, offset));
-        // Favor existing selections slightly to avoid flicker around the cutoff.
-        if (std::find(shadowedPointLights.begin(), shadowedPointLights.end(), light) != shadowedPointLights.end())
-            contribution *= 1.2f;
-        if (contribution >= MIN_POINT_SHADOW_CONTRIBUTION)
-            candidates.push_back({light, contribution});
-    }
-    std::stable_sort(candidates.begin(), candidates.end(), [](const Candidate& a, const Candidate& b) {
-        return a.contribution > b.contribution;
-    });
-    const int count = std::min(budget, static_cast<int>(candidates.size()));
-    shadowedPointLights.clear();
-    for (int i = 0; i < count; ++i)
-        shadowedPointLights.push_back(candidates[i].light);
+    const int count = static_cast<int>(std::min(lights.size(), static_cast<std::size_t>(maxLayers / 6)));
     glActiveTexture(GL_TEXTURE12);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointDepthMap);
-    if (count > pointShadowCapacity) {
+    if (count != pointShadowCount && count > 0) {
         glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT24, SHADOW_RESOLUTION, SHADOW_RESOLUTION, count * 6, 0, GL_DEPTH_COMPONENT,
                      GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -642,7 +610,6 @@ void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Mo
         glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-        pointShadowCapacity = count;
     }
     pointShadowCount = count;
     if (count == 0)
@@ -657,9 +624,8 @@ void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Mo
     pointShadowShader->use();
 
     for (int light = 0; light < count; ++light) {
-        const auto* source = shadowedPointLights[light];
-        const auto& position = source->position;
-        const float farPlane = std::max(kNearPlane * 2.0f, 5.0f * std::sqrt(std::max(0.0f, source->intensity)));
+        const auto& position = lights[light]->position;
+        const float farPlane = std::max(kNearPlane * 2.0f, 5.0f * std::sqrt(std::max(0.0f, lights[light]->intensity)));
         const auto projection = glm::perspective(glm::radians(90.0f), 1.0f, kNearPlane, farPlane);
         pointShadowShader->set("lightPos", position);
         pointShadowShader->set("farPlane", farPlane);
