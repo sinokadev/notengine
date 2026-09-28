@@ -1,16 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 SinokaDev
-//
-// Demo: glTF 모델 로드 (loadModelGLTF)
-//
-// assets/Cube/glTF/Cube.gltf를 하나의 Model로 로드한 뒤 자동으로 회전시킵니다.
-// glTF 애니메이션 트랙 재생이 아닌 데모 코드의 회전입니다.
-//
-// 조작법:
-//   WASD          - 카메라 이동
-//   마우스        - 카메라 방향
-//   ESC           - 마우스 커서 토글
-//   숫자 1       - Cube 표시 여부 토글
 
 #include <iostream>
 #include <unordered_map>

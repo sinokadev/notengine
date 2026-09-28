@@ -1,16 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 SinokaDev
-//
-// Demo: glTF 씬 로드 (Scene::loadGLTF)
-//
-// assets/Sponza/glTF/Sponza.gltf 를 loadGLTF로 씬 전체 로드합니다.
-// 노드 계층이 보존되어 각 메시가 독립 Object로 등록됩니다.
-//
-// 조작법:
-//   WASD     - 카메라 이동 (Shift 가속)
-//   마우스   - 카메라 방향
-//   ESC      - 마우스 커서 토글
-//   F        - 씬의 오브젝트 수 / 그룹 목록 콘솔 출력
 
 #include <iostream>
 #include <unordered_map>
