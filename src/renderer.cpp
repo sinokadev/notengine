@@ -289,7 +289,7 @@ void Renderer::renderInstanced(const std::shared_ptr<Model>& model, const std::v
             continue;
 
         shader->use();
-        shader->set("u_IsInstanced", true);
+        shader->set("isInstanced", true);
 
         shader->set("view", camera.getViewMatrix());
         shader->set("projection", camera.getProjectionMatrix(aspectRatio));
@@ -320,7 +320,7 @@ void Renderer::renderSingle(const std::shared_ptr<Model>& model, const glm::mat4
         shader->use();
         subMesh.material->bind();
 
-        shader->set("u_IsInstanced", false);
+        shader->set("isInstanced", false);
 
         shader->set("model", worldMatrix);
         shader->set("view", camera.getViewMatrix());
