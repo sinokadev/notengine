@@ -46,6 +46,8 @@ uniform float maxReflectionLOD;
 uniform float ambientIntensity;
 uniform sampler2D brdfLUT;
 uniform sampler2D shadowMap;
+uniform samplerCubeArray pointShadowMap;
+uniform int pointShadowCount;
 uniform samplerCube irradianceMap;
 uniform samplerCube prefilterMap;
 
@@ -111,6 +113,19 @@ vec3 evaluateSurfaceLighting(vec3 surfaceNormal, vec3 viewDir, vec3 lightDir, ve
     diffuseWeight *= (1.0 - metalness);
 
     return (diffuseWeight * (surfaceAlbedo / PI) + specularReflectance) * lightColor * normalDotLight * (1.0 - shadowFactor);
+}
+
+float calcPointShadow(int index, vec3 normal, vec3 lightDir) {
+    if (index >= pointShadowCount)
+        return 0.0;
+    vec3 fromLight = FragPos - pointLights[index].position.xyz;
+    float distanceToLight = length(fromLight);
+    float farPlane = max(0.2, pointLights[index].radius);
+    if (distanceToLight >= farPlane)
+        return 0.0;
+    float closestDepth = texture(pointShadowMap, vec4(fromLight, float(index))).r * farPlane;
+    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+    return distanceToLight - bias > closestDepth ? 1.0 : 0.0;
 }
 
 float calcShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
@@ -204,7 +219,7 @@ void main() {
         // Final Light Intensity Calculation
         vec3 lightColor = lightColorRaw * brightness * attenuation;
 
-        directLighting += evaluateSurfaceLighting(N, V, L_point, lightColor, albedo, metallic, roughness, F0, 0.0);
+        directLighting += evaluateSurfaceLighting(N, V, L_point, lightColor, albedo, metallic, roughness, F0, calcPointShadow(i, N, L_point));
     }
 
     vec3 finalColor = ambient + directLighting;

@@ -17,8 +17,7 @@ namespace knot {
 namespace {
 bool isGLTFPath(const std::string& path) {
     std::string extension = std::filesystem::path(path).extension().string();
-    std::transform(extension.begin(), extension.end(), extension.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
     return extension == ".gltf" || extension == ".glb";
 }
 } // namespace
@@ -203,8 +202,7 @@ bool Scene::loadSeno(const std::string& path) {
                     meshPath = resolveAssetPath(meshPath);
 
                     if (isGLTFPath(meshPath)) {
-                        std::cerr << "[Error] glTF includes materials; use models[{\"obj\": \"path.gltf\"}] instead of meshes"
-                                  << std::endl;
+                        std::cerr << "[Error] glTF includes materials; use models[{\"obj\": \"path.gltf\"}] instead of meshes" << std::endl;
                         return false;
                     }
 
@@ -376,8 +374,7 @@ bool Scene::loadSeno(const std::string& path) {
 
                     const bool isGLTF = isGLTFPath(objPath);
                     if (isGLTF && (modelData.contains("mesh") || modelData.contains("material") || modelData.contains("submeshes"))) {
-                        std::cerr << "[Error] glTF models use only 'obj'; mesh, material and submeshes overrides are not supported"
-                                  << std::endl;
+                        std::cerr << "[Error] glTF models use only 'obj'; mesh, material and submeshes overrides are not supported" << std::endl;
                         return false;
                     }
 

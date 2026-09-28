@@ -93,65 +93,53 @@ public:
     void renderInstanced(const std::shared_ptr<Model>& model, const std::vector<VisibleInstance>& instances, const Camera& camera, float aspectRatio);
 
 private:
-    /**
-     * @brief Constructs the global renderer instance.
-     *
-     * Construction is private to enforce the singleton pattern.
-     */
     Renderer() = default;
 
-    /** @brief Whether the renderer has completed GPU initialization. */
+    void renderObjects(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, float aspectRatio);
+    void renderShadowObjects(const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups,
+                             const std::shared_ptr<Shader>& shader);
+    void renderDirShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups);
+    void renderPointShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups);
+
     bool initialized = false;
 
-    /** @brief Shader-storage buffer containing point-light data. */
     GLuint lightSSBO = 0;
 
-    /** @brief Instance transform vertex buffer. */
     unsigned int instanceVBO = 0;
 
-    /** @brief Minimum instance count required to use instanced rendering. */
     static constexpr std::size_t INSTANCE_THRESHOLD = 4;
 
-    /** @brief Internal identifier used for the skybox shader resource. */
     static constexpr unsigned int SKYBOX_SHADER_ID = 999999;
 
-    /** @brief Shared mesh used to render the skybox. */
     std::shared_ptr<Mesh> skyboxMesh;
 
-    /** @brief Shader used to render the skybox. */
     std::shared_ptr<Shader> skyboxShader;
 
-    /** @brief Internal identifier used for the BRDF shader resource. */
     static constexpr unsigned int BRDF_SHADER_ID = 999998;
 
     static constexpr float AMBIENT_INTENSITY = 1.0f;
     static constexpr unsigned int SHADOW_RESOLUTION = 2048;
 
-    /** @brief Precomputed BRDF integration lookup texture. */
     GLuint brdfLUTTexture = 0;
 
-    /**
-     * @brief Generates the BRDF integration lookup texture.
-     */
     void generateBRDFLUT();
 
-    /**
-     * @brief Renders the internal fullscreen quad.
-     */
     void renderQuad();
 
-    /** @brief Vertex array object for the fullscreen quad. */
     GLuint quadVAO = 0;
 
-    /** @brief Vertex buffer object for the fullscreen quad. */
     GLuint quadVBO = 0;
 
-    unsigned int depthMapFBO;
-    unsigned int depthMap;
+    unsigned int depthMapFBO = 0;
+    unsigned int depthMap = 0;
+    unsigned int pointDepthFBO = 0;
+    unsigned int pointDepthMap = 0;
+    int pointShadowCount = 0;
 
     static constexpr unsigned int SHADOW_SHADER_ID = 999997;
 
-    std::shared_ptr<Shader> shadowShader;
+    std::shared_ptr<Shader> pointShadowShader;
+    std::shared_ptr<Shader> dirShadowShader;
     glm::mat4 lightSpaceMatrix{1.0f};
 
     int framebufferWidth;
