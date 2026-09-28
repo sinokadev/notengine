@@ -20,8 +20,8 @@ struct VisibleInstance {
 };
 /** @brief GPU layout for a PBR point light stored in the light SSBO. */
 struct GPUMovingPointLight {
-    /** @brief Position in xyz; w is padding. */
-    glm::vec4 position; // [x, y, z, w(Any data or Padding)]
+    /** @brief Position in xyz; w is the shadow layer, or -1 when unshadowed. */
+    glm::vec4 position;
     /** @brief RGB color and intensity in w. */
     glm::vec4 color; // [r, g, b, brightness]
     /** @brief Influence radius derived from light intensity. */
@@ -135,6 +135,10 @@ private:
     unsigned int pointDepthFBO = 0;
     unsigned int pointDepthMap = 0;
     int pointShadowCount = 0;
+    int pointShadowCapacity = 0;
+    static constexpr int MAX_POINT_SHADOWS = 4;
+    static constexpr float MIN_POINT_SHADOW_CONTRIBUTION = 0.01f;
+    std::vector<const PbrPointLight*> shadowedPointLights;
 
     static constexpr unsigned int SHADOW_SHADER_ID = 999997;
 
@@ -142,7 +146,7 @@ private:
     std::shared_ptr<Shader> dirShadowShader;
     glm::mat4 lightSpaceMatrix{1.0f};
 
-    int framebufferWidth;
-    int framebufferHeight;
+    int framebufferWidth = 1;
+    int framebufferHeight = 1;
 };
 } // namespace knot
