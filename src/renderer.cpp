@@ -627,7 +627,6 @@ void Renderer::renderShadow(Scene& scene, const std::unordered_map<const Model*,
 }
 
 void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups) {
-    // 포인트 셰도우는 비용이 너무 많이 들어...
     if (DISABLE_SHADOW || !pointShadowShader || !pointShadowShader->isValid()) {
         pointShadowCount = 0;
         return;
@@ -637,10 +636,13 @@ void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Mo
     GLint maxLayers = 0;
     glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &maxLayers);
     const int count = static_cast<int>(std::min(lights.size(), static_cast<std::size_t>(maxLayers / 6)));
+
+    constexpr int POINT_SHADOW_RES = 1024; 
+
     glActiveTexture(GL_TEXTURE12);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointDepthMap);
     if (count != pointShadowCount && count > 0) {
-        glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT24, SHADOW_RESOLUTION, SHADOW_RESOLUTION, count * 6, 0, GL_DEPTH_COMPONENT,
+        glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT24, POINT_SHADOW_RES, POINT_SHADOW_RES, count * 6, 0, GL_DEPTH_COMPONENT,
                      GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -654,7 +656,8 @@ void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Mo
 
     const glm::vec3 directions[] = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
     const glm::vec3 up[] = {{0, -1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}, {0, -1, 0}, {0, -1, 0}};
-    glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
+
+    glViewport(0, 0, POINT_SHADOW_RES, POINT_SHADOW_RES);
     glBindFramebuffer(GL_FRAMEBUFFER, pointDepthFBO);
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
@@ -664,13 +667,37 @@ void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Mo
         const auto& position = lights[light]->position;
         const float farPlane = std::max(kNearPlane * 2.0f, 5.0f * std::sqrt(std::max(0.0f, lights[light]->intensity)));
         const auto projection = glm::perspective(glm::radians(90.0f), 1.0f, kNearPlane, farPlane);
+
+        std::unordered_map<const Model*, std::vector<VisibleInstance>> culledShadowGroups;
+
+        for (const auto& [model, instances] : instanceGroups) {
+            for (const auto& inst : instances) {
+                glm::vec3 objPos = glm::vec3(inst.worldMatrix[3]);
+
+                float dist = glm::distance(position, objPos);
+                if (dist <= farPlane + 2.0f) {
+                    culledShadowGroups[model].push_back(inst);
+                }
+            }
+        }
+
+        if (culledShadowGroups.empty()) {
+            for (int face = 0; face < 6; ++face) {
+                glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, pointDepthMap, 0, light * 6 + face);
+                glClear(GL_DEPTH_BUFFER_BIT);
+            }
+            continue;
+        }
+
         pointShadowShader->set("lightPos", position);
         pointShadowShader->set("farPlane", farPlane);
+
         for (int face = 0; face < 6; ++face) {
             glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, pointDepthMap, 0, light * 6 + face);
             glClear(GL_DEPTH_BUFFER_BIT);
             pointShadowShader->set("lightSpaceMatrix", projection * glm::lookAt(position, position + directions[face], up[face]));
-            renderShadowObjects(instanceGroups, pointShadowShader);
+
+            renderShadowObjects(culledShadowGroups, pointShadowShader);
         }
     }
 
