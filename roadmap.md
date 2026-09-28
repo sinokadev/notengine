@@ -44,6 +44,9 @@
 - [ ] Cascaded PCSS
 - [ ] SSAO
 
+- [ ] Post-processing
+- [ ] Bloom
+
 - [ ] EXR 확장자 지원 (TinyEXR 사용)
 
 - [ ] GUI 시스템
