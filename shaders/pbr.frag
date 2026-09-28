@@ -121,11 +121,25 @@ float calcPointShadow(int index, vec3 normal, vec3 lightDir) {
     vec3 fromLight = FragPos - pointLights[index].position.xyz;
     float distanceToLight = length(fromLight);
     float farPlane = max(0.2, pointLights[index].radius);
-    if (distanceToLight >= farPlane)
+    if (distanceToLight <= 0.000001 || distanceToLight >= farPlane)
         return 0.0;
-    float closestDepth = texture(pointShadowMap, vec4(fromLight, float(index))).r * farPlane;
     float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-    return distanceToLight - bias > closestDepth ? 1.0 : 0.0;
+
+    // Sample a 3x3 neighborhood in the plane perpendicular to the cube lookup.
+    vec3 direction = fromLight / distanceToLight;
+    vec3 up = abs(direction.y) < 0.99 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+    vec3 tangent = normalize(cross(up, direction));
+    vec3 bitangent = cross(direction, tangent);
+    float texelSize = 2.0 / float(textureSize(pointShadowMap, 0).x);
+    float shadow = 0.0;
+    for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
+            vec3 sampleDirection = direction + (tangent * float(x) + bitangent * float(y)) * texelSize;
+            float closestDepth = texture(pointShadowMap, vec4(sampleDirection, float(index))).r * farPlane;
+            shadow += distanceToLight - bias > closestDepth ? 1.0 : 0.0;
+        }
+    }
+    return shadow / 9.0;
 }
 
 float calcShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
