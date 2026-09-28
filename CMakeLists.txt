@@ -68,6 +68,7 @@ add_library(notengine STATIC ${SOURCES})
 set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
 set(GENERATED_HEADER "${CMAKE_CURRENT_BINARY_DIR}/GeneratedShaders.h")
 file(GLOB SHADER_FILES CONFIGURE_DEPENDS "${SHADER_DIR}/*.glsl" "${SHADER_DIR}/*.vert" "${SHADER_DIR}/*.frag")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${SHADER_FILES})
 
 function(embed_shaders_to_header input_files output_header)
     set(header_content "#pragma once\n#include <string>\n#include <unordered_map>\n\nnamespace Shaders {\n")
