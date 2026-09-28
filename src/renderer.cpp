@@ -342,7 +342,7 @@ bool Renderer::renderObject(const Object& object, const Camera& camera, float as
 void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio) {
     if (DISABLE_SKYMAP)
         return;
-    
+
     glDepthMask(GL_FALSE);
     glDepthFunc(GL_LEQUAL);
     glDisable(GL_CULL_FACE);
@@ -497,13 +497,13 @@ void Renderer::renderShadow(Scene& scene, const std::unordered_map<const Model*,
 
     // light normalize
     if (glm::length(lightDir) < 0.0001f) { // is 0 vector?
-        lightDir = glm::vec3(0.0f, -1.0f, 0.0f); 
+        lightDir = glm::vec3(0.0f, -1.0f, 0.0f);
     } else {
         lightDir = glm::normalize(lightDir);
     }
 
     // just ignore this part
-    // NOTE: https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping 
+    // NOTE: https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
     glm::mat4 lightProjection = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, 0.1f, 30.0f);
 
     glm::vec3 lightPos = -lightDir * 10.0f;
