@@ -573,16 +573,52 @@ void Renderer::renderDirShadow(Scene& scene, const std::unordered_map<const Mode
 void Renderer::renderShadowObjects(const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups,
                                    const std::shared_ptr<Shader>& shader) {
     for (const auto& [model, instances] : instanceGroups) {
-        for (const auto& instance : instances) {
-            shader->set("model", instance.worldMatrix);
+        if (!model || model->subMeshes.empty() || instances.empty())
+            continue;
+
+        const bool useInstancing = instances.size() >= INSTANCE_THRESHOLD;
+
+        if (useInstancing) {
+            std::vector<InstanceData> instanceData;
+            instanceData.reserve(instances.size());
+            for (const auto& inst : instances) {
+                instanceData.push_back({inst.worldMatrix});
+            }
+
+            glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+            glBufferData(GL_ARRAY_BUFFER, instanceData.size() * sizeof(InstanceData), instanceData.data(), GL_STREAM_DRAW);
+
+            shader->set("isInstanced", true);
+
             for (const auto& subMesh : model->subMeshes) {
                 if (!subMesh.mesh || !subMesh.mesh->isReady())
                     continue;
+
+                subMesh.mesh->setupInstanceAttributes(instanceVBO);
                 glBindVertexArray(subMesh.mesh->vao);
-                glDrawElements(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr);
+                glDrawElementsInstanced(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr,
+                                        static_cast<GLsizei>(instanceData.size()));
+            }
+        } else {
+            shader->set("isInstanced", false);
+
+            for (const auto& instance : instances) {
+                shader->set("model", instance.worldMatrix);
+                for (const auto& subMesh : model->subMeshes) {
+                    if (!subMesh.mesh || !subMesh.mesh->isReady())
+                        continue;
+
+                    glBindVertexArray(subMesh.mesh->vao);
+                    // 인스턴스 attribute가 켜져 있을 수 있으니 꺼줌 (renderSingle과 동일)
+                    for (GLuint i = 0; i < 4; ++i) {
+                        glDisableVertexAttribArray(4 + i);
+                    }
+                    glDrawElements(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr);
+                }
             }
         }
     }
+    glBindVertexArray(0);
 }
 
 void Renderer::renderShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups) {
@@ -591,6 +627,7 @@ void Renderer::renderShadow(Scene& scene, const std::unordered_map<const Model*,
 }
 
 void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups) {
+    // 포인트 셰도우는 비용이 너무 많이 들어...
     if (DISABLE_SHADOW || !pointShadowShader || !pointShadowShader->isValid()) {
         pointShadowCount = 0;
         return;
