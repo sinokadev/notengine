@@ -127,7 +127,7 @@ float calcPointShadow(int index, vec3 normal, vec3 lightDir) {
     float farPlane = max(0.2, pointLights[index].radius);
     if (distanceToLight <= 0.000001 || distanceToLight >= farPlane)
         return 0.0;
-    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+    float bias = max(0.1 * (1.0 - dot(normal, lightDir)), 0.01);
 
     // Sample a 3x3 neighborhood in the plane perpendicular to the cube lookup.
     vec3 direction = fromLight / distanceToLight;
