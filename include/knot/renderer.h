@@ -78,6 +78,12 @@ public:
     /** @brief Draws a cubemap skybox centered on the camera. */
     void renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio);
     /** @brief Performs frustum culling, batching, and rendering for a scene.
+     *  Built-in shaders draw opaque fragments first, then translucent fragments
+     *  sorted by sub-mesh center with depth writes disabled. Intersecting surfaces
+     *  and triangles within a single sub-mesh are not individually sorted.
+     *  The translucent pass adds one draw per visible sub-mesh instance, including
+     *  those whose fragments turn out to be opaque. Custom shaders can opt in by
+     *  implementing alphaPass (0 = all, 1 = opaque, 2 = translucent).
      *  @return false when the renderer has not been initialized. */
     bool renderScene(Scene& scene, float aspectRatio);
     /** @brief Renders a Shadows. */

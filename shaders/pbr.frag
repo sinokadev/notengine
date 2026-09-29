@@ -1,6 +1,9 @@
 #version 430 core
 out vec4 FragColor;
 
+// 0: direct draw, 1: opaque fragments, 2: translucent fragments.
+uniform int alphaPass;
+
 in vec3 FragPos;
 in vec3 Normal;
 in vec2 TexCoords;
@@ -177,7 +180,7 @@ void main() {
 
     // Texture Maps
     vec4 albedoSample = texture(material.albedoMap, TexCoords);
-    if (albedoSample.a == 0.0) {
+    if (albedoSample.a <= 0.0 || (alphaPass == 1 && albedoSample.a < 1.0) || (alphaPass == 2 && albedoSample.a >= 1.0)) {
         discard;
     }
     vec3 albedo = albedoSample.rgb;
