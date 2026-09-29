@@ -297,6 +297,7 @@ void Renderer::renderInstanced(const std::shared_ptr<Model>& model, const std::v
             continue;
 
         shader->use();
+        subMesh.material->bind();
         shader->set("isInstanced", true);
 
         shader->set("view", camera.getViewMatrix());
@@ -443,6 +444,21 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
         shader->set("lightSpaceMatrix", lightSpaceMatrix);
     };
 
+    struct TranslucentDraw {
+        const SubMesh* subMesh;
+        glm::mat4 worldMatrix;
+        float depth;
+    };
+    std::vector<TranslucentDraw> translucentDraws;
+    std::unordered_map<unsigned int, bool> alphaShaders;
+    const auto view = camera.getViewMatrix();
+
+    // Establish the opaque depth buffer before blending any translucent pixels.
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glEnable(GL_BLEND);
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
     for (const auto& [modelKey, instances] : instanceGroups) {
         // validation
         if (instances.empty())
@@ -464,6 +480,16 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
 
             if (preparedShaders.insert(shader->getShaderProgram()).second) {
                 setupSceneUniforms(shader);
+                const bool supportsAlphaPass = glGetUniformLocation(shader->getShaderProgram(), "alphaPass") >= 0;
+                alphaShaders[shader->getShaderProgram()] = supportsAlphaPass;
+                shader->set("alphaPass", 1);
+            }
+            // Custom shaders without the pass uniform are drawn only once.
+            if (subMesh.mesh && subMesh.mesh->isReady() && alphaShaders[shader->getShaderProgram()]) {
+                for (const auto& inst : instances) {
+                    const auto center = view * inst.worldMatrix * glm::vec4(subMesh.mesh->boundsCenter, 1.0f);
+                    translucentDraws.push_back({&subMesh, inst.worldMatrix, -center.z});
+                }
             }
         }
 
@@ -475,6 +501,35 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
             }
         }
     }
+
+    // Sort globally across models and instances. Depth testing remains enabled,
+    // but blended fragments must not prevent farther surfaces from contributing.
+    std::stable_sort(translucentDraws.begin(), translucentDraws.end(), [](const auto& a, const auto& b) {
+        return a.depth > b.depth;
+    });
+    glEnable(GL_BLEND);
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_FALSE);
+    for (const auto& draw : translucentDraws) {
+        const auto& subMesh = *draw.subMesh;
+        auto shader = subMesh.material->getShader();
+        subMesh.material->bind();
+        shader->set("alphaPass", 2);
+        shader->set("isInstanced", false);
+        shader->set("model", draw.worldMatrix);
+        shader->set("view", view);
+        shader->set("projection", camera.getProjectionMatrix(aspectRatio));
+        shader->set("cameraPos", camera.position);
+        glBindVertexArray(subMesh.mesh->vao);
+        for (GLuint i = 0; i < 4; ++i) {
+            glDisableVertexAttribArray(4 + i);
+        }
+        glDrawElements(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr);
+        // Preserve the default behavior of subsequent direct renderSingle calls.
+        shader->set("alphaPass", 0);
+    }
+    glBindVertexArray(0);
+    glDepthMask(GL_TRUE);
 }
 
 bool Renderer::renderScene(Scene& scene, float aspectRatio) {

@@ -28,6 +28,14 @@ void Mesh::setup() {
         return;
     }
 
+    glm::vec3 boundsMin = vertices.front().Position;
+    glm::vec3 boundsMax = boundsMin;
+    for (const auto& vertex : vertices) {
+        boundsMin = glm::min(boundsMin, vertex.Position);
+        boundsMax = glm::max(boundsMax, vertex.Position);
+    }
+    boundsCenter = (boundsMin + boundsMax) * 0.5f;
+
     glGenVertexArrays(1, &vao);
     glGenBuffers(1, &vbo);
     glGenBuffers(1, &ebo);
