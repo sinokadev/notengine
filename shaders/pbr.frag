@@ -176,7 +176,11 @@ void main() {
     vec3 V = normalize(cameraPos - FragPos);
 
     // Texture Maps
-    vec3 albedo = texture(material.albedoMap, TexCoords).rgb;
+    vec4 albedoSample = texture(material.albedoMap, TexCoords);
+    if (albedoSample.a == 0.0) {
+        discard;
+    }
+    vec3 albedo = albedoSample.rgb;
     float metallic = texture(material.metallicMap, TexCoords).r;
     float roughness = texture(material.roughnessMap, TexCoords).r;
     float ao = texture(material.aoMap, TexCoords).r;
@@ -245,5 +249,5 @@ void main() {
     // Gamma Correction
     finalColor = pow(finalColor, vec3(1.0 / 2.2));
 
-    FragColor = vec4(finalColor, 1.0);
+    FragColor = vec4(finalColor, albedoSample.a);
 }
