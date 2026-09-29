@@ -25,13 +25,6 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Install dependencies
-      # NOTE: DO NOT remove libglfw3-dev,
-      # as the dependencies installed with it are required for the build.
-      # 
-      # This patch is intended for GitHub Actions.
-      # It should not be necessary on a typical Linux desktop setup with a graphical environment.
-      # 
-      # See Also: PR #5
         run: |
           sudo apt update
           sudo apt install -y \
@@ -75,6 +68,12 @@ jobs:
           cmake --build --preset make-release-notengine
           cmake --build --preset make-release-all
 
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: not-engine-linux-${{ matrix.preset }}
+          path: build/  # CMake 프리셋 설정에 따라 출력 폴더가 다르면 이 경로를 수정해줘!
+
   windows-vs2022:
     name: Windows / VS2022
     runs-on: windows-2022
@@ -97,6 +96,12 @@ jobs:
           cmake --build --preset vs2022-release-notengine
           cmake --build --preset vs2022-release-all
 
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: not-engine-windows-vs2022
+          path: build/
+
   windows-vs2026:
     name: Windows / VS2026
     runs-on: windows-2025-vs2026
@@ -118,3 +123,9 @@ jobs:
         run: |
           cmake --build --preset vs2026-release-notengine
           cmake --build --preset vs2026-release-all
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: not-engine-windows-vs2026
+          path: build/
