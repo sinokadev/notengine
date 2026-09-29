@@ -19,18 +19,17 @@ unsigned int createSolidColorTexture(glm::vec3 color);
 
 namespace {
 
-std::string assetRoot = []() {
 #ifdef NOTENGINE_ASSET_ROOT
+std::string assetRoot = []() {
     std::string root = NOTENGINE_ASSET_ROOT;
-    if (!root.empty() && root.back() != '/' && root.back() != '\\') {
+    if (!root.empty() && root.back() != '/') {
         root += '/';
     }
-    if (std::filesystem::exists(root)) {
-        return root;
-    }
-#endif
-    return std::string("./");
+    return root;
 }();
+#else
+std::string assetRoot = "";
+#endif
 
 unsigned int compileShader(unsigned int type, const char* source, const char* label) {
     unsigned int shader = glCreateShader(type);
@@ -51,6 +50,17 @@ unsigned int compileShader(unsigned int type, const char* source, const char* la
 }
 
 } // namespace
+
+void setAssetRoot(const std::string& root) {
+    assetRoot = root;
+    if (!assetRoot.empty() && assetRoot.back() != '/') {
+        assetRoot += '/';
+    }
+}
+
+const std::string& getAssetRoot() {
+    return assetRoot;
+}
 
 ShaderSource::ShaderSource(std::string v, std::string f) : vertexPath(v), fragmentPath(f) {
     // 1. 파일 이름만 추출 (디렉토리 경로 제거)
