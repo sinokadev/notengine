@@ -537,6 +537,7 @@ bool Scene::loadSeno(const std::string& path) {
                     intensity = lightData.value("intensity", 1.0f);
 
                     auto light = std::make_shared<PbrPointLight>(position, color, intensity);
+                    light->castsShadow = lightData.value("castsShadow", true);
 
                     lightManager.registerLight(light);
                 }

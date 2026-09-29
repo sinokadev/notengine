@@ -26,6 +26,8 @@ int main() {
         bad=j;bad["objects"].push_back(bad["objects"][0]);fails([&]{validate(bad);});
         bad=j;bad["objects"][0]["rotation"]={0,0,0,0};fails([&]{validate(bad);});
         bad=j;bad["objects"][0]["position"]={1,"x",0};fails([&]{validate(bad);});
+        bad=j;bad["lights"]=Json::array({{{"type","PbrPointLight"},{"castsShadow",false}}});validate(bad);
+        bad["lights"][0]["castsShadow"]="false";fails([&]{validate(bad);});
         bad=j;bad["camera"]={{"near",2},{"far",1}};fails([&]{validate(bad);});
         {std::ofstream out(file);out<<"invalid";}
         fails([&]{d.save(file);});check(read(file)=="invalid","External change preserved");

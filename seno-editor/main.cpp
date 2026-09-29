@@ -112,7 +112,7 @@ public:
             item={{"position",{0,0,0}},{"pivot",{0,0,0}},{"scale",{1,1,1}},{"rotation",{1,0,0,0}},{"model",0},{"group","new"}};
         } else if(collection=="lights") {
             item={{"type",kind},{"color",{1,1,1}},{"intensity",1.0}};
-            if(kind=="DirLight") item["rotation"]={1,0,0,0}; else item["position"]={0,3,0};
+            if(kind=="DirLight") item["rotation"]={1,0,0,0}; else { item["position"]={0,3,0}; item["castsShadow"]=true; }
         } else if(collection=="materials") item={{"shader","pbrShader"},{"albedo",{0.7,0.7,0.7}},{"metallic",0.0},{"roughness",0.5},{"ao",1.0}};
         else if(collection=="meshes") item="{assetRoot}/assets/notbox.obj";
         else {

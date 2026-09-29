@@ -138,6 +138,7 @@ void Renderer::shutdown() {
     }
     depthMapFBO = depthMap = pointDepthFBO = pointDepthMap = 0;
     pointShadowCount = 0;
+    shadowedPointLights.clear();
     dirShadowShader.reset();
     pointShadowShader.reset();
 
@@ -244,10 +245,17 @@ void Renderer::processPointLights(const std::vector<const PbrPointLight*>& point
     std::vector<GPUMovingPointLight> gpuLights;
     gpuLights.reserve(pointLights.size());
 
+    std::unordered_map<const PbrPointLight*, int> shadowLayers;
+    for (std::size_t i = 0; i < shadowedPointLights.size(); ++i) {
+        shadowLayers.emplace(shadowedPointLights[i], static_cast<int>(i));
+    }
+
     for (const auto* light : pointLights) {
         GPUMovingPointLight gpuLight;
 
-        gpuLight.position = glm::vec4(light->position, 1.0f);
+        const auto layer = shadowLayers.find(light);
+        const int shadowLayer = light->castsShadow && layer != shadowLayers.end() ? layer->second : -1;
+        gpuLight.position = glm::vec4(light->position, static_cast<float>(shadowLayer));
 
         gpuLight.color = glm::vec4(light->color, light->intensity);
 
@@ -544,9 +552,6 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     const auto dirLights = lightManager.getDirLights();
     const auto pointLights = lightManager.getPointLights();
 
-    // ssbo upload point lights
-    processPointLights(pointLights);
-
     // render
     std::unordered_map<const Model*, std::vector<VisibleInstance>> instanceGroups;
 
@@ -570,6 +575,8 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
 
     // render
     renderShadow(scene, shadowGroups);
+    // Upload the layer mapping selected for this frame, including unshadowed lights.
+    processPointLights(pointLights);
 
     renderSkybox(scene.getCubeMap(), camera, aspectRatio);
 
@@ -690,6 +697,7 @@ void Renderer::renderShadow(Scene& scene, const std::unordered_map<const Model*,
 }
 
 void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups) {
+    shadowedPointLights.clear();
     if (DISABLE_SHADOW || !pointShadowShader || !pointShadowShader->isValid()) {
         pointShadowCount = 0;
         return;
@@ -698,7 +706,12 @@ void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Mo
     const auto lights = scene.getLightManager().getPointLights();
     GLint maxLayers = 0;
     glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &maxLayers);
-    const int count = static_cast<int>(std::min(lights.size(), static_cast<std::size_t>(maxLayers / 6)));
+    for (const auto* light : lights) {
+        if (light->castsShadow && shadowedPointLights.size() < static_cast<std::size_t>(maxLayers / 6)) {
+            shadowedPointLights.push_back(light);
+        }
+    }
+    const int count = static_cast<int>(shadowedPointLights.size());
 
     constexpr int POINT_SHADOW_RES = 1024; 
 
@@ -727,8 +740,8 @@ void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Mo
     pointShadowShader->use();
 
     for (int light = 0; light < count; ++light) {
-        const auto& position = lights[light]->position;
-        const float farPlane = std::max(kNearPlane * 2.0f, 5.0f * std::sqrt(std::max(0.0f, lights[light]->intensity)));
+        const auto& position = shadowedPointLights[light]->position;
+        const float farPlane = std::max(kNearPlane * 2.0f, 5.0f * std::sqrt(std::max(0.0f, shadowedPointLights[light]->intensity)));
         const auto projection = glm::perspective(glm::radians(90.0f), 1.0f, kNearPlane, farPlane);
 
         std::unordered_map<const Model*, std::vector<VisibleInstance>> culledShadowGroups;
