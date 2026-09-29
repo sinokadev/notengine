@@ -55,6 +55,7 @@ inline void validate(const Json& j) {
             }
             if (k=="intensity"||k=="metallic"||k=="roughness"||k=="ao"||k=="fov"||k=="near"||k=="far"||k=="size")
                 require(x.is_number(),k+" must be numeric");
+            if (k=="castsShadow") require(x.is_boolean(),"castsShadow must be a boolean");
             if (k=="type"||k=="shader"||k=="path"||k=="obj"||k=="group") require(x.is_string(),k+" must be a string");
             self(self,x);
         }
