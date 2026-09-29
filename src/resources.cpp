@@ -52,36 +52,6 @@ unsigned int compileShader(unsigned int type, const char* source, const char* la
 
 } // namespace
 
-void setAssetRoot(const std::string& root) {
-    if (root.empty()) return;
-
-    std::string temp = root;
-    if (temp.back() != '/' && temp.back() != '\\') {
-        temp += '/';
-    }
-
-    if (std::filesystem::exists(temp)) {
-        assetRoot = temp;
-    } else {
-        std::cerr << "[Warning] Invalid asset path provided, keeping fallback path: " << assetRoot << std::endl;
-    }
-}
-
-const std::string& getAssetRoot() {
-    return assetRoot;
-}
-
-void setAssetRoot(const std::string& root) {
-    assetRoot = root;
-    if (!assetRoot.empty() && assetRoot.back() != '/') {
-        assetRoot += '/';
-    }
-}
-
-const std::string& getAssetRoot() {
-    return assetRoot;
-}
-
 ShaderSource::ShaderSource(std::string v, std::string f) : vertexPath(v), fragmentPath(f) {
     // 1. 파일 이름만 추출 (디렉토리 경로 제거)
     std::string vName = std::filesystem::path(v).filename().string();
