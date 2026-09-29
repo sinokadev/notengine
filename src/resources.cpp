@@ -19,9 +19,6 @@ unsigned int createSolidColorTexture(glm::vec3 color);
 
 namespace {
 
-#include <string>
-#include <filesystem>
-
 std::string assetRoot = []() {
 #ifdef NOTENGINE_ASSET_ROOT
     std::string root = NOTENGINE_ASSET_ROOT;
@@ -54,6 +51,25 @@ unsigned int compileShader(unsigned int type, const char* source, const char* la
 }
 
 } // namespace
+
+void setAssetRoot(const std::string& root) {
+    if (root.empty()) return;
+
+    std::string temp = root;
+    if (temp.back() != '/' && temp.back() != '\\') {
+        temp += '/';
+    }
+
+    if (std::filesystem::exists(temp)) {
+        assetRoot = temp;
+    } else {
+        std::cerr << "[Warning] Invalid asset path provided, keeping fallback path: " << assetRoot << std::endl;
+    }
+}
+
+const std::string& getAssetRoot() {
+    return assetRoot;
+}
 
 void setAssetRoot(const std::string& root) {
     assetRoot = root;
