@@ -13,4 +13,7 @@ uniform Material material;
 
 void main() {
     FragColor = texture(material.diffuse, TexCoords);
+    if (FragColor.a == 0.0) {
+        discard;
+    }
 }

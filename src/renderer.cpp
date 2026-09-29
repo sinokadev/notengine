@@ -35,6 +35,8 @@ bool Renderer::init(GLADloadfunc loadProc) {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glCullFace(GL_BACK);
 
     glGenBuffers(1, &lightSSBO);
@@ -191,12 +193,18 @@ void Renderer::generateBRDFLUT() {
     glGetIntegerv(GL_VIEWPORT, prevViewport);
 
     // render
+    // The BRDF shader writes only RG, so source-alpha blending is undefined here.
+    const GLboolean wasBlendEnabled = glIsEnabled(GL_BLEND);
+    glDisable(GL_BLEND);
     glViewport(0, 0, 512, 512);
     brdfShader->use();
     glClear(GL_COLOR_BUFFER_BIT);
     renderQuad();
 
     // clean
+    if (wasBlendEnabled) {
+        glEnable(GL_BLEND);
+    }
     glViewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3]);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDeleteFramebuffers(1, &captureFBO);
