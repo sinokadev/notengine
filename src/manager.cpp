@@ -234,11 +234,11 @@ std::vector<const PbrPointLight*> LightManager::getPointLights() const {
     return result;
 }
 
-ResourceManager::~ResourceManager() {
+ShaderManager::~ShaderManager() {
     shutdown();
 }
 
-void ResourceManager::clear() {
+void ShaderManager::clear() {
     shaders.clear();
     defaultShaderIds.clear();
     idToIterator.clear();
@@ -246,11 +246,11 @@ void ResourceManager::clear() {
     nextId = 1;
 }
 
-void ResourceManager::shutdown() {
+void ShaderManager::shutdown() {
     clear();
 }
 
-bool ResourceManager::init() {
+bool ShaderManager::init() {
     auto alphaSource = std::make_shared<ShaderSource>(AlphaShader::GetSource());
     if (!alphaSource->isValid()) {
         std::cerr << "[Error] Failed to load default alpha shader sources" << std::endl;
@@ -281,7 +281,7 @@ bool ResourceManager::init() {
     return true;
 }
 
-std::shared_ptr<Shader> ResourceManager::createShader(std::shared_ptr<ShaderSource> ss, const std::string& name) {
+std::shared_ptr<Shader> ShaderManager::createShader(std::shared_ptr<ShaderSource> ss, const std::string& name) {
     if (!ss || !ss->isValid()) {
         std::cerr << "[Error] Invalid shader source for '" << name << "'" << std::endl;
         return nullptr;
@@ -303,7 +303,7 @@ std::shared_ptr<Shader> ResourceManager::createShader(std::shared_ptr<ShaderSour
     return shader;
 }
 
-bool ResourceManager::removeShader(unsigned int id) {
+bool ShaderManager::removeShader(unsigned int id) {
     if (defaultShaderIds.find(id) != defaultShaderIds.end()) {
         return false;
     }
@@ -327,7 +327,7 @@ bool ResourceManager::removeShader(unsigned int id) {
     return true;
 }
 
-std::shared_ptr<Shader> ResourceManager::getShader(unsigned int id) {
+std::shared_ptr<Shader> ShaderManager::getShader(unsigned int id) {
     auto it = idToIterator.find(id);
     if (it != idToIterator.end()) {
         return *it->second;
@@ -336,7 +336,7 @@ std::shared_ptr<Shader> ResourceManager::getShader(unsigned int id) {
     return nullptr;
 }
 
-std::shared_ptr<Shader> ResourceManager::getShader(const std::string& name) {
+std::shared_ptr<Shader> ShaderManager::getShader(const std::string& name) {
     auto it = nameToId.find(name);
     if (it != nameToId.end()) {
         return getShader(it->second);

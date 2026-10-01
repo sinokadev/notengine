@@ -7,6 +7,6 @@ Managers API
 .. doxygenclass:: knot::LightManager
    :members:
 
-.. doxygenclass:: knot::ResourceManager
+.. doxygenclass:: knot::ShaderManager
    :members:
 

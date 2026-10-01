@@ -129,10 +129,10 @@ private:
 };
 
 /** @brief Owns shader programs created for a scene. */
-class ResourceManager {
+class ShaderManager {
 public:
-    ResourceManager() = default;
-    ~ResourceManager();
+    ShaderManager() = default;
+    ~ShaderManager();
 
     /** @brief Creates the built-in alpha and PBR shaders.
      *  @return true if both default shaders were created. */
