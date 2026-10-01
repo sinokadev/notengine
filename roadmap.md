@@ -38,11 +38,14 @@
 - [x] IBL Diffuse
 - [x] IBL Specular
 - [x] Dir Shadow Map
-- [ ] Point Shadow Map
+- [x] Point Shadow Map
 - [ ] Cascaded Shadow Maps
 - [ ] PCSS
 - [ ] Cascaded PCSS
 - [ ] SSAO
+
+- [ ] Post-processing
+- [ ] Bloom
 
 - [ ] EXR 확장자 지원 (TinyEXR 사용)
 
@@ -81,6 +84,7 @@
 - [ ] pbr-book.org 읽기
 
 - [ ] 유리
+- [x] 투명/반투명한 오브젝트
 
 - [ ] HDR 맵을 이미 로드된 이미지로만 설정할수 있도록 하기
 - [ ] 이미지 클래스 만들기
@@ -92,3 +96,5 @@
 - [ ] OpenAL
 
 - [ ] 오브젝트가 화면에 보이지 않으면 그 오브젝트의 셰도우도 그리지 않는 문제 해결하기 (컬링을 셰도우 기준으로)
+
+- [ ] resource manager(shader manager)를 싱글톤으로 바꾸기

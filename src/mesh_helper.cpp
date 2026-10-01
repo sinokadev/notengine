@@ -468,4 +468,391 @@ std::shared_ptr<Model> loadModelOBJWithMTL(const std::string& filePath, std::sha
     model->calculateBounds();
     return model;
 }
+
+#define CGLTF_IMPLEMENTATION
+#include <cgltf/cgltf.h>
+
+// stb_image.h is already implemented in texture.cpp; include without the
+// implementation guard so we can call stbi_load_from_memory for embedded images.
+#include <stb/stb_image.h>
+
+#include <knot/utility/texture.h>
+
+namespace {
+
+/** @brief Reads a typed accessor into a flat float vector. */
+std::vector<float> cgltfReadFloats(const cgltf_accessor* accessor) {
+    if (!accessor)
+        return {};
+
+    const size_t count = accessor->count;
+    const size_t components = cgltf_num_components(accessor->type);
+    std::vector<float> out(count * components);
+
+    for (size_t i = 0; i < count; ++i) {
+        cgltf_accessor_read_float(accessor, i, out.data() + i * components, components);
+    }
+
+    return out;
+}
+
+/** @brief Reads an index accessor into a flat uint32 vector. */
+std::vector<unsigned int> cgltfReadIndices(const cgltf_accessor* accessor) {
+    if (!accessor)
+        return {};
+
+    const size_t count = accessor->count;
+    std::vector<unsigned int> out(count);
+
+    for (size_t i = 0; i < count; ++i) {
+        cgltf_uint value = 0;
+        cgltf_accessor_read_uint(accessor, i, &value, 1);
+        out[i] = static_cast<unsigned int>(value);
+    }
+
+    return out;
+}
+
+/** @brief Loads a glTF texture, optionally extracting a packed channel and applying its factor. */
+unsigned int cgltfLoadTexture(const cgltf_texture_view& view, const std::string& gltfDir, std::unordered_map<std::string, unsigned int>& cache,
+                              int channel = -1, glm::vec3 factor = glm::vec3(1.0f)) {
+    if (!view.texture || !view.texture->image)
+        return 0;
+
+    const cgltf_image* image = view.texture->image;
+    const std::string key = std::to_string(reinterpret_cast<uintptr_t>(image)) + ":" + std::to_string(channel) + ":" + std::to_string(factor.x) +
+                            ":" + std::to_string(factor.y) + ":" + std::to_string(factor.z);
+    auto it = cache.find(key);
+    if (it != cache.end())
+        return it->second;
+
+    // glTF UVs use the image's top-left origin. Do not inherit the HDR/OBJ loader's flip.
+    stbi_set_flip_vertically_on_load(false);
+    int w = 0, h = 0, channels = 0;
+    unsigned char* pixels = nullptr;
+    if (image->buffer_view) {
+        const cgltf_buffer_view* bv = image->buffer_view;
+        const unsigned char* data = static_cast<const unsigned char*>(bv->buffer->data) + bv->offset;
+        pixels = stbi_load_from_memory(data, static_cast<int>(bv->size), &w, &h, &channels, 4);
+    } else if (image->uri) {
+        std::filesystem::path texPath(image->uri);
+        if (!texPath.is_absolute())
+            texPath = std::filesystem::path(gltfDir) / texPath;
+        pixels = stbi_load(texPath.string().c_str(), &w, &h, &channels, 4);
+    }
+
+    if (!pixels) {
+        std::cerr << "[Warning] GLTF: failed to decode texture: " << (image->uri ? image->uri : "embedded image") << "\n";
+        cache.emplace(key, 0u);
+        return 0;
+    }
+
+    // The engine samples separate RGB/red maps, while glTF packs roughness in G and metallic in B.
+    for (size_t i = 0; i < static_cast<size_t>(w) * h; ++i) {
+        unsigned char* pixel = pixels + i * 4;
+        const glm::vec3 rgb = channel >= 0 ? glm::vec3(pixel[channel]) : glm::vec3(pixel[0], pixel[1], pixel[2]);
+        const glm::vec3 scaled = glm::clamp(rgb * factor, glm::vec3(0.0f), glm::vec3(255.0f));
+        for (int c = 0; c < 3; ++c)
+            pixel[c] = static_cast<unsigned char>(scaled[c]);
+    }
+    const unsigned int texId = knot::createTexture(pixels, w, h, GL_RGBA);
+    stbi_image_free(pixels);
+    cache.emplace(key, texId);
+    return texId;
+}
+
+/** @brief Converts a single cgltf_primitive into a knot::Mesh. */
+std::shared_ptr<knot::Mesh> cgltfPrimitiveToMesh(const cgltf_primitive& prim) {
+    if (prim.type != cgltf_primitive_type_triangles)
+        return nullptr;
+
+    const cgltf_accessor* posAcc = nullptr;
+    const cgltf_accessor* normAcc = nullptr;
+    const cgltf_accessor* uvAcc = nullptr;
+    const cgltf_accessor* tanAcc = nullptr;
+
+    for (cgltf_size ai = 0; ai < prim.attributes_count; ++ai) {
+        const cgltf_attribute& attr = prim.attributes[ai];
+        switch (attr.type) {
+        case cgltf_attribute_type_position:
+            posAcc = attr.data;
+            break;
+        case cgltf_attribute_type_normal:
+            normAcc = attr.data;
+            break;
+        case cgltf_attribute_type_texcoord:
+            if (attr.index == 0)
+                uvAcc = attr.data;
+            break;
+        case cgltf_attribute_type_tangent:
+            tanAcc = attr.data;
+            break;
+        default:
+            break;
+        }
+    }
+
+    if (!posAcc)
+        return nullptr;
+
+    const size_t vertexCount = posAcc->count;
+
+    std::vector<float> positions = cgltfReadFloats(posAcc);
+    std::vector<float> normals = cgltfReadFloats(normAcc);
+    std::vector<float> uvs = cgltfReadFloats(uvAcc);
+    std::vector<float> tangents = cgltfReadFloats(tanAcc);
+
+    auto mesh = std::make_shared<knot::Mesh>();
+    mesh->vertices.resize(vertexCount);
+
+    for (size_t i = 0; i < vertexCount; ++i) {
+        knot::Vertex& v = mesh->vertices[i];
+
+        v.Position = glm::vec3(positions[i * 3 + 0], positions[i * 3 + 1], positions[i * 3 + 2]);
+
+        if (normals.size() >= (i + 1) * 3) {
+            v.Normal = glm::vec3(normals[i * 3 + 0], normals[i * 3 + 1], normals[i * 3 + 2]);
+        } else {
+            v.Normal = glm::vec3(0.0f, 1.0f, 0.0f);
+        }
+
+        if (uvs.size() >= (i + 1) * 2) {
+            v.TexCoords = glm::vec2(uvs[i * 2 + 0], uvs[i * 2 + 1]);
+        } else {
+            v.TexCoords = glm::vec2(0.0f);
+        }
+
+        // glTF tangents are vec4 (xyz = tangent, w = handedness)
+        if (tangents.size() >= (i + 1) * 4) {
+            v.Tangent = glm::vec3(tangents[i * 4 + 0], tangents[i * 4 + 1], tangents[i * 4 + 2]);
+        } else {
+            v.Tangent = glm::vec3(0.0f);
+        }
+    }
+
+    mesh->indices = cgltfReadIndices(prim.indices);
+
+    if (tangents.empty() && !mesh->indices.empty()) {
+        knot::calculateMeshTangents(mesh->vertices, mesh->indices);
+    }
+
+    mesh->indexCount = static_cast<unsigned int>(mesh->indices.size());
+    mesh->setup();
+
+    return mesh;
+}
+
+/** @brief Creates a PbrMaterial from a cgltf_material. */
+std::shared_ptr<knot::PbrMaterial> cgltfMakeMaterial(const cgltf_material* mat, const std::string& gltfDir,
+                                                     std::unordered_map<std::string, unsigned int>& texCache, std::shared_ptr<knot::Shader> shader) {
+    glm::vec3 albedoColor(1.0f);
+    float metallicFactor = 1.0f;
+    float roughnessFactor = 1.0f;
+
+    unsigned int albedoMap = 0;
+    unsigned int metallicMap = 0;
+    unsigned int roughnessMap = 0;
+    unsigned int normalMap = 0;
+    unsigned int aoMap = 0;
+
+    if (mat && mat->has_pbr_metallic_roughness) {
+        const cgltf_pbr_metallic_roughness& pbr = mat->pbr_metallic_roughness;
+        albedoColor = glm::vec3(pbr.base_color_factor[0], pbr.base_color_factor[1], pbr.base_color_factor[2]);
+        metallicFactor = pbr.metallic_factor;
+        roughnessFactor = pbr.roughness_factor;
+        albedoMap = cgltfLoadTexture(pbr.base_color_texture, gltfDir, texCache, -1, albedoColor);
+        metallicMap = cgltfLoadTexture(pbr.metallic_roughness_texture, gltfDir, texCache, 2, glm::vec3(metallicFactor));
+        roughnessMap = cgltfLoadTexture(pbr.metallic_roughness_texture, gltfDir, texCache, 1, glm::vec3(roughnessFactor));
+    }
+
+    if (mat) {
+        normalMap = cgltfLoadTexture(mat->normal_texture, gltfDir, texCache);
+        aoMap = cgltfLoadTexture(mat->occlusion_texture, gltfDir, texCache);
+    }
+
+    return std::make_shared<knot::PbrMaterial>(shader, albedoColor, metallicFactor, roughnessFactor, 1.0f, albedoMap, metallicMap, roughnessMap,
+                                               aoMap, normalMap);
+}
+
+} // anonymous namespace
+
+std::shared_ptr<Model> loadModelGLTF(const std::string& filePath, std::shared_ptr<Shader> pbrShader) {
+    if (!pbrShader) {
+        std::cerr << "[Error] GLTF: A PBR shader is required\n";
+        return nullptr;
+    }
+
+    cgltf_options options{};
+    cgltf_data* data = nullptr;
+
+    if (cgltf_parse_file(&options, filePath.c_str(), &data) != cgltf_result_success) {
+        std::cerr << "[Error] GLTF: Failed to parse file: " << filePath << "\n";
+        return nullptr;
+    }
+
+    if (cgltf_load_buffers(&options, data, filePath.c_str()) != cgltf_result_success) {
+        std::cerr << "[Error] GLTF: Failed to load buffers: " << filePath << "\n";
+        cgltf_free(data);
+        return nullptr;
+    }
+
+    const std::string gltfDir = std::filesystem::path(filePath).parent_path().string();
+    std::unordered_map<std::string, unsigned int> texCache;
+
+    auto model = std::make_shared<Model>();
+
+    for (cgltf_size mi = 0; mi < data->meshes_count; ++mi) {
+        const cgltf_mesh& gltfMesh = data->meshes[mi];
+
+        for (cgltf_size pi = 0; pi < gltfMesh.primitives_count; ++pi) {
+            auto mesh = cgltfPrimitiveToMesh(gltfMesh.primitives[pi]);
+            if (!mesh)
+                continue;
+
+            auto material = cgltfMakeMaterial(gltfMesh.primitives[pi].material, gltfDir, texCache, pbrShader);
+            model->subMeshes.emplace_back(std::move(mesh), std::move(material));
+        }
+    }
+
+    cgltf_free(data);
+
+    if (model->subMeshes.empty()) {
+        std::cerr << "[Error] GLTF: No triangle primitives found in: " << filePath << "\n";
+        return nullptr;
+    }
+
+    model->calculateBounds();
+    return model;
+}
+
+std::vector<std::shared_ptr<Object>> loadSceneGLTF(const std::string& filePath, std::shared_ptr<Shader> pbrShader) {
+    if (!pbrShader) {
+        std::cerr << "[Error] GLTF: A PBR shader is required\n";
+        return {};
+    }
+
+    cgltf_options options{};
+    cgltf_data* data = nullptr;
+
+    if (cgltf_parse_file(&options, filePath.c_str(), &data) != cgltf_result_success) {
+        std::cerr << "[Error] GLTF: Failed to parse file: " << filePath << "\n";
+        return {};
+    }
+
+    if (cgltf_load_buffers(&options, data, filePath.c_str()) != cgltf_result_success) {
+        std::cerr << "[Error] GLTF: Failed to load buffers: " << filePath << "\n";
+        cgltf_free(data);
+        return {};
+    }
+
+    const std::string gltfDir = std::filesystem::path(filePath).parent_path().string();
+    std::unordered_map<std::string, unsigned int> texCache;
+
+    std::vector<std::shared_ptr<Object>> objects;
+
+    const cgltf_scene* scene = data->scene;
+    if (!scene && data->scenes_count > 0)
+        scene = &data->scenes[0];
+
+    if (!scene) {
+        std::cerr << "[Warning] GLTF: No scenes found in: " << filePath << "\n";
+        cgltf_free(data);
+        return {};
+    }
+
+    // Iterative DFS traversal with accumulated parent world transform
+    struct NodeEntry {
+        const cgltf_node* node;
+        glm::mat4 parentWorld;
+    };
+
+    std::vector<NodeEntry> stack;
+    stack.reserve(64);
+
+    for (cgltf_size ri = 0; ri < scene->nodes_count; ++ri) {
+        stack.push_back({scene->nodes[ri], glm::mat4(1.0f)});
+    }
+
+    while (!stack.empty()) {
+        auto [node, parentWorld] = stack.back();
+        stack.pop_back();
+
+        if (!node)
+            continue;
+
+        // Build local matrix
+        glm::mat4 localMatrix(1.0f);
+        if (node->has_matrix) {
+            std::memcpy(&localMatrix[0][0], node->matrix, sizeof(float) * 16);
+        } else {
+            glm::vec3 t(0.0f), s(1.0f);
+            glm::quat r(1.0f, 0.0f, 0.0f, 0.0f);
+
+            if (node->has_translation)
+                t = glm::vec3(node->translation[0], node->translation[1], node->translation[2]);
+            if (node->has_rotation)
+                r = glm::quat(node->rotation[3], node->rotation[0], node->rotation[1], node->rotation[2]);
+            if (node->has_scale)
+                s = glm::vec3(node->scale[0], node->scale[1], node->scale[2]);
+
+            localMatrix = glm::translate(glm::mat4(1.0f), t) * glm::mat4_cast(r) * glm::scale(glm::mat4(1.0f), s);
+        }
+
+        const glm::mat4 worldMatrix = parentWorld * localMatrix;
+
+        // Push children first (reversed so left-to-right traversal order is preserved)
+        for (cgltf_size ci = node->children_count; ci > 0; --ci) {
+            stack.push_back({node->children[ci - 1], worldMatrix});
+        }
+
+        if (!node->mesh)
+            continue;
+
+        const cgltf_mesh& gltfMesh = *node->mesh;
+        auto model = std::make_shared<Model>();
+
+        for (cgltf_size pi = 0; pi < gltfMesh.primitives_count; ++pi) {
+            auto mesh = cgltfPrimitiveToMesh(gltfMesh.primitives[pi]);
+            if (!mesh)
+                continue;
+
+            auto material = cgltfMakeMaterial(gltfMesh.primitives[pi].material, gltfDir, texCache, pbrShader);
+            model->subMeshes.emplace_back(std::move(mesh), std::move(material));
+        }
+
+        if (model->subMeshes.empty())
+            continue;
+
+        model->calculateBounds();
+
+        // Decompose world matrix into T / R / S (approximate for TRS nodes)
+        auto obj = std::make_shared<Object>(std::move(model));
+
+        obj->position = glm::vec3(worldMatrix[3]);
+
+        glm::vec3 col0 = glm::vec3(worldMatrix[0]);
+        glm::vec3 col1 = glm::vec3(worldMatrix[1]);
+        glm::vec3 col2 = glm::vec3(worldMatrix[2]);
+
+        obj->scale = glm::vec3(glm::length(col0), glm::length(col1), glm::length(col2));
+
+        if (obj->scale.x > 0.0f && obj->scale.y > 0.0f && obj->scale.z > 0.0f) {
+            glm::mat3 rotMat(col0 / obj->scale.x, col1 / obj->scale.y, col2 / obj->scale.z);
+            obj->rotation = glm::quat_cast(rotMat);
+        }
+
+        if (node->name)
+            obj->setGroup(node->name);
+
+        objects.push_back(std::move(obj));
+    }
+
+    cgltf_free(data);
+
+    if (objects.empty())
+        std::cerr << "[Warning] GLTF: No mesh nodes found in scene: " << filePath << "\n";
+
+    return objects;
+}
+
 } // namespace knot

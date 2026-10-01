@@ -12,7 +12,7 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 uniform mat4 lightSpaceMatrix;
-uniform bool u_IsInstanced;
+uniform bool isInstanced;
 
 out vec3 FragPos;
 out vec2 TexCoords;
@@ -21,8 +21,8 @@ out mat3 TBN;
 out vec4 LightSpaceFragPos;
 
 void main() {
-    // u_IsInstanced 플래그에 따라 적용할 modelMatrix 결정
-    mat4 modelMatrix = u_IsInstanced ? instanceModel : model;
+    // isInstanced 플래그에 따라 적용할 modelMatrix 결정
+    mat4 modelMatrix = isInstanced ? instanceModel : model;
 
     mat3 normalMatrix = mat3(transpose(inverse(modelMatrix)));
 

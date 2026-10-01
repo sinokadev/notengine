@@ -27,6 +27,9 @@ struct Mesh {
     /** @brief Triangle index data retained on the CPU. */
     std::vector<unsigned int> indices;
 
+    /** @brief Local bounding-box center, refreshed by setup(), for transparency sorting. */
+    glm::vec3 boundsCenter{0.0f};
+
     /** @brief OpenGL vertex-array object. */
     unsigned int vao = 0;
     /** @brief OpenGL vertex-buffer object. */
