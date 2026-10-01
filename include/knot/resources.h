@@ -662,6 +662,9 @@ public:
 /** @brief Omnidirectional point light used by the PBR renderer. */
 class PbrPointLight : public Light {
 public:
+    /** @brief Whether this light casts shadows. Lighting remains active when false. */
+    bool castsShadow = true;
+
     /** @brief Creates a point light at @p pos with color @p col and brightness @p bright. */
     PbrPointLight(glm::vec3 pos = glm::vec3(0.0f), glm::vec3 col = glm::vec3(1.0f), float bright = 1.0f) : Light(col, bright, pos) {
     }

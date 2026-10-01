@@ -1,22 +1,8 @@
-/*
- * Copyright (c) 2026 SinokaDev
- * * This file contains code derived from Google's Filament project.
- * Original code Copyright Google LLC.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 #version 430 core
 out vec4 FragColor;
+
+// 0: direct draw, 1: opaque fragments, 2: translucent fragments.
+uniform int alphaPass;
 
 in vec3 FragPos;
 in vec3 Normal;
@@ -26,7 +12,6 @@ in vec4 LightSpaceFragPos;
 
 // structs and uniforms
 
-// dir lightColorRaw
 struct DirLight {
     vec3 direction;
     vec3 ambient;
@@ -35,7 +20,6 @@ struct DirLight {
 };
 uniform DirLight dirLight;
 
-// point lights
 struct PointLight {
     vec4 position;
     vec4 color;
@@ -51,7 +35,6 @@ layout(std430, binding = 0) readonly buffer LightBuffer {
 
 uniform int activePointLightCount;
 
-// material
 struct Material {
     sampler2D albedoMap;
     sampler2D normalMap;
@@ -61,77 +44,110 @@ struct Material {
 };
 uniform Material material;
 
-// just uniform
 uniform vec3 cameraPos;
 uniform float maxReflectionLOD;
 uniform float ambientIntensity;
 uniform sampler2D brdfLUT;
 uniform sampler2D shadowMap;
+uniform samplerCubeArray pointShadowMap;
+uniform int pointShadowCount;
 uniform samplerCube irradianceMap;
 uniform samplerCube prefilterMap;
 
 #define PI 3.14159265359
 
-float pow5(float x) {
-    float x2 = x * x;
-    return x2 * x2 * x;
+float computeMicrofacetDistribution(vec3 surfaceNormal, vec3 halfVector, float glossiness) {
+    float roughnessSquared = glossiness * glossiness;
+    float roughnessFourth = roughnessSquared * roughnessSquared;
+    float normalDotHalf = max(dot(surfaceNormal, halfVector), 0.0);
+    float normalDotHalfSq = normalDotHalf * normalDotHalf;
+
+    float numerator = roughnessFourth;
+    float denominator = (normalDotHalfSq * (roughnessFourth - 1.0) + 1.0);
+    denominator = PI * denominator * denominator;
+
+    return numerator / max(denominator, 0.000001);
 }
 
-float PREVENT_DIV0(float num, float den, float alsh) {
-    return num / max(den, alsh);
+float computeGeometryAttenuationFactor(float angleDot, float glossiness) {
+    float adjustedRoughness = (glossiness + 1.0);
+    float kParam = (adjustedRoughness * adjustedRoughness) / 8.0;
+
+    float numerator = angleDot;
+    float denominator = angleDot * (1.0 - kParam) + kParam;
+
+    return numerator / max(denominator, 0.000001);
 }
 
-float D_GGX(float alpha, float NoH, const vec3 h) {
-    float oneMinusNoHSquared = 1.0 - NoH * NoH;
+float computeCombinedShadowMask(vec3 surfaceNormal, vec3 viewDir, vec3 lightDir, float glossiness) {
+    float viewCos = max(dot(surfaceNormal, viewDir), 0.0);
+    float lightCos = max(dot(surfaceNormal, lightDir), 0.0);
+    float geoView = computeGeometryAttenuationFactor(viewCos, glossiness);
+    float geoLight = computeGeometryAttenuationFactor(lightCos, glossiness);
 
-    float a = NoH * alpha;
-    float k = min(alpha / (oneMinusNoHSquared + a * a), 453.5);
-    float d = k * (k * (1.0 / PI));
-    return d;
+    return geoView * geoLight;
 }
 
-float V_SmithGGXCorrelated(float alpha, float NoV, float NoL) {
-    float a2 = alpha;
-    float lambdaV = NoL * sqrt((NoV - a2 * NoV) * NoV + a2);
-    float lambdaL = NoV * sqrt((NoL - a2 * NoL) * NoL + a2);
-    float v = PREVENT_DIV0(0.5, lambdaV + lambdaL, 0.0000077);
-    return v;
+vec3 computeFresnelResponse(float cosTheta, vec3 baseReflectivity) {
+    return baseReflectivity + (1.0 - baseReflectivity) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-vec3 F_Schlick(const vec3 f0, float f90, float VoH) {
-    return f0 + (f90 - f0) * pow5(1.0 - VoH);
+vec3 computeFresnelWithRoughness(float cosTheta, vec3 baseReflectivity, float glossiness) {
+    return baseReflectivity + (max(vec3(1.0 - glossiness), baseReflectivity) - baseReflectivity) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-float Fd_Lambert() {
-    return 1.0 / PI;
+vec3 evaluateSurfaceLighting(vec3 surfaceNormal, vec3 viewDir, vec3 lightDir, vec3 lightColor, vec3 surfaceAlbedo, float metalness, float glossiness,
+                             vec3 baseReflectivity, float shadowFactor) {
+    vec3 halfVector = normalize(viewDir + lightDir);
+    float normalDotView = max(dot(surfaceNormal, viewDir), 0.0001);
+    float normalDotLight = max(dot(surfaceNormal, lightDir), 0.0);
+    float halfDotView = max(dot(halfVector, viewDir), 0.0);
+
+    float microfacetDist = computeMicrofacetDistribution(surfaceNormal, halfVector, glossiness);
+    float geometryMask = computeCombinedShadowMask(surfaceNormal, viewDir, lightDir, glossiness);
+    vec3 fresnelTerm = computeFresnelResponse(halfDotView, baseReflectivity);
+
+    vec3 specularNumerator = microfacetDist * geometryMask * fresnelTerm;
+    float specularDenominator = 4.0 * normalDotView * normalDotLight + 0.0001;
+    vec3 specularReflectance = specularNumerator / specularDenominator;
+
+    vec3 specularWeight = fresnelTerm;
+    vec3 diffuseWeight = vec3(1.0) - specularWeight;
+    diffuseWeight *= (1.0 - metalness);
+
+    return (diffuseWeight * (surfaceAlbedo / PI) + specularReflectance) * lightColor * normalDotLight * (1.0 - shadowFactor);
 }
 
-vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness) {
-    return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
-}
+float calcPointShadow(int index, vec3 normal, vec3 lightDir) {
+    int shadowLayer = int(pointLights[index].position.w);
+    if (shadowLayer < 0 || shadowLayer >= pointShadowCount)
+        return 0.0;
+    vec3 fromLight = FragPos - pointLights[index].position.xyz;
+    float distanceToLight = length(fromLight);
+    float farPlane = max(0.2, pointLights[index].radius);
+    if (distanceToLight <= 0.000001 || distanceToLight >= farPlane)
+        return 0.0;
+    float bias = max(0.1 * (1.0 - dot(normal, lightDir)), 0.01);
 
-vec3 calcPbrLight(vec3 N, vec3 V, vec3 L, vec3 lightColor, vec3 albedo, float metallic, float alphaRoughness, vec3 f0, float shadow) {
-    vec3 H = normalize(V + L);
-    float NoV = max(dot(N, V), 0.0001);
-    float NoL = max(dot(N, L), 0.0);
-    float NoH = max(dot(N, H), 0.0);
-    float VoH = max(dot(V, H), 0.0);
-
-    float D = D_GGX(alphaRoughness, NoH, H);
-    float V_func = V_SmithGGXCorrelated(alphaRoughness, NoV, NoL);
-    vec3 F = F_Schlick(f0, 1.0, VoH);
-
-    vec3 Fr = D * V_func * F;
-    vec3 Fd = albedo * Fd_Lambert();
-
-    vec3 kD = (vec3(1.0) - F) * (1.0 - metallic);
-
-    return ((kD * Fd + Fr) * lightColor * NoL) * (1.0 - shadow);
+    // Sample a 3x3 neighborhood in the plane perpendicular to the cube lookup.
+    vec3 direction = fromLight / distanceToLight;
+    vec3 up = abs(direction.y) < 0.99 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+    vec3 tangent = normalize(cross(up, direction));
+    vec3 bitangent = cross(direction, tangent);
+    float texelSize = 2.0 / float(textureSize(pointShadowMap, 0).x);
+    float shadow = 0.0;
+    for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
+            vec3 sampleDirection = direction + (tangent * float(x) + bitangent * float(y)) * texelSize;
+            float closestDepth = texture(pointShadowMap, vec4(sampleDirection, float(shadowLayer))).r * farPlane;
+            shadow += distanceToLight - bias > closestDepth ? 1.0 : 0.0;
+        }
+    }
+    return shadow / 9.0;
 }
 
 float calcShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
     vec3 projCoords = lightSpaceFragPos.xyz / lightSpaceFragPos.w;
-
     projCoords = projCoords * 0.5 + 0.5;
 
     if (projCoords.z > 1.0) {
@@ -139,11 +155,9 @@ float calcShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
     }
 
     float closestDepth = texture(shadowMap, projCoords.xy).r;
-
     float currentDepth = projCoords.z;
 
     vec3 N = normalize(normal);
-
     vec3 L = normalize(lightDir);
 
     float bias = max(0.005 * (1.0 - dot(N, L)), 0.0005);
@@ -160,32 +174,36 @@ float calcShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
 
     return shadow;
 }
+
 void main() {
     vec3 V = normalize(cameraPos - FragPos);
 
-    // Texture Map
-    vec3 albedo = texture(material.albedoMap, TexCoords).rgb;
+    // Texture Maps
+    vec4 albedoSample = texture(material.albedoMap, TexCoords);
+    if (albedoSample.a <= 0.0 || (alphaPass == 1 && albedoSample.a < 1.0) || (alphaPass == 2 && albedoSample.a >= 1.0)) {
+        discard;
+    }
+    vec3 albedo = albedoSample.rgb;
     float metallic = texture(material.metallicMap, TexCoords).r;
     float roughness = texture(material.roughnessMap, TexCoords).r;
     float ao = texture(material.aoMap, TexCoords).r;
 
-    // Normal Map
+    // Normal Mapping
     vec3 normalMap = texture(material.normalMap, TexCoords).rgb;
     vec3 N = normalize(normalMap * 2.0 - 1.0);
     N = normalize(TBN * N);
 
-    float alphaRoughness = max(roughness * roughness, 0.002);
-
-    // F0
-    vec3 f0 = mix(vec3(0.04), albedo, metallic);
+    // Base Reflectivity (F0)
+    vec3 F0 = mix(vec3(0.04), albedo, metallic);
 
     // Directional Light
     vec3 L_dir = normalize(-dirLight.direction);
-    vec3 directLighting = calcPbrLight(N, V, L_dir, dirLight.diffuse, albedo, metallic, alphaRoughness, f0, calcShadow(LightSpaceFragPos, N, L_dir));
+    vec3 directLighting =
+        evaluateSurfaceLighting(N, V, L_dir, dirLight.diffuse, albedo, metallic, roughness, F0, calcShadow(LightSpaceFragPos, N, L_dir));
 
-    // Fresnel
+    // Fresnel for IBL
     float NoV = max(dot(N, V), 0.0);
-    vec3 kS = fresnelSchlickRoughness(NoV, f0, roughness);
+    vec3 kS = computeFresnelWithRoughness(NoV, F0, roughness);
     vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 
     // Diffuse IBL
@@ -199,10 +217,10 @@ void main() {
     vec2 brdf = texture(brdfLUT, vec2(NoV, roughness)).rg;
     vec3 specular = prefilteredColor * (kS * brdf.x + brdf.y);
 
-    // Ambient
+    // Ambient Lighting
     vec3 ambient = (kD * diffuse + specular) * ao * ambientIntensity;
 
-    // Point Light
+    // Point Lights
     for (int i = 0; i < activePointLightCount; ++i) {
         vec3 lightPos = pointLights[i].position.xyz;
         vec3 lightColorRaw = pointLights[i].color.rgb;
@@ -211,27 +229,28 @@ void main() {
         vec3 L_point = normalize(lightPos - FragPos);
         float dist = length(lightPos - FragPos);
 
-        // 기본 역제곱 감쇄
+        // Basic Inverse-Square Attenuation
         float attenuation = 1.0 / (dist * dist + 0.01);
 
-        // 부드러운 감쇄 창 함수
+        // Smooth Windowing Attenuation Function
         float factor = dist / pointLights[i].radius;
         float windowing = clamp(1.0 - factor * factor * factor * factor, 0.0, 1.0);
         windowing *= windowing;
         attenuation *= windowing;
 
-        // 최종 광도 계산
+        // Final Light Intensity Calculation
         vec3 lightColor = lightColorRaw * brightness * attenuation;
 
-        directLighting += calcPbrLight(N, V, L_point, lightColor, albedo, metallic, alphaRoughness, f0, 0.0);
+        directLighting += evaluateSurfaceLighting(N, V, L_point, lightColor, albedo, metallic, roughness, F0, calcPointShadow(i, N, L_point));
     }
+
     vec3 finalColor = ambient + directLighting;
 
-    // Reinhard 톤매핑
+    // Reinhard Tone Mapping
     finalColor = finalColor / (finalColor + vec3(1.0));
 
-    // 감마 보정
+    // Gamma Correction
     finalColor = pow(finalColor, vec3(1.0 / 2.2));
 
-    FragColor = vec4(finalColor, 1.0);
+    FragColor = vec4(finalColor, albedoSample.a);
 }

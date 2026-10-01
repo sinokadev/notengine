@@ -51,7 +51,7 @@ Scene types
 
 .. doxygenclass:: knot::PbrPointLight
    :members:
-
+   
 .. doxygenclass:: knot::DirLight
    :members:
 

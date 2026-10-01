@@ -20,8 +20,8 @@ struct VisibleInstance {
 };
 /** @brief GPU layout for a PBR point light stored in the light SSBO. */
 struct GPUMovingPointLight {
-    /** @brief Position in xyz; w is padding. */
-    glm::vec4 position; // [x, y, z, w(Any data or Padding)]
+    /** @brief Position in xyz; w is the shadow layer, or -1 when unshadowed. */
+    glm::vec4 position;
     /** @brief RGB color and intensity in w. */
     glm::vec4 color; // [r, g, b, brightness]
     /** @brief Influence radius derived from light intensity. */
@@ -78,6 +78,12 @@ public:
     /** @brief Draws a cubemap skybox centered on the camera. */
     void renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio);
     /** @brief Performs frustum culling, batching, and rendering for a scene.
+     *  Built-in shaders draw opaque fragments first, then translucent fragments
+     *  sorted by sub-mesh center with depth writes disabled. Intersecting surfaces
+     *  and triangles within a single sub-mesh are not individually sorted.
+     *  The translucent pass adds one draw per visible sub-mesh instance, including
+     *  those whose fragments turn out to be opaque. Custom shaders can opt in by
+     *  implementing alphaPass (0 = all, 1 = opaque, 2 = translucent).
      *  @return false when the renderer has not been initialized. */
     bool renderScene(Scene& scene, float aspectRatio);
     /** @brief Renders a Shadows. */
@@ -93,68 +99,60 @@ public:
     void renderInstanced(const std::shared_ptr<Model>& model, const std::vector<VisibleInstance>& instances, const Camera& camera, float aspectRatio);
 
 private:
-    /**
-     * @brief Constructs the global renderer instance.
-     *
-     * Construction is private to enforce the singleton pattern.
-     */
     Renderer() = default;
 
-    /** @brief Whether the renderer has completed GPU initialization. */
+    void renderObjects(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, float aspectRatio);
+    void renderShadowObjects(const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups,
+                             const std::shared_ptr<Shader>& shader);
+    void renderDirShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups);
+    void renderPointShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups);
+
     bool initialized = false;
 
-    /** @brief Shader-storage buffer containing point-light data. */
     GLuint lightSSBO = 0;
 
-    /** @brief Instance transform vertex buffer. */
     unsigned int instanceVBO = 0;
 
-    /** @brief Minimum instance count required to use instanced rendering. */
     static constexpr std::size_t INSTANCE_THRESHOLD = 4;
 
-    /** @brief Internal identifier used for the skybox shader resource. */
     static constexpr unsigned int SKYBOX_SHADER_ID = 999999;
 
-    /** @brief Shared mesh used to render the skybox. */
     std::shared_ptr<Mesh> skyboxMesh;
 
-    /** @brief Shader used to render the skybox. */
     std::shared_ptr<Shader> skyboxShader;
 
-    /** @brief Internal identifier used for the BRDF shader resource. */
     static constexpr unsigned int BRDF_SHADER_ID = 999998;
 
     static constexpr float AMBIENT_INTENSITY = 1.0f;
     static constexpr unsigned int SHADOW_RESOLUTION = 2048;
 
-    /** @brief Precomputed BRDF integration lookup texture. */
     GLuint brdfLUTTexture = 0;
 
-    /**
-     * @brief Generates the BRDF integration lookup texture.
-     */
     void generateBRDFLUT();
 
-    /**
-     * @brief Renders the internal fullscreen quad.
-     */
     void renderQuad();
 
-    /** @brief Vertex array object for the fullscreen quad. */
     GLuint quadVAO = 0;
 
-    /** @brief Vertex buffer object for the fullscreen quad. */
     GLuint quadVBO = 0;
 
-    unsigned int depthMapFBO;
-    unsigned int depthMap;
+    unsigned int depthMapFBO = 0;
+    unsigned int depthMap = 0;
+    unsigned int pointDepthFBO = 0;
+    unsigned int pointDepthMap = 0;
+    int pointShadowCount = 0;
+    int pointShadowCapacity = 0;
+    static constexpr int MAX_POINT_SHADOWS = 4;
+    static constexpr float MIN_POINT_SHADOW_CONTRIBUTION = 0.01f;
+    std::vector<const PbrPointLight*> shadowedPointLights;
 
     static constexpr unsigned int SHADOW_SHADER_ID = 999997;
 
-    std::shared_ptr<Shader> shadowShader;
+    std::shared_ptr<Shader> pointShadowShader;
+    std::shared_ptr<Shader> dirShadowShader;
     glm::mat4 lightSpaceMatrix{1.0f};
 
-    int framebufferWidth;
-    int framebufferHeight;
+    int framebufferWidth = 1;
+    int framebufferHeight = 1;
 };
 } // namespace knot

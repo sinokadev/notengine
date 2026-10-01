@@ -44,6 +44,14 @@ int main() {
         }
         input["objects"][0].erase("pivot");check(load(scene,input),"Optional pivot rejected");
         check(scene.getObjectManager().getObject(12)->pivot==glm::vec3(0),"Default pivot not zero");
+        auto lightInput = input;
+        lightInput["lights"] = Json::array({{{"type","PbrPointLight"}},
+            {{"type","PbrPointLight"},{"castsShadow",false},{"intensity",3.0}}});
+        check(load(scene,lightInput),"Point shadow option load failed");
+        const auto lights = scene.getLightManager().getPointLights();
+        check(lights.size()==2 && lights[0]->castsShadow && !lights[1]->castsShadow,
+              "Point shadow default or explicit false not loaded");
+        check(lights[1]->intensity==3.0f,"Unshadowed light lost intensity");
         // Exercise the actual loader without requiring OpenGL: a missing OBJ
         // reports the resolved path before GPU allocation can take place.
         Json missing = {{"version",8},{"meshes",Json::array({"missing-model.obj"})}};

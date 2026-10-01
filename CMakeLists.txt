@@ -18,7 +18,36 @@ endif()
 set(GAME_VERSION_MAJOR 0)
 set(GAME_VERSION_MINOR 2)
 set(GAME_VERSION_PATCH 1)
-set(GAME_VERSION_STRING "${GAME_VERSION_MAJOR}.${GAME_VERSION_MINOR}.${GAME_VERSION_PATCH}")
+
+find_package(Git QUIET)
+
+if(GIT_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_BRANCH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_COMMIT_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+endif()
+
+if(NOT GIT_BRANCH)
+    set(GIT_BRANCH "unknown")
+endif()
+
+if(NOT GIT_COMMIT_HASH)
+    set(GIT_COMMIT_HASH "nogit")
+endif()
+
+set(GAME_VERSION_STRING "${GAME_VERSION_MAJOR}.${GAME_VERSION_MINOR}.${GAME_VERSION_PATCH}-${GIT_BRANCH}+${GIT_COMMIT_HASH}")
 
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/knot/version.h"
@@ -39,6 +68,7 @@ add_library(notengine STATIC ${SOURCES})
 set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
 set(GENERATED_HEADER "${CMAKE_CURRENT_BINARY_DIR}/GeneratedShaders.h")
 file(GLOB SHADER_FILES CONFIGURE_DEPENDS "${SHADER_DIR}/*.glsl" "${SHADER_DIR}/*.vert" "${SHADER_DIR}/*.frag")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${SHADER_FILES})
 
 function(embed_shaders_to_header input_files output_header)
     set(header_content "#pragma once\n#include <string>\n#include <unordered_map>\n\nnamespace Shaders {\n")
@@ -136,6 +166,15 @@ set_target_properties(test_submesh PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${C
 add_executable(test_group EXCLUDE_FROM_ALL demo/test_group.cpp)
 target_link_libraries(test_group PRIVATE notengine)
 set_target_properties(test_group PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+
+add_executable(test_point_shadows EXCLUDE_FROM_ALL demo/test_point_shadows.cpp)
+target_link_libraries(test_point_shadows PRIVATE notengine)
+
+foreach(gltf_demo IN ITEMS gltf_model gltf_scene test_seno_gltf)
+    add_executable(${gltf_demo} EXCLUDE_FROM_ALL demo/${gltf_demo}.cpp)
+    target_link_libraries(${gltf_demo} PRIVATE notengine)
+    set_target_properties(${gltf_demo} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+endforeach()
 
 # Install configuration
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Install.cmake")
