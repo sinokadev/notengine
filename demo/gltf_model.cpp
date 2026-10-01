@@ -32,7 +32,7 @@ int main() {
     // ----------------------------------------------------------------
     scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
-    auto pbrShader = scene.getResourceManager().getShader("pbrShader");
+    auto pbrShader = scene.getShaderManager().getShader("pbrShader");
 
     // ----------------------------------------------------------------
     // Cube — loadModelGLTF로 로드 (서브메시+PBR 머티리얼 포함)

@@ -96,7 +96,7 @@ LightManager& Scene::getLightManager() {
     return lightManager;
 }
 
-ResourceManager& Scene::getResourceManager() {
+ShaderManager& Scene::getShaderManager() {
     return resourceManager;
 }
 
@@ -656,7 +656,7 @@ bool Scene::loadSeno(const std::string& path) {
 bool Scene::loadGLTF(const std::string& path) {
     auto shader = resourceManager.getShader("pbrShader");
     if (!shader) {
-        std::cerr << "[Error] GLTF: pbrShader not found in ResourceManager\n";
+        std::cerr << "[Error] GLTF: pbrShader not found in ShaderManager\n";
         return false;
     }
 

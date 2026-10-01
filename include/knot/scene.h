@@ -31,7 +31,7 @@ public:
     /** @brief Returns the scene light manager. */
     LightManager& getLightManager();
     /** @brief Returns the scene shader resource manager. */
-    ResourceManager& getResourceManager();
+    ShaderManager& getShaderManager();
 
     /** @brief Returns the active camera. @pre A camera has been assigned. */
     Camera& getCamera();
@@ -89,7 +89,7 @@ public:
 private:
     ObjectManager objectManager;
     LightManager lightManager;
-    ResourceManager resourceManager;
+    ShaderManager resourceManager;
 
     UpdateCallback updateCallback;
 

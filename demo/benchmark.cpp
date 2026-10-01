@@ -42,7 +42,7 @@ int main() {
 
     auto mesh = knot::loadModelOBJ(knot::getAssetRoot() + "assets/notbox.obj");
 
-    auto shader = scene.getResourceManager().getShader("pbrShader");
+    auto shader = scene.getShaderManager().getShader("pbrShader");
 
     auto material = std::make_shared<knot::PbrMaterial>(shader, glm::vec3(1.0f), 0.2f, 0.0f, 1.0f);
 

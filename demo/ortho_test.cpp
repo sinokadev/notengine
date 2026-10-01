@@ -21,7 +21,7 @@ int main() {
 
     scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
-    auto shader = scene.getResourceManager().getShader("pbrShader");
+    auto shader = scene.getShaderManager().getShader("pbrShader");
 
     auto model = knot::loadModelOBJWithMTL(knot::getAssetRoot() + "assets/Untitled.obj", shader);
 
