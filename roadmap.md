@@ -55,7 +55,7 @@
 
 - [ ] resources.h 분리
 
-- [ ] Vulkan
+- [ ] sokol-gfx (https://github.com/floooh/sokol)
 
 - [x] Seno (ScEne format for NOt engine) 로딩
 
