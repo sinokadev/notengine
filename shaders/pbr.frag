@@ -115,7 +115,9 @@ vec3 evaluateSurfaceLighting(vec3 surfaceNormal, vec3 viewDir, vec3 lightDir, ve
     vec3 diffuseWeight = vec3(1.0) - specularWeight;
     diffuseWeight *= (1.0 - metalness);
 
-    return (diffuseWeight * (surfaceAlbedo / PI) + specularReflectance) * lightColor * normalDotLight * (1.0 - shadowFactor);
+    float clampedShadow = clamp(shadowFactor, 0.0, 1.0);
+
+    return (diffuseWeight * (surfaceAlbedo / PI) + specularReflectance) * lightColor * normalDotLight * (1.0 - clampedShadow);
 }
 
 float calcPointShadow(int index, vec3 normal, vec3 lightDir) {
