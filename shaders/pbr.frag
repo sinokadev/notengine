@@ -96,7 +96,7 @@ vec3 computeFresnelWithRoughness(float cosTheta, vec3 baseReflectivity, float gl
     return baseReflectivity + (max(vec3(1.0 - glossiness), baseReflectivity) - baseReflectivity) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-vec3 evaluateSurfaceLighting(vec3 surfaceNormal, vec3 viewDir, vec3 lightDir, vec3 lightColor, vec3 surfaceAlbedo, float metalness, float glossiness,
+vec3 calcPbrLight(vec3 surfaceNormal, vec3 viewDir, vec3 lightDir, vec3 lightColor, vec3 surfaceAlbedo, float metalness, float glossiness,
                              vec3 baseReflectivity, float shadowFactor) {
     vec3 halfVector = normalize(viewDir + lightDir);
     float normalDotView = max(dot(surfaceNormal, viewDir), 0.0001);
@@ -201,7 +201,7 @@ void main() {
     // Directional Light
     vec3 L_dir = normalize(-dirLight.direction);
     vec3 directLighting =
-        evaluateSurfaceLighting(N, V, L_dir, dirLight.diffuse, albedo, metallic, roughness, F0, calcShadow(LightSpaceFragPos, N, L_dir));
+        calcPbrLight(N, V, L_dir, dirLight.diffuse, albedo, metallic, roughness, F0, calcShadow(LightSpaceFragPos, N, L_dir));
 
     // Fresnel for IBL
     float NoV = max(dot(N, V), 0.0);
@@ -243,7 +243,7 @@ void main() {
         // Final Light Intensity Calculation
         vec3 lightColor = lightColorRaw * brightness * attenuation;
 
-        directLighting += evaluateSurfaceLighting(N, V, L_point, lightColor, albedo, metallic, roughness, F0, calcPointShadow(i, N, L_point));
+        directLighting += calcPbrLight(N, V, L_point, lightColor, albedo, metallic, roughness, F0, calcPointShadow(i, N, L_point));
     }
 
     vec3 finalColor = ambient + directLighting;

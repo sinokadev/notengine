@@ -27,15 +27,8 @@ int main() {
 
     knot::Scene scene;
 
-    // ----------------------------------------------------------------
-    // HDR 환경맵
-    // ----------------------------------------------------------------
     scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
-    // ----------------------------------------------------------------
-    // Sponza 씬을 Scene::loadGLTF로 로드
-    // 각 glTF 노드 → 독립된 knot::Object (노드 이름 → group)
-    // ----------------------------------------------------------------
     std::cout << "[Info] Loading Sponza scene...\n";
 
     if (!scene.loadGLTF(knot::getAssetRoot() + "assets/Sponza/glTF/Sponza.gltf")) {
@@ -46,15 +39,10 @@ int main() {
     const auto& objects = scene.getObjectManager().getObjects();
     std::cout << "[Info] Loaded " << objects.size() << " objects\n";
 
-    // ----------------------------------------------------------------
-    // 조명 — Sponza 실내에 어울리는 배치
-    // ----------------------------------------------------------------
-    // 태양광 (비스듬히 위에서)
     auto sunLight = std::make_shared<knot::DirLight>(glm::vec3(-0.4f, -1.0f, -0.3f), glm::vec3(0.05f), glm::vec3(1.0f, 0.97f, 0.9f), glm::vec3(1.0f));
     sunLight->intensity = 2.0f;
     scene.getLightManager().registerLight(sunLight);
 
-    // 실내 포인트 라이트 몇 개
     const std::vector<glm::vec3> lightPositions = {
         {0.0f, 5.0f, 0.0f}, {8.0f, 3.0f, 0.0f}, {-8.0f, 3.0f, 0.0f}, {0.0f, 3.0f, 4.0f}, {0.0f, 3.0f, -4.0f},
     };
@@ -63,16 +51,10 @@ int main() {
         scene.getLightManager().registerLight(pl);
     }
 
-    // ----------------------------------------------------------------
-    // 카메라 — Sponza 입구 근처에서 시작, far plane 넉넉하게
-    // ----------------------------------------------------------------
     auto camera = std::make_shared<knot::MovingCamera>(glm::vec3(0.0f, 2.0f, 0.0f), 60.0f, 0.05f, 500.0f);
-    camera->speed = 0.008f; // Sponza 크기가 크므로 속도 조정
+    camera->speed = 0.008f;
     scene.setCamera(camera);
 
-    // ----------------------------------------------------------------
-    // 입력 상태
-    // ----------------------------------------------------------------
     std::unordered_map<knot::ScanCode, bool> keys;
     float lastX = 640.0f;
     float lastY = 360.0f;
@@ -92,7 +74,6 @@ int main() {
                     ev.handled = true;
                 }
 
-                // F키: 씬 정보 출력
                 if (ev.key == knot::ScanCode::F) {
                     const auto& objs = scene.getObjectManager().getObjects();
                     std::cout << "[Info] Object count: " << objs.size() << "\n";
@@ -135,7 +116,6 @@ int main() {
         if (paused)
             return;
 
-        // Shift로 가속
         const float speedMul = keys[knot::ScanCode::LSHIFT] ? 4.0f : 1.0f;
 
         glm::vec3 moveDir(0.0f);

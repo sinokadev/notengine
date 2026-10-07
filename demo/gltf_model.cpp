@@ -27,16 +27,10 @@ int main() {
 
     knot::Scene scene;
 
-    // ----------------------------------------------------------------
-    // HDR 환경맵
-    // ----------------------------------------------------------------
     scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
     auto pbrShader = scene.getShaderManager().getShader("pbrShader");
 
-    // ----------------------------------------------------------------
-    // Cube — loadModelGLTF로 로드 (서브메시+PBR 머티리얼 포함)
-    // ----------------------------------------------------------------
     auto cubeModel = knot::loadModelGLTF(knot::getAssetRoot() + "assets/Cube/glTF/Cube.gltf", pbrShader);
 
     if (!cubeModel) {
@@ -50,24 +44,15 @@ int main() {
     cubeObj->setGroup("cube");
     scene.getObjectManager().registerObject(cubeObj);
 
-    // ----------------------------------------------------------------
-    // 조명
-    // ----------------------------------------------------------------
     auto dirLight = std::make_shared<knot::DirLight>(glm::vec3(-0.3f, -1.0f, -0.5f), glm::vec3(0.08f), glm::vec3(1.0f), glm::vec3(1.0f));
     scene.getLightManager().registerLight(dirLight);
 
     auto pointLight = std::make_shared<knot::PbrPointLight>(glm::vec3(0.0f, 3.0f, 3.0f), glm::vec3(1.0f, 0.95f, 0.85f), 5.0f);
     scene.getLightManager().registerLight(pointLight);
 
-    // ----------------------------------------------------------------
-    // 카메라
-    // ----------------------------------------------------------------
     auto camera = std::make_shared<knot::MovingCamera>(glm::vec3(0.0f, 0.5f, 6.0f));
     scene.setCamera(camera);
 
-    // ----------------------------------------------------------------
-    // 입력 상태
-    // ----------------------------------------------------------------
     std::unordered_map<knot::ScanCode, bool> keys;
     float lastX = 640.0f;
     float lastY = 360.0f;
@@ -90,7 +75,6 @@ int main() {
                 }
                 if (ev.key == knot::ScanCode::NUM_1) {
                     showCube = !showCube;
-                    // 표시 토글: 화면 밖으로 이동
                     cubeObj->position.y = showCube ? 0.0f : -9999.0f;
                     ev.handled = true;
                 }
@@ -126,7 +110,6 @@ int main() {
         if (paused)
             return;
 
-        // Cube: Y축 자동 회전
         cubeObj->rotation = glm::quat(glm::vec3(0.0f, totalTime * 0.8f, 0.0f));
 
         glm::vec3 moveDir(0.0f);

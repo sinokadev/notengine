@@ -512,9 +512,7 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
 
     // Sort globally across models and instances. Depth testing remains enabled,
     // but blended fragments must not prevent farther surfaces from contributing.
-    std::stable_sort(translucentDraws.begin(), translucentDraws.end(), [](const auto& a, const auto& b) {
-        return a.depth > b.depth;
-    });
+    std::stable_sort(translucentDraws.begin(), translucentDraws.end(), [](const auto& a, const auto& b) { return a.depth > b.depth; });
     glEnable(GL_BLEND);
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     glDepthMask(GL_FALSE);
@@ -666,8 +664,7 @@ void Renderer::renderShadowObjects(const std::unordered_map<const Model*, std::v
 
                 subMesh.mesh->setupInstanceAttributes(instanceVBO);
                 glBindVertexArray(subMesh.mesh->vao);
-                glDrawElementsInstanced(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr,
-                                        static_cast<GLsizei>(instanceData.size()));
+                glDrawElementsInstanced(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr, static_cast<GLsizei>(instanceData.size()));
             }
         } else {
             shader->set("isInstanced", false);
@@ -713,7 +710,7 @@ void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Mo
     }
     const int count = static_cast<int>(shadowedPointLights.size());
 
-    constexpr int POINT_SHADOW_RES = 1024; 
+    constexpr int POINT_SHADOW_RES = 1024;
 
     glActiveTexture(GL_TEXTURE12);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointDepthMap);
