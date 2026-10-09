@@ -5,7 +5,7 @@
 
 > Everything as code!
 
-A code-first game engine built on OpenGL, empowering you to build everything from scratch with clean, simple code.
+A code-first game engine built on sokol_gfx (OpenGL 4.3 backend), empowering you to build everything from scratch with clean, simple code.
 
 **PRs and issues are welcome!**
 
@@ -112,3 +112,25 @@ Install `script/blender_seno/seno_exporter.py` as a Blender add-on, then choose
    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=sinokadev/notengine&type=date&legend=top-left&sealed_token=8zWNyxLJDIcZDmt26iDQup4hkwqqKFTk3B4h7SQ5zy_a2ScOp5yboWcm3Ad0ZK_6keAOYbcNYMYg6wJABSGtK7avPjye2IB7HdHTQveh29N1xXwjeZ1_BzkTUBoqN7wmTXuKy24hTpKRecVwiE2SQrLqu4RkcJM7b6GxURYu6Wjmb09hycdMUE59cKZo" />
  </picture>
 </a>
+
+### Rendering API
+
+GPU buffers, textures, shaders, pipelines and render passes use the vendored
+`sokol_gfx.h`; GLFW owns the window and OpenGL context. The current backend
+requires OpenGL 4.3 for point-light storage buffers. Other sokol backends are
+not enabled by this migration.
+
+`Engine` handles the frame lifecycle. When using `Renderer` directly, make the
+GLFW context current, call `init()`, and pair `beginFrame(width, height, color)`
+with `endFrame()` before swapping buffers. Destroy scenes before shutting down
+the renderer, and shut down the renderer before destroying the context.
+
+Texture IDs now identify sokol texture views. Use `destroyTexture(id)` to release
+the view and its image; `createTexture(pixels, width, height)` accepts RGBA8 data.
+Mesh buffers are exposed as `vertexBuffer` and `indexBuffer`. Shader uniforms
+and material bindings are staged until `Shader::draw()` applies the pipeline.
+Custom GLSL sources must supply `ShaderSource::interface` reflection metadata
+with native, tightly packed uniform blocks and the engine's vertex layout.
+
+The Seno editor retains its ImGui OpenGL backend and resets sokol's state cache
+at that integration boundary. Its scene viewport uses the sokol renderer.

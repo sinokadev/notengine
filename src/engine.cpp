@@ -1,7 +1,6 @@
 #include <knot/engine.h>
 #include <knot/version.h>
 
-#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
 #include <iostream>
@@ -38,7 +37,7 @@ bool Engine::init(int width, int height, const std::string& title, const std::st
         return false;
     }
 
-    if (!Renderer::get().init(window.getProcAddress())) {
+    if (!Renderer::get().init()) {
         shutdown();
         return false;
     }
@@ -119,10 +118,6 @@ int Engine::run() {
 }
 
 void Engine::shutdown() {
-    if (!initialized) {
-        return;
-    }
-
     if (scene) {
         scene->shutdown();
         scene = nullptr;
@@ -154,13 +149,14 @@ void Engine::update() {
 }
 
 void Engine::render() {
-    glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    Renderer::get().beginFrame(window.getFramebufferWidth(), window.getFramebufferHeight());
-    Renderer::get().renderScene(*scene, getAspectRatio());
-    if (renderLoopCallback) {
-        renderLoopCallback(deltaTime);
+    auto& renderer = Renderer::get();
+    renderer.beginFrame(window.getFramebufferWidth(), window.getFramebufferHeight(), clearColor);
+    if (getAspectRatio() > 0.0f) {
+        renderer.renderScene(*scene, getAspectRatio());
+        if (renderLoopCallback)
+            renderLoopCallback(deltaTime);
     }
+    renderer.endFrame();
 }
 
 void Engine::processTimer() {

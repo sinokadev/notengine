@@ -5,8 +5,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include <glad/gl.h>
-#include <GLFW/glfw3.h>
+#include <array>
+#include <sokol/sokol_gfx.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -39,6 +39,9 @@ public:
     /** @brief Loaded fragment shader source text. */
     std::string fragmentSourceCode;
 
+    /** @brief Sokol reflection metadata; custom GLSL sources must supply this interface. */
+    sg_shader_desc interface{};
+
     /** @brief Loads source text from the supplied vertex and fragment paths. */
     ShaderSource(std::string v, std::string f);
     /** @brief Reports whether both shader source strings were loaded. */
@@ -47,52 +50,58 @@ public:
 private:
 };
 
-/** @brief Compiled OpenGL shader program with cached uniform locations. */
+/** @brief Render states shared by the built-in rendering passes. */
+enum class ShaderPass { Opaque, Translucent, Skybox, Shadow, Cubemap, Brdf, Count };
+
+/** @brief Sokol shader, cached pipelines, resource bindings, and CPU uniform data. */
 class Shader {
 public:
-    /** @brief Compiles and links sources into a program associated with @p id. */
-    Shader(std::shared_ptr<ShaderSource> ss, unsigned int id);
-    /** @brief Deletes the OpenGL program when a context is current. */
+    Shader(std::shared_ptr<ShaderSource> source, unsigned int id);
     ~Shader();
-
     Shader(const Shader&) = delete;
     Shader& operator=(const Shader&) = delete;
 
-    /** @brief Reports whether shader compilation and linking succeeded. */
-    bool isValid() const {
-        return valid;
+    bool isValid() const;
+    bool hasUniform(const std::string& name) const;
+    void set(const std::string& name, bool value) const;
+    void set(const std::string& name, int value) const;
+    void set(const std::string& name, float value) const;
+    void set(const std::string& name, const glm::vec2& value) const;
+    void set(const std::string& name, const glm::vec3& value) const;
+    void set(const std::string& name, const glm::mat4& value) const;
+    void setTexture(const std::string& name, unsigned int texture);
+    void setLightBuffer(sg_view view);
+    /** @brief Applies the pipeline, bindings and uniforms, then draws the mesh. */
+    void draw(const Mesh& mesh, ShaderPass pass, sg_buffer instances = {}, int instanceCount = 1);
+    unsigned int getId() const {
+        return id;
+    }
+    /** @brief Returns a sokol shader handle ID. */
+    unsigned int getShaderProgram() const {
+        return shader.id;
     }
 
-    /** @brief Binds this program for subsequent draw calls. */
-    void use();
-    /** @name Uniform setters
-     *  @brief Set a uniform in the currently linked program by name. */
-    ///@{
-    /** @brief Sets a boolean uniform. */
-    void set(const std::string& name, bool value) const;
-    /** @brief Sets an integer uniform. */
-    void set(const std::string& name, int value) const;
-    /** @brief Sets a floating-point uniform. */
-    void set(const std::string& name, float value) const;
-    /** @brief Sets a two-component vector uniform. */
-    void set(const std::string& name, const glm::vec2& value) const;
-    /** @brief Sets a three-component vector uniform. */
-    void set(const std::string& name, const glm::vec3& value) const;
-    /** @brief Sets a 4x4 matrix uniform. */
-    void set(const std::string& name, const glm::mat4& value) const;
-    ///@}
-    /** @brief Returns the resource-manager ID assigned to this shader. */
-    unsigned int getId() const;
-    /** @brief Returns the underlying OpenGL program ID. */
-    unsigned int getShaderProgram() const;
-
 private:
-    int uniformLocation(const std::string& name) const;
+    struct Uniform {
+        int block;
+        size_t offset;
+        size_t size;
+        sg_uniform_type type;
+    };
+    void setUniform(const std::string& name, const void* data, size_t size, sg_uniform_type type) const;
+    sg_pipeline pipeline(ShaderPass pass);
 
-    bool valid = false;
-    unsigned int shaderProgram = 0;
     unsigned int id = 0;
-    mutable std::unordered_map<std::string, int> uniformLocations;
+    sg_shader shader{};
+    sg_bindings bindings{};
+    sg_vertex_layout_state layout{};
+    sg_buffer identityInstance{};
+    std::array<sg_sampler, 3> samplers{};
+    std::array<sg_pipeline, static_cast<size_t>(ShaderPass::Count)> pipelines{};
+    mutable std::array<std::vector<unsigned char>, SG_MAX_UNIFORMBLOCK_BINDSLOTS> uniformData;
+    std::unordered_multimap<std::string, Uniform> uniforms;
+    std::unordered_map<std::string, int> textures;
+    int lightBufferSlot = -1;
 };
 
 /** @brief Factory for the engine's built-in PBR shader sources. */
@@ -109,7 +118,7 @@ public:
     static ShaderSource GetSource();
 };
 
-/** @brief Base material that binds an associated shader program. */
+/** @brief Base material that stages an associated shader's resources. */
 class Material {
 public:
     /** @brief Creates a material using @p shader. */
@@ -118,11 +127,8 @@ public:
 
     virtual ~Material() = default;
 
-    /** @brief Binds the material's shader program when available. */
+    /** @brief Stages the material resources for drawing. */
     virtual void bind() {
-        if (shader) {
-            shader->use();
-        }
     }
 
     /** @brief Returns the shader used by this material. */
@@ -140,33 +146,14 @@ class TextureMaterial : public Material {
 public:
     /** @brief Creates a material using a 2D texture.
      *  @param s Shader to use.
-     *  @param textureId OpenGL 2D texture ID.
+     *  @param textureId sokol texture-view ID.
      *  @param ownsTexture Whether this material deletes @p textureId on destruction. */
     TextureMaterial(std::shared_ptr<Shader> s, unsigned int textureId, bool ownsTexture = false)
         : Material(std::move(s)), textureId(textureId), ownsTexture(ownsTexture) {
     }
 
-    ~TextureMaterial() override {
-        if (ownsTexture && textureId != 0) {
-            if (glfwGetCurrentContext() != nullptr) {
-                glDeleteTextures(1, &textureId);
-            }
-            textureId = 0;
-        }
-    }
-
-    /** @brief Binds the texture to unit 0 and sets material.diffuse. */
-    void bind() override {
-        if (!shader)
-            return;
-
-        shader->use();
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textureId);
-
-        shader->set("material.diffuse", 0);
-    }
+    ~TextureMaterial() override;
+    void bind() override;
 
 private:
     unsigned int textureId;
@@ -241,89 +228,12 @@ public:
         }
     }
 
-    ~PbrMaterial() override {
-        const bool hasContext = (glfwGetCurrentContext() != nullptr);
-        if (isAlbedoAllocated && albedoMap != 0) {
-            if (hasContext) {
-                glDeleteTextures(1, &albedoMap);
-            }
-            albedoMap = 0;
-            isAlbedoAllocated = false;
-        }
-        if (isMetallicAllocated && metallicMap != 0) {
-            if (hasContext) {
-                glDeleteTextures(1, &metallicMap);
-            }
-            metallicMap = 0;
-            isMetallicAllocated = false;
-        }
-        if (isRoughnessAllocated && roughnessMap != 0) {
-            if (hasContext) {
-                glDeleteTextures(1, &roughnessMap);
-            }
-            roughnessMap = 0;
-            isRoughnessAllocated = false;
-        }
-        if (isAoAllocated && aoMap != 0) {
-            if (hasContext) {
-                glDeleteTextures(1, &aoMap);
-            }
-            aoMap = 0;
-            isAoAllocated = false;
-        }
-        if (isNormalAllocated && normalMap != 0) {
-            if (hasContext) {
-                glDeleteTextures(1, &normalMap);
-            }
-            normalMap = 0;
-            isNormalAllocated = false;
-        }
-    }
-
-    /** @brief Replaces the albedo map; an owned fallback texture is released. */
-    void setAlbedoMap(unsigned int texID) {
-        if (isAlbedoAllocated && albedoMap != 0) {
-            glDeleteTextures(1, &albedoMap);
-            isAlbedoAllocated = false;
-        }
-        albedoMap = texID;
-    }
-
-    /** @brief Replaces the metallic map; an owned fallback texture is released. */
-    void setMetallicMap(unsigned int texID) {
-        if (isMetallicAllocated && metallicMap != 0) {
-            glDeleteTextures(1, &metallicMap);
-            isMetallicAllocated = false;
-        }
-        metallicMap = texID;
-    }
-
-    /** @brief Replaces the roughness map; an owned fallback texture is released. */
-    void setRoughnessMap(unsigned int texID) {
-        if (isRoughnessAllocated && roughnessMap != 0) {
-            glDeleteTextures(1, &roughnessMap);
-            isRoughnessAllocated = false;
-        }
-        roughnessMap = texID;
-    }
-
-    /** @brief Replaces the ambient-occlusion map; an owned fallback texture is released. */
-    void setAoMap(unsigned int texID) {
-        if (isAoAllocated && aoMap != 0) {
-            glDeleteTextures(1, &aoMap);
-            isAoAllocated = false;
-        }
-        aoMap = texID;
-    }
-
-    /** @brief Replaces the normal map; an owned fallback texture is released. */
-    void setNormalMap(unsigned int texID) {
-        if (isNormalAllocated && normalMap != 0) {
-            glDeleteTextures(1, &normalMap);
-            isNormalAllocated = false;
-        }
-        normalMap = texID;
-    }
+    ~PbrMaterial() override;
+    void setAlbedoMap(unsigned int texture);
+    void setMetallicMap(unsigned int texture);
+    void setRoughnessMap(unsigned int texture);
+    void setAoMap(unsigned int texture);
+    void setNormalMap(unsigned int texture);
 
     /** @brief Sets the fallback albedo base color. */
     void setAlbedoColor(const glm::vec3& color) {
@@ -345,33 +255,8 @@ public:
         baseAo = ao;
     }
 
-    /** @brief Binds PBR maps to texture units 0 through 4. */
-    void bind() override {
-        if (!shader)
-            return;
-
-        shader->use();
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, albedoMap);
-        shader->set("material.albedoMap", 0);
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, metallicMap);
-        shader->set("material.metallicMap", 1);
-
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, roughnessMap);
-        shader->set("material.roughnessMap", 2);
-
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, aoMap);
-        shader->set("material.aoMap", 3);
-
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, normalMap);
-        shader->set("material.normalMap", 4);
-    }
+    /** @brief Stages PBR texture bindings for the next draw. */
+    void bind() override;
 
 public:
     /** @brief Albedo texture ID. */

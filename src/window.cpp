@@ -21,6 +21,8 @@ bool Window::init(int width, int height, const std::string& title) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_DEPTH_BITS, 24);
+    glfwWindowHint(GLFW_STENCIL_BITS, 8);
 
     windowHandle = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
     if (!windowHandle) {
@@ -88,10 +90,6 @@ void Window::enableVsync() {
 
 void Window::disableVsync() {
     glfwSwapInterval(0);
-}
-
-GLADloadfunc Window::getProcAddress() const {
-    return reinterpret_cast<GLADloadfunc>(glfwGetProcAddress);
 }
 
 void Window::setResizeCallback(ResizeCallback callback) {

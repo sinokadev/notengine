@@ -7,7 +7,7 @@ include(GNUInstallDirs)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 if(MSVC)
@@ -60,7 +60,7 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Dependencies.cmake")
 
 # Sources (CONFIGURE_DEPENDS 추가하여 파일 추가 감지)
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cpp")
-list(APPEND SOURCES "library/gl.c" "library/miniaudio.c")
+list(APPEND SOURCES "library/glfw_glue.c" "library/miniaudio.c")
 
 add_library(notengine STATIC ${SOURCES})
 
@@ -115,7 +115,10 @@ target_include_directories(notengine PUBLIC
 # implementation-only include path private; users include <miniaudio/miniaudio.h>.
 target_include_directories(notengine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include/miniaudio
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/sokol
 )
+
+find_package(Vulkan REQUIRED)
 
 # Link dependencies
 target_link_libraries(notengine PUBLIC
@@ -124,6 +127,7 @@ target_link_libraries(notengine PUBLIC
     # "$<BUILD_INTERFACE:OpenAL::OpenAL>"
     OpenGL::GL
     ${CMAKE_DL_LIBS}
+    Vulkan::Vulkan
 )
 
 if(UNIX AND NOT APPLE)
@@ -139,6 +143,7 @@ elseif(WIN32)
 endif()
 
 target_compile_definitions(notengine PUBLIC
+    GLFW_INCLUDE_NONE
     NOTENGINE_ASSET_ROOT="${CMAKE_SOURCE_DIR}"
 )
 

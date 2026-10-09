@@ -1,4 +1,5 @@
 #include "document.h"
+#include <glad/gl.h>
 #include <knot/renderer.h>
 #include <knot/resources.h>
 #include <GLFW/glfw3.h>
@@ -217,10 +218,11 @@ public:
         camera->rotation=glm::quatLookAt(glm::normalize(target-camera->position),viewUp);
         camera->farPlane=10000.f;
         camera->span=2.f*distance*std::tan(glm::radians(camera->fov)*.5f);
-        glBindFramebuffer(GL_FRAMEBUFFER,0);glEnable(GL_DEPTH_TEST);glDepthMask(GL_TRUE);
-        glClearColor(.055f,.065f,.085f,1);glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-        auto& renderer=knot::Renderer::get();renderer.beginFrame(width,height);
+        sg_reset_state_cache();
+        auto& renderer = knot::Renderer::get();
+        renderer.beginFrame(width, height, {.055f, .065f, .085f, 1});
         if(scene) renderer.renderScene(*scene,static_cast<float>(width)/height);
+        renderer.endFrame();
         glBindTexture(GL_TEXTURE_2D,texture);
         if(width!=texWidth || height!=texHeight) {
             texWidth=width;texHeight=height;
@@ -462,7 +464,11 @@ int main(int argc,char** argv) {
     glfwMakeContextCurrent(window);glfwSwapInterval(1);
     knot::setAssetRoot(fs::absolute(SENO_ASSET_ROOT).lexically_normal().string());
     auto& renderer=knot::Renderer::get();
-    if(!renderer.init(reinterpret_cast<GLADloadfunc>(glfwGetProcAddress))) {glfwDestroyWindow(window);glfwTerminate();return 1;}
+    if (!gladLoadGL(glfwGetProcAddress) || !renderer.init()) {
+        glfwDestroyWindow(window);
+        glfwTerminate();
+        return 1;
+    }
     IMGUI_CHECKVERSION();ImGui::CreateContext();
     ImGui::GetIO().ConfigFlags|=ImGuiConfigFlags_NavEnableKeyboard;
     ImGui::GetIO().IniFilename=nullptr;
@@ -488,6 +494,7 @@ int main(int argc,char** argv) {
             glfwPollEvents();int width,height;glfwGetFramebufferSize(window,&width,&height);
             if(width==0||height==0){glfwWaitEventsTimeout(.1);continue;}
             ImGui_ImplOpenGL3_NewFrame();ImGui_ImplGlfw_NewFrame();ImGui::NewFrame();
+            sg_reset_state_cache();
             editor.frame();ImGui::Render();
             glBindFramebuffer(GL_FRAMEBUFFER,0);glViewport(0,0,width,height);
             glClearColor(.055f,.065f,.085f,1);glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);

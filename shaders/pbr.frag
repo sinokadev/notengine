@@ -49,7 +49,7 @@ uniform float maxReflectionLOD;
 uniform float ambientIntensity;
 uniform sampler2D brdfLUT;
 uniform sampler2D shadowMap;
-uniform samplerCubeArray pointShadowMap;
+uniform sampler2DArray pointShadowMap;
 uniform int pointShadowCount;
 uniform samplerCube irradianceMap;
 uniform samplerCube prefilterMap;
@@ -120,6 +120,28 @@ vec3 calcPbrLight(vec3 surfaceNormal, vec3 viewDir, vec3 lightDir, vec3 lightCol
     return (diffuseWeight * (surfaceAlbedo / PI) + specularReflectance) * lightColor * normalDotLight * (1.0 - clampedShadow);
 }
 
+// Map a cube direction to the same six faces used by the shadow render passes.
+vec3 pointShadowCoords(vec3 direction, int light) {
+    vec3 axis = abs(direction);
+    vec2 uv;
+    float major;
+    int face;
+    if (axis.x >= axis.y && axis.x >= axis.z) {
+        major = axis.x;
+        face = direction.x >= 0.0 ? 0 : 1;
+        uv = vec2(direction.x >= 0.0 ? -direction.z : direction.z, -direction.y);
+    } else if (axis.y >= axis.z) {
+        major = axis.y;
+        face = direction.y >= 0.0 ? 2 : 3;
+        uv = vec2(direction.x, direction.y >= 0.0 ? direction.z : -direction.z);
+    } else {
+        major = axis.z;
+        face = direction.z >= 0.0 ? 4 : 5;
+        uv = vec2(direction.z >= 0.0 ? direction.x : -direction.x, -direction.y);
+    }
+    return vec3(uv / major * 0.5 + 0.5, float(light * 6 + face));
+}
+
 float calcPointShadow(int index, vec3 normal, vec3 lightDir) {
     int shadowLayer = int(pointLights[index].position.w);
     if (shadowLayer < 0 || shadowLayer >= pointShadowCount)
@@ -141,7 +163,7 @@ float calcPointShadow(int index, vec3 normal, vec3 lightDir) {
     for (int x = -1; x <= 1; ++x) {
         for (int y = -1; y <= 1; ++y) {
             vec3 sampleDirection = direction + (tangent * float(x) + bitangent * float(y)) * texelSize;
-            float closestDepth = texture(pointShadowMap, vec4(sampleDirection, float(shadowLayer))).r * farPlane;
+            float closestDepth = texture(pointShadowMap, pointShadowCoords(sampleDirection, shadowLayer)).r * farPlane;
             shadow += distanceToLight - bias > closestDepth ? 1.0 : 0.0;
         }
     }
@@ -152,7 +174,7 @@ float calcShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
     vec3 projCoords = lightSpaceFragPos.xyz / lightSpaceFragPos.w;
     projCoords = projCoords * 0.5 + 0.5;
 
-    if (projCoords.z > 1.0) {
+    if (projCoords.z > 1.0 || projCoords.z < 0.0 || any(lessThan(projCoords.xy, vec2(0.0))) || any(greaterThan(projCoords.xy, vec2(1.0)))) {
         return 0.0;
     }
 

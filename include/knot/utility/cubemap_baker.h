@@ -2,18 +2,18 @@
 
 namespace knot {
 /** @brief Converts an equirectangular HDR texture into a cubemap.
- *  @param hdrTexture2D Source OpenGL 2D texture.
+ *  @param hdrTexture2D Source sokol texture-view ID.
  *  @param size Width and height of each cubemap face.
- *  @return The generated cubemap texture ID. */
+ *  @return The generated cubemap texture-view ID. */
 unsigned int bakeHDRMapToCubemap(unsigned int hdrTexture2D, int size);
 /** @brief Convolves an environment cubemap into a diffuse irradiance map.
  *  @param envCubemapID Source environment cubemap.
  *  @param size Width and height of each generated face.
- *  @return The generated irradiance cubemap texture ID. */
+ *  @return The generated irradiance cubemap texture-view ID. */
 unsigned int bakeCubemapToIrradianceMap(unsigned int envCubemapID, int size);
 /** @brief Generates a prefiltered environment cubemap for specular IBL.
  *  @param envCubemapID Source environment cubemap.
  *  @param size Width and height of each cubemap face.
- *  @return The generated prefiltered cubemap texture ID. */
+ *  @return The generated prefiltered cubemap texture-view ID. */
 unsigned int bakeCubemapToPrefilterMap(unsigned int envCubemapID, int size = 128);
 } // namespace knot

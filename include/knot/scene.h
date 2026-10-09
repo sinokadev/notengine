@@ -15,7 +15,7 @@ public:
     /** @brief Callback invoked by update() once per engine frame. */
     using UpdateCallback = std::function<void(Scene&, float)>;
 
-    /** @brief Creates a scene and initializes default shaders when OpenGL is ready. */
+    /** @brief Creates a scene and initializes default shaders when sokol_gfx is ready. */
     Scene();
     /** @brief Releases scene-owned objects, shaders, and environment textures. */
     ~Scene();
@@ -50,17 +50,17 @@ public:
     /** @brief Loads an equirectangular HDR environment and derives IBL maps. */
     void loadHDRMap(const std::string& path);
 
-    /** @brief Returns the environment cubemap texture ID. */
+    /** @brief Returns the environment cubemap texture-view ID. */
     unsigned int getCubeMap() const {
         return cubeMap;
     }
 
-    /** @brief Returns the diffuse irradiance cubemap texture ID. */
+    /** @brief Returns the diffuse irradiance cubemap texture-view ID. */
     unsigned int getIrradianceMap() const {
         return irradianceMap;
     }
 
-    /** @brief Returns the prefilter map texture ID. */
+    /** @brief Returns the prefilter map texture-view ID. */
     unsigned int getPrefilterMap() const {
         return prefilterMap;
     }

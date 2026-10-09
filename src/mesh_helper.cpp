@@ -1,4 +1,3 @@
-#include <glad/gl.h>
 #include <knot/resources.h>
 #include <knot/utility/mesh_helper.h>
 #include <iostream>
@@ -555,7 +554,7 @@ unsigned int cgltfLoadTexture(const cgltf_texture_view& view, const std::string&
         for (int c = 0; c < 3; ++c)
             pixel[c] = static_cast<unsigned char>(scaled[c]);
     }
-    const unsigned int texId = knot::createTexture(pixels, w, h, GL_RGBA);
+    const unsigned int texId = knot::createTexture(pixels, w, h);
     stbi_image_free(pixels);
     cache.emplace(key, texId);
     return texId;
