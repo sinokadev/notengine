@@ -1,26 +1,18 @@
 #pragma once
-
 #include <glm/glm.hpp>
+#include <sokol/sokol_gfx.h>
 #include <string>
 
 namespace knot {
-
-/** @brief Creates a 1x1 RGBA texture from a linear RGB color.
- *  @return The OpenGL texture ID. */
+// Texture IDs are sokol texture-view handles, never native OpenGL names.
+// The returned view owns its image; release both with destroyTexture().
+unsigned int createTextureView(sg_image image);
+void destroyTexture(unsigned int texture);
 unsigned int createSolidColorTexture(glm::vec3 color);
-
-/** @brief Creates a mipmapped 2D texture from 8-bit pixel data.
- *  @param data Pixel data accepted by glTexImage2D.
- *  @param width Texture width in pixels.
- *  @param height Texture height in pixels.
- *  @param format OpenGL pixel format and internal format.
- *  @return The OpenGL texture ID. */
-unsigned int createTexture(unsigned char* data, int width, int height, GLenum format);
-
-/** @brief Loads an image as an RGBA 2D texture.
- *  @return The texture ID, or a magenta fallback texture if loading fails. */
+/** @brief Uploads RGBA8 pixels and generates the full mip chain on the CPU. */
+unsigned int createTexture(const unsigned char* data, int width, int height);
+/** @brief Loads RGBA8 pixels, or returns a magenta fallback on failure. */
 unsigned int loadTextureFromFile(const std::string& path);
-/** @brief Loads a floating-point HDR image as an RGB16F 2D texture.
- *  @return The texture ID, or 0 if loading fails. */
+/** @brief Loads an HDR image as RGBA32F, or returns zero on failure. */
 unsigned int loadHDRTexture(const std::string& path);
 } // namespace knot

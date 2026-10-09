@@ -6,8 +6,6 @@
 #include <nlohmann/json.hpp>
 
 #include <knot/scene.h>
-#include <glad/gl.h>
-#include <GLFW/glfw3.h>
 
 #include <knot/mesh.h>
 #include <knot/utility.h>
@@ -23,7 +21,7 @@ bool isGLTFPath(const std::string& path) {
 } // namespace
 
 Scene::Scene() {
-    if (glad_glCreateShader != nullptr) {
+    if (sg_isvalid()) {
         resourceManager.init();
     }
 }
@@ -36,26 +34,10 @@ void Scene::clear() {
     objectManager.clear();
     lightManager.clear();
 
-    if (cubeMap != 0) {
-        if (glfwGetCurrentContext() != nullptr)
-            glDeleteTextures(1, &cubeMap);
-
-        cubeMap = 0;
-    }
-
-    if (irradianceMap != 0) {
-        if (glfwGetCurrentContext() != nullptr)
-            glDeleteTextures(1, &irradianceMap);
-
-        irradianceMap = 0;
-    }
-
-    if (prefilterMap != 0) {
-        if (glfwGetCurrentContext() != nullptr)
-            glDeleteTextures(1, &prefilterMap);
-
-        prefilterMap = 0;
-    }
+    destroyTexture(cubeMap);
+    destroyTexture(irradianceMap);
+    destroyTexture(prefilterMap);
+    cubeMap = irradianceMap = prefilterMap = 0;
 
     updateCallback = nullptr;
 }
@@ -66,22 +48,25 @@ void Scene::shutdown() {
 }
 
 void Scene::loadHDRMap(const std::string& path) {
-    if (cubeMap != 0)
-        glDeleteTextures(1, &cubeMap);
-    if (irradianceMap != 0)
-        glDeleteTextures(1, &irradianceMap);
-    if (prefilterMap != 0)
-        glDeleteTextures(1, &prefilterMap);
-
-    unsigned int tempHdrMap = loadHDRTexture(path);
-
-    cubeMap = bakeHDRMapToCubemap(tempHdrMap, 512);
-
-    irradianceMap = bakeCubemapToIrradianceMap(cubeMap, 32);
-
-    prefilterMap = bakeCubemapToPrefilterMap(cubeMap, 128);
-
-    glDeleteTextures(1, &tempHdrMap);
+    const auto hdr = loadHDRTexture(path);
+    if (!hdr)
+        return;
+    const auto cube = bakeHDRMapToCubemap(hdr, 512);
+    const auto irradiance = bakeCubemapToIrradianceMap(cube, 32);
+    const auto prefilter = bakeCubemapToPrefilterMap(cube, 128);
+    destroyTexture(hdr);
+    if (!cube || !irradiance || !prefilter) {
+        destroyTexture(cube);
+        destroyTexture(irradiance);
+        destroyTexture(prefilter);
+        return;
+    }
+    destroyTexture(cubeMap);
+    destroyTexture(irradianceMap);
+    destroyTexture(prefilterMap);
+    cubeMap = cube;
+    irradianceMap = irradiance;
+    prefilterMap = prefilter;
 }
 
 void Scene::setUpdateCallback(UpdateCallback callback) {

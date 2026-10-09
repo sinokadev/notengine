@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <cassert>
-#include <glad/gl.h>
+#include <knot/renderer.h>
 #include <GLFW/glfw3.h>
 #include <knot/resources.h>
 #include <knot/manager.h>
@@ -150,8 +150,9 @@ int main() {
 
         glfwMakeContextCurrent(window);
 
-        if (!gladLoadGL(glfwGetProcAddress)) {
-            std::cerr << "Failed to init GLAD\n";
+        if (!knot::Renderer::get().init()) {
+            std::cerr << "Failed to initialize sokol_gfx\n";
+            knot::Renderer::get().shutdown();
             glfwDestroyWindow(window);
             glfwTerminate();
             return 1;
@@ -184,6 +185,7 @@ int main() {
         assert(ground[0]->group == "ground");
         assert(ground[0]->scale.x == 200.0f);
 
+        knot::Renderer::get().shutdown();
         glfwDestroyWindow(window);
         glfwTerminate();
 

@@ -4,7 +4,7 @@
 #include <iostream>
 #include <unordered_map>
 
-#include <glad/gl.h>
+#include <knot/renderer.h>
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
 

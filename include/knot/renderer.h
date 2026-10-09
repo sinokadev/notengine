@@ -33,7 +33,7 @@ struct GPUMovingPointLight {
     /** @brief Quadratic attenuation coefficient. */
     float quadratic;
 };
-/** @brief OpenGL renderer for scenes, meshes, lights, and skyboxes. */
+/** @brief sokol_gfx renderer for scenes, meshes, lights, and skyboxes. */
 class Renderer {
 public:
     /** @brief Get the singleton instance of the Renderer.
@@ -58,15 +58,13 @@ public:
     /** @brief Default far clipping distance exposed for renderer clients. */
     static constexpr float kFarPlane = 100.0f;
 
-    /** @brief Loads OpenGL functions and creates renderer-owned resources.
-     *  @param loadProc GLAD-compatible OpenGL procedure loader.
-     *  @return true when initialization succeeds. */
-    bool init(GLADloadfunc loadProc);
-    /** @brief Releases renderer-owned GPU resources. Safe to call repeatedly. */
+    /** @brief Initializes sokol_gfx for the current GLFW OpenGL 4.3 context. */
+    bool init();
     void shutdown();
-    /** @brief Sets the OpenGL viewport for a new frame.
-     *  Does nothing for non-positive framebuffer dimensions. */
-    void beginFrame(int framebufferWidth, int framebufferHeight);
+    /** @brief Records framebuffer dimensions and clear color; drawing opens the pass. */
+    void beginFrame(int width, int height, glm::vec4 clearColor = {0, 0, 0, 1});
+    /** @brief Ends the main pass and commits GPU work before swapping buffers. */
+    void endFrame();
     /** @brief Renders one model using an explicit world transform. */
     void renderSingle(const std::shared_ptr<Model>& model, const glm::mat4& worldMatrix, const Camera& camera, float aspectRatio);
     /** @brief Renders an object using its current transform.
@@ -93,8 +91,6 @@ public:
     void processDirLights(const std::shared_ptr<Shader>& shader, const std::vector<const DirLight*>& dirLights);
     /** @brief Uploads point lights to shader-storage buffer binding 0. */
     void processPointLights(const std::vector<const PbrPointLight*>& pointLights);
-    /** @brief Converts an HDR equirectangular texture to a cubemap. */
-    unsigned int bakeHDRMapToCubemap(unsigned int hdrTexture2D, int size);
     /** @brief Renders several instances of one model in a single draw call. */
     void renderInstanced(const std::shared_ptr<Model>& model, const std::vector<VisibleInstance>& instances, const Camera& camera, float aspectRatio);
 
@@ -107,52 +103,43 @@ private:
     void renderDirShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups);
     void renderPointShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups);
 
-    bool initialized = false;
-
-    GLuint lightSSBO = 0;
-
-    unsigned int instanceVBO = 0;
-
-    static constexpr std::size_t INSTANCE_THRESHOLD = 4;
-
-    static constexpr unsigned int SKYBOX_SHADER_ID = 999999;
-
-    std::shared_ptr<Mesh> skyboxMesh;
-
-    std::shared_ptr<Shader> skyboxShader;
-
-    static constexpr unsigned int BRDF_SHADER_ID = 999998;
-
-    static constexpr float AMBIENT_INTENSITY = 1.0f;
-    static constexpr unsigned int SHADOW_RESOLUTION = 2048;
-
-    GLuint brdfLUTTexture = 0;
-
+    bool beginMainPass();
     void generateBRDFLUT();
+    void uploadInstances(const std::vector<VisibleInstance>& instances);
 
-    void renderQuad();
-
-    GLuint quadVAO = 0;
-
-    GLuint quadVBO = 0;
-
-    unsigned int depthMapFBO = 0;
-    unsigned int depthMap = 0;
-    unsigned int pointDepthFBO = 0;
-    unsigned int pointDepthMap = 0;
-    int pointShadowCount = 0;
-    int pointShadowCapacity = 0;
-    static constexpr int MAX_POINT_SHADOWS = 4;
-    static constexpr float MIN_POINT_SHADOW_CONTRIBUTION = 0.01f;
-    std::vector<const PbrPointLight*> shadowedPointLights;
-
-    static constexpr unsigned int SHADOW_SHADER_ID = 999997;
-
+    bool initialized = false;
+    bool mainPassActive = false;
+    bool clearPending = true;
+    glm::vec4 clearColor{0, 0, 0, 1};
+    int framebufferWidth = 0;
+    int framebufferHeight = 0;
+    struct LightBuffer {
+        sg_buffer buffer{};
+        sg_view view{};
+    };
+    std::vector<LightBuffer> lightBuffers;
+    size_t nextLightBuffer = 0;
+    sg_view lightView{};
+    std::vector<sg_buffer> instanceBuffers;
+    size_t nextInstanceBuffer = 0;
+    sg_buffer instanceBuffer{};
+    std::shared_ptr<Mesh> skyboxMesh;
+    std::shared_ptr<Shader> skyboxShader;
     std::shared_ptr<Shader> pointShadowShader;
     std::shared_ptr<Shader> dirShadowShader;
+    unsigned int brdfLUTTexture = 0;
+    unsigned int fallbackCubemap = 0;
+    unsigned int depthMap = 0;
+    sg_view depthAttachment{};
+    unsigned int pointDepthMap = 0;
+    std::vector<sg_view> pointDepthAttachments;
+    int pointShadowCount = 0;
+    std::vector<const PbrPointLight*> shadowedPointLights;
     glm::mat4 lightSpaceMatrix{1.0f};
 
-    int framebufferWidth = 1;
-    int framebufferHeight = 1;
+    static constexpr std::size_t INSTANCE_THRESHOLD = 4;
+    static constexpr float AMBIENT_INTENSITY = 1.0f;
+    static constexpr int SHADOW_RESOLUTION = 2048;
+    static constexpr int POINT_SHADOW_RESOLUTION = 1024;
 };
 } // namespace knot

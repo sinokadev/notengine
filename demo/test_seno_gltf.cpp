@@ -1,5 +1,12 @@
-#include <glad/gl.h>
+#include <knot/renderer.h>
 #include <GLFW/glfw3.h>
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+#include <GL/gl.h>
 #include <knot/scene.h>
 #include <knot/utility.h>
 #include <nlohmann/json.hpp>
@@ -89,7 +96,9 @@ void runTests() {
         const auto& model = objects.front()->model;
         require(!model->subMeshes.empty() && model->boundsRadius > 0, "geometry missing");
         auto material = std::dynamic_pointer_cast<knot::PbrMaterial>(model->subMeshes.front().material);
-        require(material && glIsTexture(material->albedoMap) && glIsTexture(material->metallicMap) && glIsTexture(material->roughnessMap),
+        require(material && sg_query_view_state({material->albedoMap}) == SG_RESOURCESTATE_VALID &&
+                    sg_query_view_state({material->metallicMap}) == SG_RESOURCESTATE_VALID &&
+                    sg_query_view_state({material->roughnessMap}) == SG_RESOURCESTATE_VALID,
                 "glTF materials missing");
     }
 
@@ -113,33 +122,106 @@ void runTests() {
     legacy["objects"].push_back({{"model", 2}});
     require(scene.loadSeno(fixtures.write("legacy.seno", legacy).string()), "existing Seno model formats regressed");
     require(scene.getObjectManager().getObjects().size() == 4, "legacy objects missing");
-    require(glGetError() == GL_NO_ERROR, "OpenGL error during model loading");
 }
+// Readback checks exercise actual GPU bindings, pass ordering and blending.
+void runRenderTests() {
+    auto& renderer = knot::Renderer::get();
+    knot::Scene scene;
+    auto camera = std::make_shared<knot::PerspectiveCamera>(glm::vec3(0, 0, 5));
+    scene.setCamera(camera);
+    auto alpha = scene.getShaderManager().getShader("alphaShader");
+    auto red = std::make_shared<knot::AlphaMaterial>(alpha, glm::vec3(1, 0, 0));
+    auto model = std::make_shared<knot::Model>(knot::createCube(), red);
+    for (int i = 0; i < 5; ++i) {
+        auto object = std::make_shared<knot::Object>(model);
+        object->position.x = (i - 2) * 0.5f;
+        scene.getObjectManager().registerObject(object);
+    }
+    auto light = std::make_shared<knot::PbrPointLight>(glm::vec3(2, 3, 4), glm::vec3(1), 4);
+    scene.getLightManager().registerLight(light);
+    auto render = [&] {
+        renderer.beginFrame(320, 240, {0, 0, 0, 1});
+        require(renderer.renderScene(scene, 4.0f / 3), "Scene rendering failed");
+        renderer.endFrame();
+    };
+    auto pixel = [] {
+        std::array<unsigned char, 4> result{};
+        glReadPixels(160, 120, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, result.data());
+        require(glGetError() == GL_NO_ERROR, "GPU readback failed");
+        sg_reset_state_cache();
+        return result;
+    };
+    render();
+    auto color = pixel();
+    require(color[0] > 240 && color[1] < 10 && color[2] < 10, "Instanced alpha geometry did not render red");
+
+    const unsigned char bluePixel[] = {0, 0, 255, 128};
+    const auto blueTexture = knot::createTexture(bluePixel, 1, 1);
+    auto blue = std::make_shared<knot::TextureMaterial>(alpha, blueTexture, true);
+    auto glass = std::make_shared<knot::Object>(knot::createCube(), blue);
+    glass->position.z = 2;
+    scene.getObjectManager().registerObject(glass);
+    render();
+    color = pixel();
+    require(color[0] > 100 && color[0] < 155 && color[2] > 100 && color[2] < 155, "Translucent pass did not blend over opaque depth");
+
+    auto pbr = scene.getShaderManager().getShader("pbrShader");
+    model->setMaterial(std::make_shared<knot::PbrMaterial>(pbr));
+    render(); // PBR without an HDR map must still have complete texture bindings.
+    scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
+    require(scene.getCubeMap() && scene.getIrradianceMap() && scene.getPrefilterMap(), "HDR/IBL baking failed");
+    require(sg_query_image_num_mipmaps(sg_query_view_image({scene.getPrefilterMap()})) == 5, "Prefilter mip chain missing");
+    for (int count : {0, 2, 1}) {
+        scene.getLightManager().clear();
+        for (int i = 0; i < count; ++i)
+            scene.getLightManager().registerLight(std::make_shared<knot::PbrPointLight>(glm::vec3(i + 1, 3, 4)));
+        render(); // Reallocating point-shadow layers must refresh all views.
+    }
+    renderer.beginFrame(0, 0);
+    require(!renderer.renderScene(scene, -1), "Minimized frame should skip rendering");
+    renderer.endFrame();
+    render();
+    const auto texture = knot::createSolidColorTexture({1, 1, 1});
+    const auto image = sg_query_view_image({texture});
+    knot::destroyTexture(texture);
+    require(sg_query_image_state(image) == SG_RESOURCESTATE_INVALID, "Texture image leaked after destruction");
+    require(sg_query_view_state({texture}) == SG_RESOURCESTATE_INVALID, "Texture view leaked after destruction");
+    std::cout << "[PASS] Instancing, transparency, PBR, shadows, HDR/IBL, resize and texture lifetime\n";
+}
+
 } // namespace
 
 int main() {
     if (!glfwInit())
         return 1;
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    auto* window = glfwCreateWindow(320, 240, "Seno glTF test", nullptr, nullptr);
-    if (!window) {
-        glfwTerminate();
-        return 1;
-    }
-    glfwMakeContextCurrent(window);
     int result = 0;
-    try {
-        require(gladLoadGL(glfwGetProcAddress), "GLAD initialization failed");
-        runTests();
-        std::cout << "[PASS] Seno glTF/GLB paths, materials, validation and legacy formats\n";
-    } catch (const std::exception& error) {
-        std::cerr << "[FAIL] " << error.what() << '\n';
-        result = 1;
+    for (int samples : {1, 4}) {
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_SAMPLES, samples == 1 ? 0 : samples);
+        glfwWindowHint(GLFW_STENCIL_BITS, 8);
+        auto* window = glfwCreateWindow(320, 240, "Sokol renderer test", nullptr, nullptr);
+        if (!window) {
+            result = 1;
+            break;
+        }
+        glfwMakeContextCurrent(window);
+        try {
+            require(knot::Renderer::get().init(), "sokol_gfx initialization failed");
+            runTests();
+            runRenderTests();
+            std::cout << "[PASS] Seno glTF/GLB and renderer (samples=" << samples << ")\n";
+        } catch (const std::exception& error) {
+            std::cerr << "[FAIL] " << error.what() << '\n';
+            result = 1;
+        }
+        knot::Renderer::get().shutdown();
+        glfwDestroyWindow(window);
+        if (result)
+            break;
     }
-    glfwDestroyWindow(window);
     glfwTerminate();
     return result;
 }

@@ -1,224 +1,211 @@
 #include <knot/renderer.h>
-#include <glad/gl.h>
-#include <GLFW/glfw3.h>
-#include <glm/gtc/matrix_transform.hpp>
-#include <iostream>
-#include <cassert>
+#include <sokol/glfw_glue.h>
+#include <sokol/sokol_log.h>
 #include <algorithm>
+#include <array>
+#include <iostream>
 #include <unordered_set>
-#include <knot/mesh.h>
-
-#define DISABLE_SKYMAP false
-#define DISABLE_SHADOW false
 
 namespace knot {
-
-Renderer& Renderer::get() {
-    static Renderer instance;
-    return instance;
+static_assert(sizeof(GPUMovingPointLight) == 48, "Point-light data must match the GLSL std430 layout");
+namespace {
+std::shared_ptr<Shader> loadShader(const char* name, unsigned int id) {
+    const auto path = getAssetRoot() + "shaders/" + name;
+    return std::make_shared<Shader>(std::make_shared<ShaderSource>(path + ".vert", path + ".frag"), id);
 }
 
+unsigned int renderTexture(int size, sg_pixel_format format, int layers = 1) {
+    sg_image_desc desc{};
+    desc.type = layers == 1 ? SG_IMAGETYPE_2D : SG_IMAGETYPE_ARRAY;
+    desc.width = desc.height = size;
+    desc.num_slices = layers;
+    desc.sample_count = 1;
+    desc.pixel_format = format;
+    desc.usage.depth_stencil_attachment = format == SG_PIXELFORMAT_DEPTH;
+    desc.usage.color_attachment = !desc.usage.depth_stencil_attachment;
+    return createTextureView(sg_make_image(desc));
+}
+
+sg_view attachment(unsigned int texture, int slice = 0) {
+    sg_view_desc desc{};
+    const auto image = sg_query_view_image({texture});
+    auto& target = sg_query_image_pixelformat(image) == SG_PIXELFORMAT_DEPTH ? desc.depth_stencil_attachment : desc.color_attachment;
+    target.image = image;
+    target.slice = slice;
+    return sg_make_view(desc);
+}
+
+// Grow buffers only when needed. Each transient buffer is written once per frame;
+// callers acquire a separate buffer for every batch consumed by a draw.
+bool upload(sg_buffer& buffer, const sg_range& data, bool storage = false) {
+    if (!buffer.id || sg_query_buffer_size(buffer) < data.size) {
+        sg_destroy_buffer(buffer);
+        sg_buffer_desc desc{};
+        desc.size = std::max<size_t>(256, data.size * 2);
+        desc.usage.storage_buffer = storage;
+        desc.usage.vertex_buffer = !storage;
+        desc.usage.write_transient = true;
+        buffer = sg_make_buffer(desc);
+    }
+    if (sg_query_buffer_state(buffer) != SG_RESOURCESTATE_VALID)
+        return false;
+    sg_write_buffer_desc write{};
+    write.dst.buffer = buffer;
+    write.src.data = data;
+    sg_write_buffer_transient(write);
+    return true;
+}
+} // namespace
+
+Renderer& Renderer::get() {
+    static Renderer renderer;
+    return renderer;
+}
 Renderer::~Renderer() {
     shutdown();
 }
 
-bool Renderer::init(GLADloadfunc loadProc) {
-    std::cout << "[Info] Not Engine Renderer Init" << std::endl;
+bool Renderer::init() {
+    if (initialized)
+        return true;
+    if (!glfwGetCurrentContext() || sg_isvalid())
+        return false;
+    sg_desc desc{};
+    desc.environment = glfw_environment();
+    desc.logger.func = slog_func;
+    desc.buffer_pool_size = 4096;
+    desc.image_pool_size = 4096;
+    desc.view_pool_size = 8192;
+    desc.sampler_pool_size = 512;
+    desc.pipeline_pool_size = 512;
+    sg_setup(desc);
+    if (!sg_isvalid())
+        return false;
+    initialized = true;
 
-    // Load GL
-    if (!gladLoadGL(loadProc)) {
-        std::cerr << "[Error] Failed to load OpenGL functions" << std::endl;
+    skyboxMesh = createCube();
+    skyboxShader = loadShader("skybox", 999999);
+    dirShadowShader = loadShader("dir_shadow", 999997);
+    pointShadowShader = loadShader("point_shadow", 999996);
+    generateBRDFLUT();
+    depthMap = renderTexture(SHADOW_RESOLUTION, SG_PIXELFORMAT_DEPTH);
+    if (depthMap)
+        depthAttachment = attachment(depthMap);
+    pointDepthMap = renderTexture(POINT_SHADOW_RESOLUTION, SG_PIXELFORMAT_DEPTH, 6);
+    if (pointDepthMap)
+        for (int face = 0; face < 6; ++face)
+            pointDepthAttachments.push_back(attachment(pointDepthMap, face));
+
+    const std::array<unsigned char, 24> black{};
+    sg_image_desc image{};
+    image.type = SG_IMAGETYPE_CUBE;
+    image.width = image.height = 1;
+    image.data.mip_levels[0] = {black.data(), black.size()};
+    fallbackCubemap = createTextureView(sg_make_image(image));
+    processPointLights({});
+    if (!skyboxMesh->isReady() || !skyboxShader->isValid() || !dirShadowShader->isValid() || !pointShadowShader->isValid() || !brdfLUTTexture ||
+        !depthMap || !pointDepthMap || !fallbackCubemap || sg_query_view_state(lightView) != SG_RESOURCESTATE_VALID) {
+        shutdown();
         return false;
     }
-
-    // GL Config
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_MULTISAMPLE);
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glCullFace(GL_BACK);
-
-    glGenBuffers(1, &lightSSBO);
-    glGenBuffers(1, &instanceVBO);
-
-    // Sky Map and IBL
-    skyboxMesh = createCube();
-    auto skyboxSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/skybox.vert", getAssetRoot() + "shaders/skybox.frag");
-    skyboxShader = std::make_shared<Shader>(skyboxSource, SKYBOX_SHADER_ID);
-
-    generateBRDFLUT();
-
-    // Shadow Map
-    glGenFramebuffers(1, &depthMapFBO);
-
-    // depth map texture gen
-    glGenTextures(1, &depthMap);
-    glBindTexture(GL_TEXTURE_2D, depthMap);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
-    // depth map bind
-    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
-
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        std::cerr << "[Error] Shadow framebuffer is not complete!\n";
-    }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    // Shadow Shader
-    auto dirShadowSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/dir_shadow.vert", getAssetRoot() + "shaders/dir_shadow.frag");
-
-    dirShadowShader = std::make_shared<Shader>(dirShadowSource, SHADOW_SHADER_ID);
-
-    auto pointShadowSource =
-        std::make_shared<ShaderSource>(getAssetRoot() + "shaders/point_shadow.vert", getAssetRoot() + "shaders/point_shadow.frag");
-
-    pointShadowShader = std::make_shared<Shader>(pointShadowSource, SHADOW_SHADER_ID - 1);
-
-    glGenFramebuffers(1, &pointDepthFBO);
-    glGenTextures(1, &pointDepthMap);
-
-    initialized = true;
     return true;
 }
 
 void Renderer::shutdown() {
-    if (!initialized) {
+    if (!initialized)
         return;
-    }
-
-    const bool hasContext = (glfwGetCurrentContext() != nullptr);
-    if (lightSSBO != 0) {
-        if (hasContext) {
-            glDeleteBuffers(1, &lightSSBO);
-        }
-        lightSSBO = 0;
-    }
-
-    if (instanceVBO != 0) {
-        if (hasContext) {
-            glDeleteBuffers(1, &instanceVBO);
-        }
-        instanceVBO = 0;
-    }
-
-    if (brdfLUTTexture != 0) {
-        if (hasContext) {
-            glDeleteTextures(1, &brdfLUTTexture);
-        }
-        brdfLUTTexture = 0;
-    }
-
-    if (quadVAO != 0) {
-        if (hasContext) {
-            glDeleteVertexArrays(1, &quadVAO);
-            glDeleteBuffers(1, &quadVBO);
-        }
-        quadVAO = 0;
-        quadVBO = 0;
-    }
-
-    if (hasContext) {
-        glDeleteFramebuffers(1, &depthMapFBO);
-        glDeleteFramebuffers(1, &pointDepthFBO);
-        glDeleteTextures(1, &depthMap);
-        glDeleteTextures(1, &pointDepthMap);
-    }
-    depthMapFBO = depthMap = pointDepthFBO = pointDepthMap = 0;
-    pointShadowCount = 0;
-    shadowedPointLights.clear();
+    if (mainPassActive)
+        sg_end_pass();
+    mainPassActive = false;
+    skyboxShader.reset();
     dirShadowShader.reset();
     pointShadowShader.reset();
-
     skyboxMesh.reset();
-    skyboxShader.reset();
-
-    initialized = false;
-}
-
-void Renderer::renderQuad() {
-    if (quadVAO == 0) {
-        float quadVertices[] = {
-            // positions   // texture Coords
-            -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-        };
-        glGenVertexArrays(1, &quadVAO);
-        glGenBuffers(1, &quadVBO);
-        glBindVertexArray(quadVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    for (const auto& entry : lightBuffers) {
+        sg_destroy_view(entry.view);
+        sg_destroy_buffer(entry.buffer);
     }
-    glBindVertexArray(quadVAO);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glBindVertexArray(0);
+    lightBuffers.clear();
+    for (auto buffer : instanceBuffers)
+        sg_destroy_buffer(buffer);
+    instanceBuffers.clear();
+    nextLightBuffer = nextInstanceBuffer = 0;
+    sg_destroy_view(depthAttachment);
+    for (auto view : pointDepthAttachments)
+        sg_destroy_view(view);
+    pointDepthAttachments.clear();
+    for (auto texture : {brdfLUTTexture, depthMap, pointDepthMap, fallbackCubemap})
+        destroyTexture(texture);
+    lightView = {};
+    instanceBuffer = {};
+    depthAttachment = {};
+    brdfLUTTexture = depthMap = pointDepthMap = fallbackCubemap = 0;
+    pointShadowCount = 0;
+    shadowedPointLights.clear();
+    sg_shutdown();
+    initialized = false;
+    framebufferWidth = framebufferHeight = 0;
 }
 
 void Renderer::generateBRDFLUT() {
-    // gen texture
-    glGenTextures(1, &brdfLUTTexture);
-    glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    // attach texture to framebuffer
-    GLuint captureFBO;
-    glGenFramebuffers(1, &captureFBO);
-    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdfLUTTexture, 0);
-
-    // get shader
-    auto brdfSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/brdf.vert", getAssetRoot() + "shaders/brdf.frag");
-    std::shared_ptr<Shader> brdfShader = std::make_shared<Shader>(brdfSource, BRDF_SHADER_ID);
-
-    // viewport backup
-    GLint prevViewport[4];
-    glGetIntegerv(GL_VIEWPORT, prevViewport);
-
-    // render
-    // The BRDF shader writes only RG, so source-alpha blending is undefined here.
-    const GLboolean wasBlendEnabled = glIsEnabled(GL_BLEND);
-    glDisable(GL_BLEND);
-    glViewport(0, 0, 512, 512);
-    brdfShader->use();
-    glClear(GL_COLOR_BUFFER_BIT);
-    renderQuad();
-
-    // clean
-    if (wasBlendEnabled) {
-        glEnable(GL_BLEND);
-    }
-    glViewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3]);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glDeleteFramebuffers(1, &captureFBO);
+    auto shader = loadShader("brdf", 999998);
+    if (!shader->isValid())
+        return;
+    brdfLUTTexture = renderTexture(512, SG_PIXELFORMAT_RG16F);
+    if (!brdfLUTTexture)
+        return;
+    Mesh quad;
+    quad.vertices = {{{-1, -1, 0}, {0, 0}, {}, {}}, {{1, -1, 0}, {1, 0}, {}, {}}, {{1, 1, 0}, {1, 1}, {}, {}}, {{-1, 1, 0}, {0, 1}, {}, {}}};
+    quad.indices = {0, 1, 2, 0, 2, 3};
+    quad.setup();
+    const auto target = attachment(brdfLUTTexture);
+    sg_pass pass{};
+    pass.attachments.colors[0] = target;
+    sg_begin_pass(pass);
+    shader->draw(quad, ShaderPass::Brdf);
+    sg_end_pass();
+    sg_destroy_view(target);
 }
 
-void Renderer::beginFrame(int fbWidth, int fbHeight) {
-    if (fbWidth <= 0 || fbHeight <= 0)
+void Renderer::beginFrame(int width, int height, glm::vec4 color) {
+    if (!initialized)
         return;
+    if (mainPassActive)
+        sg_end_pass();
+    mainPassActive = false;
+    framebufferWidth = width;
+    framebufferHeight = height;
+    clearColor = color;
+    clearPending = true;
+}
 
-    framebufferWidth = fbWidth;
-    framebufferHeight = fbHeight;
+bool Renderer::beginMainPass() {
+    if (!initialized || framebufferWidth <= 0 || framebufferHeight <= 0)
+        return false;
+    if (mainPassActive)
+        return true;
+    sg_pass pass{};
+    pass.swapchain = glfw_swapchain();
+    pass.action.colors[0].load_action = clearPending ? SG_LOADACTION_CLEAR : SG_LOADACTION_LOAD;
+    pass.action.colors[0].clear_value = {clearColor.r, clearColor.g, clearColor.b, clearColor.a};
+    pass.action.depth.load_action = clearPending ? SG_LOADACTION_CLEAR : SG_LOADACTION_LOAD;
+    pass.action.depth.store_action = SG_STOREACTION_STORE;
+    pass.action.depth.clear_value = 1.0f;
+    sg_begin_pass(pass);
+    sg_apply_viewport(0, 0, framebufferWidth, framebufferHeight, false);
+    mainPassActive = true;
+    clearPending = false;
+    return true;
+}
 
-    glViewport(0, 0, framebufferWidth, framebufferHeight);
+void Renderer::endFrame() {
+    if (!initialized)
+        return;
+    if (beginMainPass())
+        sg_end_pass();
+    mainPassActive = false;
+    sg_commit();
+    nextInstanceBuffer = nextLightBuffer = 0;
 }
 
 void Renderer::processDirLights(const std::shared_ptr<Shader>& shader, const std::vector<const DirLight*>& dirLights) {
@@ -259,7 +246,7 @@ void Renderer::processPointLights(const std::vector<const PbrPointLight*>& point
 
         gpuLight.color = glm::vec4(light->color, light->intensity);
 
-        gpuLight.radius = 5.0f * std::sqrt(light->intensity);
+        gpuLight.radius = 5.0f * std::sqrt(std::max(0.0f, light->intensity));
 
         gpuLight.constant = 1.0f;
         gpuLight.linear = 0.09f;
@@ -268,15 +255,24 @@ void Renderer::processPointLights(const std::vector<const PbrPointLight*>& point
         gpuLights.push_back(gpuLight);
     }
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
-
-    if (!gpuLights.empty()) {
-        glBufferData(GL_SHADER_STORAGE_BUFFER, gpuLights.size() * sizeof(GPUMovingPointLight), gpuLights.data(), GL_DYNAMIC_DRAW);
+    if (gpuLights.empty())
+        gpuLights.push_back({});
+    if (nextLightBuffer == lightBuffers.size())
+        lightBuffers.push_back({});
+    auto& entry = lightBuffers[nextLightBuffer++];
+    const size_t size = gpuLights.size() * sizeof(GPUMovingPointLight);
+    if (entry.buffer.id && sg_query_buffer_size(entry.buffer) < size) {
+        sg_destroy_view(entry.view);
+        entry.view = {};
     }
-
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightSSBO);
-
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind buffer
+    if (!upload(entry.buffer, {gpuLights.data(), size}, true))
+        return;
+    if (!entry.view.id) {
+        sg_view_desc desc{};
+        desc.storage_buffer.buffer = entry.buffer;
+        entry.view = sg_make_view(desc);
+    }
+    lightView = entry.view;
 }
 
 void Renderer::renderInstanced(const std::shared_ptr<Model>& model, const std::vector<VisibleInstance>& instances, const Camera& camera,
@@ -284,16 +280,9 @@ void Renderer::renderInstanced(const std::shared_ptr<Model>& model, const std::v
     if (!model || model->subMeshes.empty() || instances.empty())
         return;
 
-    std::vector<InstanceData> instanceData;
-    instanceData.reserve(instances.size());
-
-    for (const auto& inst : instances) {
-        instanceData.push_back({inst.worldMatrix});
-    }
-
-    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-
-    glBufferData(GL_ARRAY_BUFFER, instanceData.size() * sizeof(InstanceData), instanceData.data(), GL_STREAM_DRAW);
+    if (!beginMainPass())
+        return;
+    uploadInstances(instances);
 
     for (const auto& subMesh : model->subMeshes) {
         if (!subMesh.mesh || !subMesh.material || !subMesh.mesh->isReady())
@@ -304,7 +293,6 @@ void Renderer::renderInstanced(const std::shared_ptr<Model>& model, const std::v
         if (!shader || !shader->isValid())
             continue;
 
-        shader->use();
         subMesh.material->bind();
         shader->set("isInstanced", true);
 
@@ -312,18 +300,12 @@ void Renderer::renderInstanced(const std::shared_ptr<Model>& model, const std::v
         shader->set("projection", camera.getProjectionMatrix(aspectRatio));
         shader->set("cameraPos", camera.position);
 
-        subMesh.mesh->setupInstanceAttributes(instanceVBO);
-
-        glBindVertexArray(subMesh.mesh->vao);
-
-        glDrawElementsInstanced(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr, static_cast<GLsizei>(instanceData.size()));
-
-        glBindVertexArray(0);
+        shader->draw(*subMesh.mesh, ShaderPass::Opaque, instanceBuffer, static_cast<int>(instances.size()));
     }
 }
 
 void Renderer::renderSingle(const std::shared_ptr<Model>& model, const glm::mat4& worldMatrix, const Camera& camera, float aspectRatio) {
-    if (!model || model->subMeshes.empty())
+    if (!beginMainPass() || !model || model->subMeshes.empty())
         return;
 
     for (const auto& subMesh : model->subMeshes) {
@@ -334,7 +316,6 @@ void Renderer::renderSingle(const std::shared_ptr<Model>& model, const glm::mat4
         if (!shader || !shader->isValid())
             continue;
 
-        shader->use();
         subMesh.material->bind();
 
         shader->set("isInstanced", false);
@@ -344,15 +325,7 @@ void Renderer::renderSingle(const std::shared_ptr<Model>& model, const glm::mat4
         shader->set("projection", camera.getProjectionMatrix(aspectRatio));
         shader->set("cameraPos", camera.position);
 
-        glBindVertexArray(subMesh.mesh->vao);
-
-        for (GLuint i = 0; i < 4; ++i) {
-            glDisableVertexAttribArray(4 + i);
-        }
-
-        glDrawElements(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr);
-
-        glBindVertexArray(0);
+        shader->draw(*subMesh.mesh, ShaderPass::Opaque);
     }
 }
 
@@ -377,33 +350,13 @@ bool Renderer::renderObject(const Object& object, const Camera& camera, float as
 }
 
 void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio) {
-    if (DISABLE_SKYMAP)
+    if (!cubemapID || !beginMainPass())
         return;
-
-    glDepthMask(GL_FALSE);
-    glDepthFunc(GL_LEQUAL);
-    glDisable(GL_CULL_FACE);
-
-    skyboxShader->use();
-
-    glm::mat4 view = glm::mat4(glm::mat3(camera.getViewMatrix()));
-    glm::mat4 projection = camera.getProjectionMatrix(aspectRatio);
-
-    skyboxShader->set("view", view);
-    skyboxShader->set("projection", projection);
+    skyboxShader->set("view", glm::mat4(glm::mat3(camera.getViewMatrix())));
+    skyboxShader->set("projection", camera.getProjectionMatrix(aspectRatio));
     skyboxShader->set("exposure", AMBIENT_INTENSITY);
-
-    glBindVertexArray(skyboxMesh->vao);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
-    skyboxShader->set("skybox", 0);
-
-    glDrawElements(GL_TRIANGLES, skyboxMesh->indexCount, GL_UNSIGNED_INT, nullptr);
-
-    glBindVertexArray(0);
-    glEnable(GL_CULL_FACE);
-    glDepthFunc(GL_LESS);
-    glDepthMask(GL_TRUE);
+    skyboxShader->setTexture("skybox", cubemapID);
+    skyboxShader->draw(*skyboxMesh, ShaderPass::Skybox);
 }
 
 void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, float aspectRatio) {
@@ -414,38 +367,19 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
         if (!shader || !shader->isValid())
             return;
 
-        shader->use();
 
         processDirLights(shader, dirLights);
 
         shader->set("activePointLightCount", static_cast<int>(pointLights.size()));
 
-        // Irradiance Map
-        glActiveTexture(GL_TEXTURE8);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, scene.getIrradianceMap());
-        shader->set("irradianceMap", 8);
-
-        // Prefilter Map
-        glActiveTexture(GL_TEXTURE9);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, scene.getPrefilterMap());
-        shader->set("prefilterMap", 9);
-
-        // BRDF LUT
-        glActiveTexture(GL_TEXTURE10);
-        glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
-        shader->set("brdfLUT", 10);
-
-        // Shadow map
-        glActiveTexture(GL_TEXTURE11);
-        glBindTexture(GL_TEXTURE_2D, depthMap);
-        shader->set("shadowMap", 11);
-
-        glActiveTexture(GL_TEXTURE12);
-        glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointDepthMap);
-        shader->set("pointShadowMap", 12);
+        shader->setTexture("irradianceMap", scene.getIrradianceMap() ? scene.getIrradianceMap() : fallbackCubemap);
+        shader->setTexture("prefilterMap", scene.getPrefilterMap() ? scene.getPrefilterMap() : fallbackCubemap);
+        shader->setTexture("brdfLUT", brdfLUTTexture);
+        shader->setTexture("shadowMap", depthMap);
+        shader->setTexture("pointShadowMap", pointDepthMap);
+        shader->setLightBuffer(lightView);
         shader->set("pointShadowCount", pointShadowCount);
-
-        shader->set("aaxReflectionLOD", 4.0f);
+        shader->set("maxReflectionLOD", scene.getPrefilterMap() ? 4.0f : 0.0f);
 
         shader->set("ambientIntensity", AMBIENT_INTENSITY);
 
@@ -458,17 +392,12 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
         float depth;
     };
     std::vector<TranslucentDraw> translucentDraws;
-    std::unordered_map<unsigned int, bool> alphaShaders;
+    std::unordered_set<unsigned int> preparedShaders;
     const auto view = camera.getViewMatrix();
 
     // Establish the opaque depth buffer before blending any translucent pixels.
-    glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_TRUE);
-    glEnable(GL_BLEND);
-    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
     for (const auto& [modelKey, instances] : instanceGroups) {
-        // validation
         if (instances.empty())
             continue;
 
@@ -476,8 +405,6 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
         if (!model || model->subMeshes.empty())
             continue;
 
-        // get submesh shaders
-        std::unordered_set<unsigned int> preparedShaders;
         for (const auto& subMesh : model->subMeshes) {
             if (!subMesh.material)
                 continue;
@@ -488,12 +415,10 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
 
             if (preparedShaders.insert(shader->getShaderProgram()).second) {
                 setupSceneUniforms(shader);
-                const bool supportsAlphaPass = glGetUniformLocation(shader->getShaderProgram(), "alphaPass") >= 0;
-                alphaShaders[shader->getShaderProgram()] = supportsAlphaPass;
                 shader->set("alphaPass", 1);
             }
             // Custom shaders without the pass uniform are drawn only once.
-            if (subMesh.mesh && subMesh.mesh->isReady() && alphaShaders[shader->getShaderProgram()]) {
+            if (subMesh.mesh && subMesh.mesh->isReady() && shader->hasUniform("alphaPass")) {
                 for (const auto& inst : instances) {
                     const auto center = view * inst.worldMatrix * glm::vec4(subMesh.mesh->boundsCenter, 1.0f);
                     translucentDraws.push_back({&subMesh, inst.worldMatrix, -center.z});
@@ -513,9 +438,6 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
     // Sort globally across models and instances. Depth testing remains enabled,
     // but blended fragments must not prevent farther surfaces from contributing.
     std::stable_sort(translucentDraws.begin(), translucentDraws.end(), [](const auto& a, const auto& b) { return a.depth > b.depth; });
-    glEnable(GL_BLEND);
-    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    glDepthMask(GL_FALSE);
     for (const auto& draw : translucentDraws) {
         const auto& subMesh = *draw.subMesh;
         auto shader = subMesh.material->getShader();
@@ -526,31 +448,22 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
         shader->set("view", view);
         shader->set("projection", camera.getProjectionMatrix(aspectRatio));
         shader->set("cameraPos", camera.position);
-        glBindVertexArray(subMesh.mesh->vao);
-        for (GLuint i = 0; i < 4; ++i) {
-            glDisableVertexAttribArray(4 + i);
-        }
-        glDrawElements(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr);
+        shader->draw(*subMesh.mesh, ShaderPass::Translucent);
         // Preserve the default behavior of subsequent direct renderSingle calls.
         shader->set("alphaPass", 0);
     }
-    glBindVertexArray(0);
-    glDepthMask(GL_TRUE);
 }
 
 bool Renderer::renderScene(Scene& scene, float aspectRatio) {
-    if (!initialized)
+    if (!initialized || framebufferWidth <= 0 || framebufferHeight <= 0 || aspectRatio <= 0.0f)
         return false;
 
-    // var
     const auto& camera = scene.getCamera();
     auto& objectManager = scene.getObjectManager();
     auto& lightManager = scene.getLightManager();
 
-    const auto dirLights = lightManager.getDirLights();
     const auto pointLights = lightManager.getPointLights();
 
-    // render
     std::unordered_map<const Model*, std::vector<VisibleInstance>> instanceGroups;
 
     std::unordered_map<const Model*, std::vector<VisibleInstance>> shadowGroups;
@@ -571,11 +484,16 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
         instanceGroups[object->model.get()].push_back(VisibleInstance{object.get(), worldMatrix});
     }
 
-    // render
+    if (mainPassActive) {
+        sg_end_pass();
+        mainPassActive = false;
+    }
     renderShadow(scene, shadowGroups);
     // Upload the layer mapping selected for this frame, including unshadowed lights.
     processPointLights(pointLights);
 
+    if (!beginMainPass())
+        return false;
     renderSkybox(scene.getCubeMap(), camera, aspectRatio);
 
     renderObjects(scene, instanceGroups, aspectRatio);
@@ -584,8 +502,6 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
 }
 
 void Renderer::renderDirShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups) {
-    if (DISABLE_SHADOW)
-        return;
     if (!dirShadowShader || !dirShadowShader->isValid())
         return;
 
@@ -603,8 +519,6 @@ void Renderer::renderDirShadow(Scene& scene, const std::unordered_map<const Mode
         lightDir = glm::normalize(lightDir);
     }
 
-    // just ignore this part
-    // NOTE: https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
     glm::mat4 lightProjection = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, 0.1f, 30.0f);
 
     glm::vec3 lightPos = -lightDir * 10.0f;
@@ -618,74 +532,49 @@ void Renderer::renderDirShadow(Scene& scene, const std::unordered_map<const Mode
 
     lightSpaceMatrix = lightProjection * lightView;
 
-    // shadow map render
-    glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
-    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-    glClear(GL_DEPTH_BUFFER_BIT);
-
-    // Shadow shader
-    dirShadowShader->use();
-
+    sg_pass pass{};
+    pass.attachments.depth_stencil = depthAttachment;
+    pass.action.depth.store_action = SG_STOREACTION_STORE;
+    sg_begin_pass(pass);
     dirShadowShader->set("lightSpaceMatrix", lightSpaceMatrix);
-
-    // rendering
     renderShadowObjects(instanceGroups, dirShadowShader);
-
-    glBindVertexArray(0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    glViewport(0, 0, framebufferWidth, framebufferHeight);
+    sg_end_pass();
 }
 
-void Renderer::renderShadowObjects(const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups,
+void Renderer::uploadInstances(const std::vector<VisibleInstance>& instances) {
+    std::vector<InstanceData> data;
+    data.reserve(instances.size());
+    for (const auto& instance : instances)
+        data.push_back({instance.worldMatrix});
+    if (nextInstanceBuffer == instanceBuffers.size())
+        instanceBuffers.push_back({});
+    auto& buffer = instanceBuffers[nextInstanceBuffer++];
+    upload(buffer, {data.data(), data.size() * sizeof(InstanceData)});
+    instanceBuffer = buffer;
+}
+
+void Renderer::renderShadowObjects(const std::unordered_map<const Model*, std::vector<VisibleInstance>>& groups,
                                    const std::shared_ptr<Shader>& shader) {
-    for (const auto& [model, instances] : instanceGroups) {
-        if (!model || model->subMeshes.empty() || instances.empty())
+    for (const auto& [model, instances] : groups) {
+        if (!model || instances.empty())
             continue;
-
-        const bool useInstancing = instances.size() >= INSTANCE_THRESHOLD;
-
-        if (useInstancing) {
-            std::vector<InstanceData> instanceData;
-            instanceData.reserve(instances.size());
-            for (const auto& inst : instances) {
-                instanceData.push_back({inst.worldMatrix});
-            }
-
-            glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-            glBufferData(GL_ARRAY_BUFFER, instanceData.size() * sizeof(InstanceData), instanceData.data(), GL_STREAM_DRAW);
-
-            shader->set("isInstanced", true);
-
-            for (const auto& subMesh : model->subMeshes) {
-                if (!subMesh.mesh || !subMesh.mesh->isReady())
-                    continue;
-
-                subMesh.mesh->setupInstanceAttributes(instanceVBO);
-                glBindVertexArray(subMesh.mesh->vao);
-                glDrawElementsInstanced(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr, static_cast<GLsizei>(instanceData.size()));
-            }
-        } else {
-            shader->set("isInstanced", false);
-
-            for (const auto& instance : instances) {
-                shader->set("model", instance.worldMatrix);
-                for (const auto& subMesh : model->subMeshes) {
-                    if (!subMesh.mesh || !subMesh.mesh->isReady())
-                        continue;
-
-                    glBindVertexArray(subMesh.mesh->vao);
-                    // 인스턴스 attribute가 켜져 있을 수 있으니 꺼줌 (renderSingle과 동일)
-                    for (GLuint i = 0; i < 4; ++i) {
-                        glDisableVertexAttribArray(4 + i);
-                    }
-                    glDrawElements(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr);
+        const bool instanced = instances.size() >= INSTANCE_THRESHOLD;
+        shader->set("isInstanced", instanced);
+        if (instanced)
+            uploadInstances(instances);
+        for (const auto& subMesh : model->subMeshes) {
+            if (!subMesh.mesh || !subMesh.mesh->isReady())
+                continue;
+            if (instanced) {
+                shader->draw(*subMesh.mesh, ShaderPass::Shadow, instanceBuffer, static_cast<int>(instances.size()));
+            } else {
+                for (const auto& instance : instances) {
+                    shader->set("model", instance.worldMatrix);
+                    shader->draw(*subMesh.mesh, ShaderPass::Shadow);
                 }
             }
         }
     }
-    glBindVertexArray(0);
 }
 
 void Renderer::renderShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups) {
@@ -693,89 +582,56 @@ void Renderer::renderShadow(Scene& scene, const std::unordered_map<const Model*,
     renderPointShadow(scene, instanceGroups);
 }
 
-void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups) {
+void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& groups) {
     shadowedPointLights.clear();
-    if (DISABLE_SHADOW || !pointShadowShader || !pointShadowShader->isValid()) {
-        pointShadowCount = 0;
-        return;
-    }
-
-    const auto lights = scene.getLightManager().getPointLights();
-    GLint maxLayers = 0;
-    glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &maxLayers);
-    for (const auto* light : lights) {
-        if (light->castsShadow && shadowedPointLights.size() < static_cast<std::size_t>(maxLayers / 6)) {
+    const auto limit = sg_query_limits().max_image_array_layers / 6;
+    for (auto* light : scene.getLightManager().getPointLights()) {
+        if (light->castsShadow && shadowedPointLights.size() < static_cast<size_t>(limit))
             shadowedPointLights.push_back(light);
+    }
+    pointShadowCount = static_cast<int>(shadowedPointLights.size());
+    const int layers = std::max(1, pointShadowCount) * 6;
+    if (static_cast<int>(pointDepthAttachments.size()) != layers) {
+        for (auto view : pointDepthAttachments)
+            sg_destroy_view(view);
+        pointDepthAttachments.clear();
+        destroyTexture(pointDepthMap);
+        pointDepthMap = renderTexture(POINT_SHADOW_RESOLUTION, SG_PIXELFORMAT_DEPTH, layers);
+        if (!pointDepthMap) {
+            pointShadowCount = 0;
+            return;
         }
+        for (int slice = 0; slice < layers; ++slice)
+            pointDepthAttachments.push_back(attachment(pointDepthMap, slice));
     }
-    const int count = static_cast<int>(shadowedPointLights.size());
-
-    constexpr int POINT_SHADOW_RES = 1024;
-
-    glActiveTexture(GL_TEXTURE12);
-    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointDepthMap);
-    if (count != pointShadowCount && count > 0) {
-        glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT24, POINT_SHADOW_RES, POINT_SHADOW_RES, count * 6, 0, GL_DEPTH_COMPONENT,
-                     GL_FLOAT, nullptr);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    }
-    pointShadowCount = count;
-    if (count == 0)
-        return;
-
     const glm::vec3 directions[] = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
     const glm::vec3 up[] = {{0, -1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}, {0, -1, 0}, {0, -1, 0}};
-
-    glViewport(0, 0, POINT_SHADOW_RES, POINT_SHADOW_RES);
-    glBindFramebuffer(GL_FRAMEBUFFER, pointDepthFBO);
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
-    pointShadowShader->use();
-
-    for (int light = 0; light < count; ++light) {
-        const auto& position = shadowedPointLights[light]->position;
-        const float farPlane = std::max(kNearPlane * 2.0f, 5.0f * std::sqrt(std::max(0.0f, shadowedPointLights[light]->intensity)));
+    for (int light = 0; light < pointShadowCount; ++light) {
+        const auto* source = shadowedPointLights[light];
+        const auto position = source->position;
+        const float farPlane = std::max(kNearPlane * 2, 5 * std::sqrt(std::max(0.0f, source->intensity)));
         const auto projection = glm::perspective(glm::radians(90.0f), 1.0f, kNearPlane, farPlane);
-
-        std::unordered_map<const Model*, std::vector<VisibleInstance>> culledShadowGroups;
-
-        for (const auto& [model, instances] : instanceGroups) {
-            for (const auto& inst : instances) {
-                glm::vec3 objPos = glm::vec3(inst.worldMatrix[3]);
-
-                float dist = glm::distance(position, objPos);
-                if (dist <= farPlane + 2.0f) {
-                    culledShadowGroups[model].push_back(inst);
-                }
+        std::unordered_map<const Model*, std::vector<VisibleInstance>> culled;
+        for (const auto& [model, instances] : groups) {
+            for (const auto& instance : instances) {
+                const auto center = glm::vec3(instance.worldMatrix * glm::vec4(model->boundsCenter, 1));
+                const float scale = std::max({glm::length(glm::vec3(instance.worldMatrix[0])), glm::length(glm::vec3(instance.worldMatrix[1])),
+                                              glm::length(glm::vec3(instance.worldMatrix[2]))});
+                if (glm::distance(position, center) <= farPlane + model->boundsRadius * scale)
+                    culled[model].push_back(instance);
             }
         }
-
-        if (culledShadowGroups.empty()) {
-            for (int face = 0; face < 6; ++face) {
-                glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, pointDepthMap, 0, light * 6 + face);
-                glClear(GL_DEPTH_BUFFER_BIT);
-            }
-            continue;
-        }
-
         pointShadowShader->set("lightPos", position);
         pointShadowShader->set("farPlane", farPlane);
-
         for (int face = 0; face < 6; ++face) {
-            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, pointDepthMap, 0, light * 6 + face);
-            glClear(GL_DEPTH_BUFFER_BIT);
+            sg_pass pass{};
+            pass.attachments.depth_stencil = pointDepthAttachments[light * 6 + face];
+            pass.action.depth.store_action = SG_STOREACTION_STORE;
+            sg_begin_pass(pass);
             pointShadowShader->set("lightSpaceMatrix", projection * glm::lookAt(position, position + directions[face], up[face]));
-
-            renderShadowObjects(culledShadowGroups, pointShadowShader);
+            renderShadowObjects(culled, pointShadowShader);
+            sg_end_pass();
         }
     }
-
-    glBindVertexArray(0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, framebufferWidth, framebufferHeight);
 }
 } // namespace knot
