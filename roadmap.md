@@ -3,7 +3,7 @@
 - Beta 0.2.0: 이벤트와 PBR, 그리고 인스턴싱, 제대로된 게임을 만들 수 있을 수준에 다다랐을때 릴리즈
 - 정식 버전: 실제 제품에 사용 가능할때, 코드 정리도 해야함
 
-- 20??: Experimental Carbon implementation of Not Engine
+- 언젠가 Carbon 바인딩 만들기
 
 ## Todo
 
