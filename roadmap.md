@@ -19,7 +19,7 @@
 
 - [x] OBJ 임포트
 - [x] MTL 머티리얼 임포트
-- [ ] GLTF 임포트 (https://github.com/jkuhlmann/cgltf)
+- [x] GLTF 임포트 (https://github.com/jkuhlmann/cgltf)
 
 - [x] camera.hpp를 구현과 헤더로 나누기
 
