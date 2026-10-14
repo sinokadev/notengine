@@ -623,6 +623,8 @@ void Renderer::renderDirShadow(Scene& scene, const std::unordered_map<const Mode
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
     glClear(GL_DEPTH_BUFFER_BIT);
 
+    glEnable(GL_DEPTH_CLAMP);
+
     // Shadow shader
     dirShadowShader->use();
 
@@ -631,10 +633,10 @@ void Renderer::renderDirShadow(Scene& scene, const std::unordered_map<const Mode
     // rendering
     renderShadowObjects(instanceGroups, dirShadowShader);
 
+    glDisable(GL_DEPTH_CLAMP);
+
     glBindVertexArray(0);
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
     glViewport(0, 0, framebufferWidth, framebufferHeight);
 }
 
@@ -676,7 +678,6 @@ void Renderer::renderShadowObjects(const std::unordered_map<const Model*, std::v
                         continue;
 
                     glBindVertexArray(subMesh.mesh->vao);
-                    // 인스턴스 attribute가 켜져 있을 수 있으니 꺼줌 (renderSingle과 동일)
                     for (GLuint i = 0; i < 4; ++i) {
                         glDisableVertexAttribArray(4 + i);
                     }
@@ -689,8 +690,13 @@ void Renderer::renderShadowObjects(const std::unordered_map<const Model*, std::v
 }
 
 void Renderer::renderShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups) {
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);
+
     renderDirShadow(scene, instanceGroups);
     renderPointShadow(scene, instanceGroups);
+
+    glCullFace(GL_BACK);
 }
 
 void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups) {
@@ -736,9 +742,6 @@ void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Mo
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
 
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_FRONT);
-
     pointShadowShader->use();
 
     const float pointShadowNear = std::max(kNearPlane, 0.15f);
@@ -781,8 +784,6 @@ void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Mo
             renderShadowObjects(culledShadowGroups, pointShadowShader);
         }
     }
-
-    glCullFace(GL_BACK);
 
     glBindVertexArray(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
