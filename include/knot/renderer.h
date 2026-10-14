@@ -125,6 +125,7 @@ private:
 
     static constexpr float AMBIENT_INTENSITY = 1.0f;
     static constexpr unsigned int SHADOW_RESOLUTION = 2048;
+    static constexpr unsigned int POINT_SHADOW_RESOLUTION = 256;
 
     GLuint brdfLUTTexture = 0;
 
