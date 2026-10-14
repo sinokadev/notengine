@@ -715,10 +715,11 @@ void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Mo
     glActiveTexture(GL_TEXTURE12);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointDepthMap);
     if (count != pointShadowCount && count > 0) {
-        glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT24, POINT_SHADOW_RES, POINT_SHADOW_RES, count * 6, 0, GL_DEPTH_COMPONENT,
+        glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT32F, POINT_SHADOW_RES, POINT_SHADOW_RES, count * 6, 0, GL_DEPTH_COMPONENT,
                      GL_FLOAT, nullptr);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -734,12 +735,19 @@ void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Mo
     glBindFramebuffer(GL_FRAMEBUFFER, pointDepthFBO);
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
+
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);
+
     pointShadowShader->use();
+
+    const float pointShadowNear = std::max(kNearPlane, 0.15f);
 
     for (int light = 0; light < count; ++light) {
         const auto& position = shadowedPointLights[light]->position;
-        const float farPlane = std::max(kNearPlane * 2.0f, 5.0f * std::sqrt(std::max(0.0f, shadowedPointLights[light]->intensity)));
-        const auto projection = glm::perspective(glm::radians(90.0f), 1.0f, kNearPlane, farPlane);
+        const float farPlane = std::max(pointShadowNear * 2.0f, 5.0f * std::sqrt(std::max(0.0f, shadowedPointLights[light]->intensity)));
+
+        const auto projection = glm::perspective(glm::radians(90.0f), 1.0f, pointShadowNear, farPlane);
 
         std::unordered_map<const Model*, std::vector<VisibleInstance>> culledShadowGroups;
 
@@ -773,6 +781,8 @@ void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Mo
             renderShadowObjects(culledShadowGroups, pointShadowShader);
         }
     }
+
+    glCullFace(GL_BACK);
 
     glBindVertexArray(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

@@ -97,7 +97,7 @@ vec3 computeFresnelWithRoughness(float cosTheta, vec3 baseReflectivity, float gl
 }
 
 vec3 calcPbrLight(vec3 surfaceNormal, vec3 viewDir, vec3 lightDir, vec3 lightColor, vec3 surfaceAlbedo, float metalness, float glossiness,
-                             vec3 baseReflectivity, float shadowFactor) {
+                  vec3 baseReflectivity, float shadowFactor) {
     vec3 halfVector = normalize(viewDir + lightDir);
     float normalDotView = max(dot(surfaceNormal, viewDir), 0.0001);
     float normalDotLight = max(dot(surfaceNormal, lightDir), 0.0);
@@ -129,7 +129,10 @@ float calcPointShadow(int index, vec3 normal, vec3 lightDir) {
     float farPlane = max(0.2, pointLights[index].radius);
     if (distanceToLight <= 0.000001 || distanceToLight >= farPlane)
         return 0.0;
-    float bias = max(0.1 * (1.0 - dot(normal, lightDir)), 0.01);
+
+    float cosTheta = clamp(dot(normal, lightDir), 0.0, 1.0);
+
+    float bias = max(0.005 * (1.0 - cosTheta), 0.0005) * (distanceToLight / farPlane);
 
     // Sample a 3x3 neighborhood in the plane perpendicular to the cube lookup.
     vec3 direction = fromLight / distanceToLight;
@@ -200,8 +203,7 @@ void main() {
 
     // Directional Light
     vec3 L_dir = normalize(-dirLight.direction);
-    vec3 directLighting =
-        calcPbrLight(N, V, L_dir, dirLight.diffuse, albedo, metallic, roughness, F0, calcShadow(LightSpaceFragPos, N, L_dir));
+    vec3 directLighting = calcPbrLight(N, V, L_dir, dirLight.diffuse, albedo, metallic, roughness, F0, calcShadow(LightSpaceFragPos, N, L_dir));
 
     // Fresnel for IBL
     float NoV = max(dot(N, V), 0.0);
