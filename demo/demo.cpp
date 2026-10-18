@@ -26,6 +26,8 @@ int main() {
     bool testMp3Loaded = false;
 
     if (audio.init()) {
+        engine.setMakingMusic(true);
+
         const std::string audioDirectory = knot::getAssetRoot() + "assets/audio/";
         const std::string testWavPath = audioDirectory + "test_wav.wav";
         const std::string testMp3Path = audioDirectory + "test_mp3.mp3";
@@ -213,6 +215,8 @@ int main() {
     });
 
     engine.setScene(scene);
+
+    engine.setMakingMusic(false);
 
     return engine.run();
 }
