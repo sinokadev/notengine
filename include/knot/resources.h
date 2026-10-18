@@ -478,6 +478,7 @@ struct Model {
 /** @brief Position, quaternion rotation, and scale in world space. */
 class Transform {
 public:
+    virtual ~Transform() = default;
     /** @brief World-space translation. */
     glm::vec3 position{0.0f};
     /** @brief World-space orientation. */
@@ -488,7 +489,7 @@ public:
     glm::vec3 pivot{0.0f};
 
     /** @brief Returns translation * pivot-corrected rotation & scale. */
-    glm::mat4 getWorldMatrix() const;
+    virtual glm::mat4 getWorldMatrix() const;
     /** @brief Returns the rotation-derived forward direction. */
     glm::vec3 getFront() const;
     /** @brief Returns the rotation-derived right direction. */
@@ -500,6 +501,10 @@ public:
 /** @brief A transformable scene entity that references a render model. */
 class Object : public Transform {
 public:
+    /** @brief Returns accumulated group transforms * this object's local TRS.
+     *  After transformGroup(), position, rotation, scale and pivot describe the
+     *  local transform within the accumulated group transform. */
+    glm::mat4 getWorldMatrix() const override;
     /** @brief Object-manager ID, or 0 before registration. */
     unsigned int id = 0;
 
@@ -629,13 +634,18 @@ public:
      * @brief Tests the model's bounding sphere against @p frustum using @p worldMatrix.
      *
      * The model's local bounding sphere is transformed into world space and
-     * scaled using the maximum absolute scale component.
+     * conservatively scaled using the full world matrix, including group scale
+     * and shear.
      *
      * @param frustum The frustum to test against.
      * @param worldMatrix The world transform used to calculate the sphere position.
      * @return true if the bounding sphere intersects the frustum; false otherwise.
      */
     bool isVisible(const Frustum& frustum, const glm::mat4& worldMatrix) const;
+
+private:
+    friend class ObjectManager;
+    glm::mat4 groupTransform{1.0f};
 };
 
 /** @brief Base class for transformable scene lights. */
