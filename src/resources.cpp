@@ -271,6 +271,10 @@ glm::mat4 Transform::getWorldMatrix() const {
     return T * toPivot * R * S * fromPivot;
 }
 
+glm::mat4 Object::getWorldMatrix() const {
+    return groupTransform * Transform::getWorldMatrix();
+}
+
 bool Object::isVisible(const Frustum& frustum) const {
     return isVisible(frustum, getWorldMatrix());
 }
@@ -285,10 +289,19 @@ bool Object::isVisible(const Frustum& frustum, const glm::mat4& worldMatrix) con
 
     glm::vec3 center = glm::vec3(worldMatrix * glm::vec4(model->boundsCenter, 1.0f));
 
-    glm::vec3 absScale = glm::abs(scale);
-    float maxScale = glm::max(glm::max(absScale.x, absScale.y), absScale.z);
-
-    float radius = model->boundsRadius * maxScale;
+    // The maximum absolute row sum of A^T A bounds its largest eigenvalue.
+    // Unlike decomposing TRS, this remains conservative under group-induced shear.
+    const glm::mat3 linear(worldMatrix);
+    const glm::mat3 gram = glm::transpose(linear) * linear;
+    float maxRowSum = 0.0f;
+    for (int row = 0; row < 3; ++row) {
+        float rowSum = 0.0f;
+        for (int col = 0; col < 3; ++col) {
+            rowSum += std::abs(gram[col][row]);
+        }
+        maxRowSum = glm::max(maxRowSum, rowSum);
+    }
+    float radius = model->boundsRadius * std::sqrt(maxRowSum);
 
     return frustum.intersectsSphere(center, radius);
 }

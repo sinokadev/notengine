@@ -158,6 +158,15 @@ std::vector<std::string> ObjectManager::getGroups() const {
     return result;
 }
 
+size_t ObjectManager::transformGroup(const std::string& group, const Transform& delta) {
+    const glm::mat4 matrix = delta.getWorldMatrix();
+    auto members = getObjectsByGroup(group);
+    for (auto* object : members) {
+        object->groupTransform = matrix * object->groupTransform;
+    }
+    return members.size();
+}
+
 LightManager::~LightManager() {
     shutdown();
 }

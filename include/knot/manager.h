@@ -71,6 +71,14 @@ public:
     /** @brief Returns all unique group names among managed objects. */
     std::vector<std::string> getGroups() const;
 
+    /** @brief Applies a world-space delta to a group as one compound object.
+     *  Rotation and scale act around delta.pivot (a world-space point).
+     *  Calls accumulate in order; each current member is transformed once,
+     *  including objects with multiple group tags. Local object TRS is preserved.
+     *  New members do not inherit earlier calls. No scene hierarchy is created.
+     *  @return Number of transformed objects; zero for an empty/unknown group. */
+    size_t transformGroup(const std::string& group, const Transform& delta);
+
     /** @brief Removes every managed object and resets ID allocation. */
     void clear();
     /** @brief Releases all managed objects. Equivalent to clear(). */
