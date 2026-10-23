@@ -138,14 +138,13 @@ float calcPointShadow(int index, vec3 normal, vec3 lightDir) {
     if (distanceToLight <= 0.000001 || distanceToLight >= farPlane)
         return 0.0;
 
-    float cosTheta = clamp(dot(normal, lightDir), 0.0, 1.0);
-    float bias = max(0.005 * (1.0 - cosTheta), 0.0005) * (distanceToLight / farPlane);
-
     vec3 direction = fromLight / distanceToLight;
     vec3 up = abs(direction.y) < 0.99 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
     vec3 tangent = normalize(cross(up, direction));
     vec3 bitangent = cross(direction, tangent);
     float texelSize = 2.0 / float(textureSize(pointShadowMap, 0).x);
+    float cosTheta = clamp(dot(normal, lightDir), 0.0, 1.0);
+    float bias = max(0.02 * (1.0 - cosTheta), 0.003) + distanceToLight * texelSize;
 
     float shadow = 0.0;
     for (int x = -1; x <= 1; ++x) {
@@ -166,7 +165,8 @@ float calcShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
         return 0.0;
 
     float currentDepth = projCoords.z;
-    float bias = max(0.0005 * (1.0 - dot(normal, lightDir)), 0.00005);
+    float normalLightAlignment = clamp(dot(normal, lightDir), 0.0, 1.0);
+    float bias = max(0.0015 * (1.0 - normalLightAlignment), 0.0002);
 
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
@@ -197,13 +197,14 @@ void main() {
     // Normal Mapping
     vec3 normalMap = texture(material.normalMap, TexCoords).rgb;
     vec3 N = normalize(TBN * (normalMap * 2.0 - 1.0));
+    vec3 geometricNormal = normalize(Normal);
 
     // Base Reflectivity (F0)
     vec3 F0 = mix(vec3(0.04), albedo, metallic);
 
     // Directional Light
     vec3 L_dir = normalize(-dirLight.direction);
-    float dirShadow = calcShadow(LightSpaceFragPos, N, L_dir);
+    float dirShadow = calcShadow(LightSpaceFragPos, geometricNormal, L_dir);
     vec3 directLighting = calcPbrLight(N, V, L_dir, dirLight.diffuse, albedo, metallic, roughness, F0, dirShadow);
 
     // Point Lights with Early Out Optimization
@@ -233,7 +234,7 @@ void main() {
         // Compute shadow only when light intensity actually matters
         float pointShadow = 0.0;
         if (attenuation > 0.001) {
-            pointShadow = calcPointShadow(i, N, L_point);
+            pointShadow = calcPointShadow(i, geometricNormal, L_point);
         }
 
         directLighting += calcPbrLight(N, V, L_point, lightColor, albedo, metallic, roughness, F0, pointShadow);
