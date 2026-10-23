@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <array>
 #include <knot/camera.h>
 #include <knot/resources.h>
 #include <knot/scene.h>
@@ -67,6 +68,14 @@ public:
     /** @brief Sets the OpenGL viewport for a new frame.
      *  Does nothing for non-positive framebuffer dimensions. */
     void beginFrame(int framebufferWidth, int framebufferHeight);
+    /** @brief Enables or disables SSAO contribution in the PBR ambient lighting. */
+    void setSSAOEnabled(bool enabled) {
+        ssaoEnabled = enabled;
+    }
+    /** @brief Reports whether SSAO is currently enabled. */
+    bool isSSAOEnabled() const {
+        return ssaoEnabled;
+    }
     /** @brief Renders one model using an explicit world transform. */
     void renderSingle(const std::shared_ptr<Model>& model, const glm::mat4& worldMatrix, const Camera& camera, float aspectRatio);
     /** @brief Renders an object using its current transform.
@@ -106,6 +115,8 @@ private:
                              const std::shared_ptr<Shader>& shader);
     void renderDirShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups);
     void renderPointShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups);
+    void renderSSAO(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, float aspectRatio);
+    void resizeSSAOTargets(int width, int height);
 
     bool initialized = false;
 
@@ -128,6 +139,22 @@ private:
     static constexpr unsigned int POINT_SHADOW_RESOLUTION = 256;
 
     GLuint brdfLUTTexture = 0;
+
+    GLuint prePassFBO = 0;
+    GLuint prePassTexture = 0;
+    GLuint prePassDepth = 0;
+    GLuint ssaoFBO = 0;
+    GLuint ssaoTexture = 0;
+    GLuint ssaoBlurFBO = 0;
+    GLuint ssaoBlurTexture = 0;
+    GLuint ssaoNoiseTexture = 0;
+    int ssaoWidth = 0;
+    int ssaoHeight = 0;
+    std::array<glm::vec3, 32> ssaoKernel{};
+    std::shared_ptr<Shader> prePassShader;
+    std::shared_ptr<Shader> ssaoShader;
+    std::shared_ptr<Shader> ssaoBlurShader;
+    bool ssaoEnabled = true;
 
     void generateBRDFLUT();
 

@@ -7,18 +7,21 @@
 #include <knot/engine.h>
 #include <knot/scene.h>
 #include <knot/resources.h>
+#include <knot/renderer.h>
 #include <knot/utility.h>
 #include <unordered_map>
 #include <GLFW/glfw3.h>
 
 enum UserEventType : uint32_t { PRINT_FPS, RELOAD_SCENE };
 
-int main() {
+int main(int argc, char** argv) {
     knot::Engine engine;
 
     if (!engine.init(1280, 720, "Knot Demo")) {
         return 1;
     }
+
+    glfwSetWindowTitle(engine.getWindow().getHandle(), "Knot Demo | SSAO ON (O to toggle)");
 
     glfwSetInputMode(engine.getWindow().getHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -26,16 +29,22 @@ int main() {
 
     knot::Scene scene;
 
-    if (!scene.loadSeno(knot::getAssetRoot() + "assets/scene.seno")) {
+    const std::string scenePath = argc > 1 ? argv[1] : knot::getAssetRoot() + "assets/scene.seno";
+    if (!scene.loadSeno(scenePath)) {
         std::cerr << "[Error] Failed to load demo scene" << std::endl;
         return 1;
     }
 
     // Scene file path and initial HDR
-    const std::string scenePath = knot::getAssetRoot() + "assets/scene.seno";
     scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
-    scene.setCamera(std::make_shared<knot::MovingCamera>(glm::vec3(0.0f, 2.0f, 5.0f)));
+    if (argc > 1) {
+        auto camera = std::make_shared<knot::MovingCamera>(glm::vec3(0.0f, 4.2f, 10.5f));
+        camera->rotate(0.0f, -250.0f);
+        scene.setCamera(camera);
+    } else {
+        scene.setCamera(std::make_shared<knot::MovingCamera>(glm::vec3(0.0f, 2.0f, 5.0f)));
+    }
 
     std::unordered_map<knot::ScanCode, bool> keyStates;
 
@@ -107,6 +116,18 @@ int main() {
                     }
 
                     stop = !stop;
+                    event.handled = true;
+                }
+
+                if (event.key == knot::ScanCode::O) {
+                    auto& renderer = knot::Renderer::get();
+                    renderer.setSSAOEnabled(!renderer.isSSAOEnabled());
+
+                    const char* ssaoState = renderer.isSSAOEnabled() ? "ON" : "OFF";
+                    const std::string title = std::string("Knot Demo | SSAO ") + ssaoState + " (O to toggle)";
+                    glfwSetWindowTitle(engine.getWindow().getHandle(), title.c_str());
+                    std::cout << "SSAO: " << ssaoState << '\n';
+
                     event.handled = true;
                 }
 

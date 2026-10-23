@@ -46,6 +46,8 @@ uniform vec3 cameraPos;
 uniform float maxReflectionLOD;
 uniform float ambientIntensity;
 uniform sampler2D brdfLUT;
+uniform sampler2D ssaoMap;
+uniform bool ssaoEnabled;
 uniform sampler2D shadowMap;
 uniform samplerCubeArray pointShadowMap;
 uniform int pointShadowCount;
@@ -252,7 +254,8 @@ void main() {
     // Corrected Specular IBL calculation using Standard BRDF Integration
     vec3 specularIBL = prefilteredColor * (F0 * brdf.x + brdf.y);
 
-    vec3 ambient = (kD_ibl * diffuseIBL + specularIBL) * ao * ambientIntensity;
+    float ssao = ssaoEnabled ? texture(ssaoMap, gl_FragCoord.xy / vec2(textureSize(ssaoMap, 0))).r : 1.0;
+    vec3 ambient = (kD_ibl * diffuseIBL + specularIBL) * ao * ambientIntensity * ssao;
 
     vec3 finalColor = ambient + directLighting;
 

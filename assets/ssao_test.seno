@@ -1,0 +1,589 @@
+{
+    "version": 8,
+    "sky": {
+        "type": "HDR",
+        "path": "{assetRoot}/assets/DaySkyHDRI015A_2K_HDR.hdr"
+    },
+    "objects": [
+        {
+            "id": 100,
+            "group": "ssao_blocks",
+            "position": [
+                -1.78,
+                0.4368,
+                -1.78
+            ],
+            "pivot": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.48,
+                0.48,
+                0.48
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "model": 0
+        },
+        {
+            "id": 2,
+            "group": "ssao_blocks",
+            "position": [
+                0.0,
+                0.40040000000000003,
+                -1.78
+            ],
+            "pivot": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.44,
+                0.44,
+                0.44
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "model": 0
+        },
+        {
+            "id": 3,
+            "group": "ssao_blocks",
+            "position": [
+                1.78,
+                0.4368,
+                -1.78
+            ],
+            "pivot": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.48,
+                0.48,
+                0.48
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "model": 0
+        },
+        {
+            "id": 4,
+            "group": "ssao_blocks",
+            "position": [
+                -1.78,
+                0.40040000000000003,
+                0.0
+            ],
+            "pivot": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.44,
+                0.44,
+                0.44
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "model": 0
+        },
+        {
+            "id": 5,
+            "group": "ssao_blocks",
+            "position": [
+                0.0,
+                0.4368,
+                0.0
+            ],
+            "pivot": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.48,
+                0.48,
+                0.48
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "model": 0
+        },
+        {
+            "id": 6,
+            "group": "ssao_blocks",
+            "position": [
+                1.78,
+                0.40040000000000003,
+                0.0
+            ],
+            "pivot": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.44,
+                0.44,
+                0.44
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "model": 0
+        },
+        {
+            "id": 7,
+            "group": "ssao_blocks",
+            "position": [
+                -1.78,
+                0.4368,
+                1.78
+            ],
+            "pivot": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.48,
+                0.48,
+                0.48
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "model": 0
+        },
+        {
+            "id": 8,
+            "group": "ssao_blocks",
+            "position": [
+                0.0,
+                0.40040000000000003,
+                1.78
+            ],
+            "pivot": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.44,
+                0.44,
+                0.44
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "model": 0
+        },
+        {
+            "id": 9,
+            "group": "ssao_blocks",
+            "position": [
+                1.78,
+                0.4368,
+                1.78
+            ],
+            "pivot": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.48,
+                0.48,
+                0.48
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "model": 0
+        },
+        {
+            "id": 10,
+            "group": "ssao_blocks",
+            "position": [
+                -1.78,
+                1.274,
+                -1.78
+            ],
+            "pivot": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.44,
+                0.44,
+                0.44
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "model": 0
+        },
+        {
+            "id": 11,
+            "group": "ssao_blocks",
+            "position": [
+                0,
+                1.3104,
+                0
+            ],
+            "pivot": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.48,
+                0.48,
+                0.48
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "model": 0
+        },
+        {
+            "id": 12,
+            "group": "ssao_blocks",
+            "position": [
+                1.78,
+                1.274,
+                1.78
+            ],
+            "pivot": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.44,
+                0.44,
+                0.44
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "model": 0
+        },
+        {
+            "id": 13,
+            "group": "ssao_bars",
+            "position": [
+                -0.89,
+                0.18,
+                0
+            ],
+            "pivot": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.42,
+                0.18,
+                0.24
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "model": 0
+        },
+        {
+            "id": 14,
+            "group": "ssao_bars",
+            "position": [
+                0.89,
+                0.18,
+                0
+            ],
+            "pivot": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.42,
+                0.18,
+                0.24
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "model": 0
+        },
+        {
+            "group": "ground",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "pivot": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                200,
+                0.1,
+                200
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "model": 1
+        }
+    ],
+    "lights": [
+        {
+            "type": "DirLight",
+            "rotation": [
+                0.2798,
+                -0.3647,
+                0.1159,
+                0.8805
+            ],
+            "color": [
+                1,
+                0.9,
+                0.8
+            ],
+            "intensity": 0.9,
+            "ambient": [
+                0.08,
+                0.08,
+                0.08
+            ],
+            "diffuse": [
+                0.9,
+                0.86,
+                0.82
+            ],
+            "specular": [
+                1,
+                1,
+                1
+            ]
+        },
+        {
+            "type": "PbrPointLight",
+            "position": [
+                2,
+                2.5,
+                1
+            ],
+            "color": [
+                1,
+                0.65,
+                0.3
+            ],
+            "intensity": 5.0
+        }
+    ],
+    "models": [
+        {
+            "mesh": 0,
+            "material": 0
+        },
+        {
+            "mesh": 1,
+            "material": 1
+        }
+    ],
+    "meshes": [
+        "{assetRoot}/assets/notbox.obj",
+        {
+            "type": "embedded",
+            "vertices": [
+                {
+                    "position": [
+                        -1.0,
+                        0.0,
+                        1.0
+                    ],
+                    "normal": [
+                        0.0,
+                        1.0,
+                        0.0
+                    ],
+                    "texcoord": [
+                        0.0,
+                        0.0
+                    ],
+                    "tangent": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                {
+                    "position": [
+                        1.0,
+                        0.0,
+                        1.0
+                    ],
+                    "normal": [
+                        0.0,
+                        1.0,
+                        0.0
+                    ],
+                    "texcoord": [
+                        1.0,
+                        0.0
+                    ],
+                    "tangent": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                {
+                    "position": [
+                        -1.0,
+                        0.0,
+                        -1.0
+                    ],
+                    "normal": [
+                        0.0,
+                        1.0,
+                        0.0
+                    ],
+                    "texcoord": [
+                        1.0,
+                        1.0
+                    ],
+                    "tangent": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                {
+                    "position": [
+                        1.0,
+                        0.0,
+                        -1.0
+                    ],
+                    "normal": [
+                        0.0,
+                        1.0,
+                        0.0
+                    ],
+                    "texcoord": [
+                        0.0,
+                        1.0
+                    ],
+                    "tangent": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                }
+            ],
+            "indices": [
+                0,
+                1,
+                3,
+                3,
+                2,
+                0
+            ]
+        }
+    ],
+    "materials": [
+        {
+            "shader": "pbrShader",
+            "albedo": [
+                0.62,
+                0.24,
+                0.1
+            ],
+            "metallic": 0.0,
+            "roughness": 0.78,
+            "ao": 1.0
+        },
+        {
+            "shader": "pbrShader",
+            "albedo": [
+                0.12,
+                0.13,
+                0.15
+            ],
+            "metallic": 0.0,
+            "roughness": 0.85,
+            "ao": 1.0
+        }
+    ],
+    "camera": {
+        "type": "MovingCamera",
+        "position": [
+            0.0,
+            4.2,
+            10.5
+        ],
+        "fov": 45.0,
+        "near": 0.1,
+        "far": 100.0
+    }
+}
