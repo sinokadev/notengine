@@ -445,7 +445,7 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
         shader->set("pointShadowMap", 12);
         shader->set("pointShadowCount", pointShadowCount);
 
-        shader->set("aaxReflectionLOD", 4.0f);
+        shader->set("maxReflectionLOD", 4.0f);
 
         shader->set("ambientIntensity", AMBIENT_INTENSITY);
 
