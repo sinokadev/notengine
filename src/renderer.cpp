@@ -1068,8 +1068,12 @@ void Renderer::renderDirShadow(Scene& scene, const std::unordered_map<const Mode
 
     dirShadowShader->set("lightSpaceMatrix", lightSpaceMatrix);
 
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(1.1f, 1.0f);
+
     renderShadowObjects(instanceGroups, dirShadowShader);
 
+    glDisable(GL_POLYGON_OFFSET_FILL);
     glDisable(GL_DEPTH_CLAMP);
 
     glBindVertexArray(0);
