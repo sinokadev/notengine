@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <array>
+#include <string>
 #include <knot/camera.h>
 #include <knot/resources.h>
 #include <knot/scene.h>
@@ -68,6 +69,9 @@ public:
     /** @brief Sets the OpenGL viewport for a new frame.
      *  Does nothing for non-positive framebuffer dimensions. */
     void beginFrame(int framebufferWidth, int framebufferHeight);
+    /** @brief Saves the current back buffer as a PNG at the requested resolution.
+     *  @return false if the renderer, framebuffer, dimensions, or output path is invalid. */
+    bool saveScreenshot(const std::string& path, int width, int height);
     /** @brief Enables or disables SSAO contribution in the PBR ambient lighting. */
     void setSSAOEnabled(bool enabled) {
         ssaoEnabled = enabled;

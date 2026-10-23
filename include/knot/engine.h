@@ -115,6 +115,19 @@ public:
     void shutdown();
 
     /**
+     * @brief Saves the just-rendered frame as a PNG at the requested resolution.
+     *
+     * Call from the render loop callback to capture the current frame before
+     * the window swaps its buffers. The image is scaled to the requested size.
+     *
+     * @param path Output PNG path.
+     * @param width Output image width in pixels.
+     * @param height Output image height in pixels.
+     * @return false if the engine is not initialized or saving fails.
+     */
+    bool saveScreenshot(const std::string& path, int width, int height);
+
+    /**
      * @brief Sets the callback executed during the render loop.
      *
      * The callback is called after the active scene has been rendered.
