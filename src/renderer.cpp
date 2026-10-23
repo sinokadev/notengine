@@ -138,7 +138,11 @@ void Renderer::shutdown() {
     }
     depthMapFBO = depthMap = pointDepthFBO = pointDepthMap = 0;
     pointShadowCount = 0;
+    pointShadowCapacity = 0;
     shadowedPointLights.clear();
+    pointShadowLayerLookup.clear();
+    gpuPointLights.clear();
+    culledPointShadowGroups.clear();
     dirShadowShader.reset();
     pointShadowShader.reset();
 
@@ -242,19 +246,20 @@ void Renderer::processDirLights(const std::shared_ptr<Shader>& shader, const std
 }
 
 void Renderer::processPointLights(const std::vector<const PbrPointLight*>& pointLights) {
-    std::vector<GPUMovingPointLight> gpuLights;
-    gpuLights.reserve(pointLights.size());
+    gpuPointLights.clear();
+    gpuPointLights.reserve(pointLights.size());
 
-    std::unordered_map<const PbrPointLight*, int> shadowLayers;
+    pointShadowLayerLookup.clear();
+    pointShadowLayerLookup.reserve(shadowedPointLights.size());
     for (std::size_t i = 0; i < shadowedPointLights.size(); ++i) {
-        shadowLayers.emplace(shadowedPointLights[i], static_cast<int>(i));
+        pointShadowLayerLookup.emplace(shadowedPointLights[i], static_cast<int>(i));
     }
 
     for (const auto* light : pointLights) {
         GPUMovingPointLight gpuLight;
 
-        const auto layer = shadowLayers.find(light);
-        const int shadowLayer = light->castsShadow && layer != shadowLayers.end() ? layer->second : -1;
+        const auto layer = pointShadowLayerLookup.find(light);
+        const int shadowLayer = light->castsShadow && layer != pointShadowLayerLookup.end() ? layer->second : -1;
         gpuLight.position = glm::vec4(light->position, static_cast<float>(shadowLayer));
 
         gpuLight.color = glm::vec4(light->color, light->intensity);
@@ -265,13 +270,13 @@ void Renderer::processPointLights(const std::vector<const PbrPointLight*>& point
         gpuLight.linear = 0.09f;
         gpuLight.quadratic = 0.032f;
 
-        gpuLights.push_back(gpuLight);
+        gpuPointLights.push_back(gpuLight);
     }
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
 
-    if (!gpuLights.empty()) {
-        glBufferData(GL_SHADER_STORAGE_BUFFER, gpuLights.size() * sizeof(GPUMovingPointLight), gpuLights.data(), GL_DYNAMIC_DRAW);
+    if (!gpuPointLights.empty()) {
+        glBufferData(GL_SHADER_STORAGE_BUFFER, gpuPointLights.size() * sizeof(GPUMovingPointLight), gpuPointLights.data(), GL_DYNAMIC_DRAW);
     }
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightSSBO);
@@ -345,10 +350,6 @@ void Renderer::renderSingle(const std::shared_ptr<Model>& model, const glm::mat4
         shader->set("cameraPos", camera.position);
 
         glBindVertexArray(subMesh.mesh->vao);
-
-        for (GLuint i = 0; i < 4; ++i) {
-            glDisableVertexAttribArray(4 + i);
-        }
 
         glDrawElements(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr);
 
@@ -527,9 +528,6 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
         shader->set("projection", camera.getProjectionMatrix(aspectRatio));
         shader->set("cameraPos", camera.position);
         glBindVertexArray(subMesh.mesh->vao);
-        for (GLuint i = 0; i < 4; ++i) {
-            glDisableVertexAttribArray(4 + i);
-        }
         glDrawElements(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr);
         // Preserve the default behavior of subsequent direct renderSingle calls.
         shader->set("alphaPass", 0);
@@ -678,9 +676,6 @@ void Renderer::renderShadowObjects(const std::unordered_map<const Model*, std::v
                         continue;
 
                     glBindVertexArray(subMesh.mesh->vao);
-                    for (GLuint i = 0; i < 4; ++i) {
-                        glDisableVertexAttribArray(4 + i);
-                    }
                     glDrawElements(GL_TRIANGLES, subMesh.mesh->indexCount, GL_UNSIGNED_INT, nullptr);
                 }
             }
@@ -720,8 +715,9 @@ void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Mo
 
     glActiveTexture(GL_TEXTURE12);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointDepthMap);
-    if (count != pointShadowCount && count > 0) {
-        glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT32F, POINT_SHADOW_RES, POINT_SHADOW_RES, count * 6, 0, GL_DEPTH_COMPONENT,
+    if (count > pointShadowCapacity) {
+        pointShadowCapacity = std::max(count, std::max(1, pointShadowCapacity * 2));
+        glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT32F, POINT_SHADOW_RES, POINT_SHADOW_RES, pointShadowCapacity * 6, 0, GL_DEPTH_COMPONENT,
                      GL_FLOAT, nullptr);
 
         glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -752,7 +748,10 @@ void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Mo
 
         const auto projection = glm::perspective(glm::radians(90.0f), 1.0f, pointShadowNear, farPlane);
 
-        std::unordered_map<const Model*, std::vector<VisibleInstance>> culledShadowGroups;
+        for (auto& [model, groupedInstances] : culledPointShadowGroups) {
+            (void)model;
+            groupedInstances.clear();
+        }
 
         for (const auto& [model, instances] : instanceGroups) {
             for (const auto& inst : instances) {
@@ -760,12 +759,17 @@ void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Mo
 
                 float dist = glm::distance(position, objPos);
                 if (dist <= farPlane + 2.0f) {
-                    culledShadowGroups[model].push_back(inst);
+                    culledPointShadowGroups[model].push_back(inst);
                 }
             }
         }
 
-        if (culledShadowGroups.empty()) {
+        bool hasVisibleInstances = false;
+        for (const auto& [model, groupedInstances] : culledPointShadowGroups) {
+            (void)model;
+            hasVisibleInstances |= !groupedInstances.empty();
+        }
+        if (!hasVisibleInstances) {
             for (int face = 0; face < 6; ++face) {
                 glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, pointDepthMap, 0, light * 6 + face);
                 glClear(GL_DEPTH_BUFFER_BIT);
@@ -781,7 +785,7 @@ void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Mo
             glClear(GL_DEPTH_BUFFER_BIT);
             pointShadowShader->set("lightSpaceMatrix", projection * glm::lookAt(position, position + directions[face], up[face]));
 
-            renderShadowObjects(culledShadowGroups, pointShadowShader);
+            renderShadowObjects(culledPointShadowGroups, pointShadowShader);
         }
     }
 
