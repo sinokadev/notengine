@@ -42,7 +42,7 @@
 - [ ] Cascaded Shadow Maps
 - [ ] PCSS
 - [ ] Cascaded PCSS
--[x] SSAO
+- [x] SSAO
 
 - [ ] Post-processing
 - [ ] Bloom
