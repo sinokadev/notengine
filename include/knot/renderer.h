@@ -146,6 +146,9 @@ private:
     static constexpr int MAX_POINT_SHADOWS = 4;
     static constexpr float MIN_POINT_SHADOW_CONTRIBUTION = 0.01f;
     std::vector<const PbrPointLight*> shadowedPointLights;
+    std::unordered_map<const PbrPointLight*, int> pointShadowLayerLookup;
+    std::vector<GPUMovingPointLight> gpuPointLights;
+    std::unordered_map<const Model*, std::vector<VisibleInstance>> culledPointShadowGroups;
 
     static constexpr unsigned int SHADOW_SHADER_ID = 999997;
 
