@@ -56,7 +56,7 @@ bool Renderer::init(GLADloadfunc loadProc) {
     // depth map texture gen
     glGenTextures(1, &depthMap);
     glBindTexture(GL_TEXTURE_2D, depthMap);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, POINT_SHADOW_RESOLUTION, POINT_SHADOW_RESOLUTION, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -987,12 +987,10 @@ void Renderer::renderShadowObjects(const std::unordered_map<const Model*, std::v
 
 void Renderer::renderShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups) {
     glEnable(GL_CULL_FACE);
-    glCullFace(GL_FRONT);
+    glCullFace(GL_BACK);
 
     renderDirShadow(scene, instanceGroups);
     renderPointShadow(scene, instanceGroups);
-
-    glCullFace(GL_BACK);
 }
 
 void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups) {
@@ -1014,7 +1012,7 @@ void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Mo
     }
     const int count = static_cast<int>(shadowedPointLights.size());
 
-    constexpr int POINT_SHADOW_RES = 1024;
+    constexpr int POINT_SHADOW_RES = POINT_SHADOW_RESOLUTION;
 
     glActiveTexture(GL_TEXTURE12);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointDepthMap);
