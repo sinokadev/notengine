@@ -9,3 +9,6 @@ format:
 	clang-format -i include/knot/*.h
 	clang-format -i include/knot/utility/*.h
 	clang-format -i shaders/*
+
+build:
+	cmake --build --preset ninja-release-all
