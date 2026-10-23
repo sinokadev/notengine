@@ -95,7 +95,7 @@ write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/notengineConfigVersion.cmake"
 
     VERSION
-        "${GAME_VERSION_STRING}"
+        "${PROJECT_VERSION}"
 
     COMPATIBILITY
         SameMajorVersion

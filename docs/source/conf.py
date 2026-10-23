@@ -6,10 +6,12 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+from pathlib import Path
+
 project = 'Not Engine'
 copyright = '2026, SinokaDev'
 author = 'SinokaDev'
-release = '0.2.1'
+release = (Path(__file__).resolve().parents[2] / 'VERSION').read_text(encoding='utf-8').strip()
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
