@@ -145,6 +145,14 @@ void Engine::shutdown() {
     initialized = false;
 }
 
+bool Engine::saveScreenshot(const std::string& path, int width, int height) {
+    if (!initialized) {
+        return false;
+    }
+
+    return Renderer::get().saveScreenshot(path, width, height);
+}
+
 void Engine::quit() {
     shouldQuit = true;
 }
