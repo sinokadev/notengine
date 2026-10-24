@@ -10,16 +10,13 @@
 #include <random>
 #include <limits>
 #include <knot/mesh.h>
+#include <knot/state.h>
 
 #ifdef _WIN32
 #define STBIW_WINDOWS_UTF8
 #endif
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb/stb_image_write.h>
-
-#define DISABLE_SKYMAP false
-#define DISABLE_SHADOW false
-#define DISABLE_SSAO false
 
 namespace knot {
 namespace {
@@ -84,7 +81,7 @@ bool Renderer::init(GLADloadfunc loadProc) {
     // depth map texture gen
     glGenTextures(1, &depthMap);
     glBindTexture(GL_TEXTURE_2D, depthMap);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, s.dir_shadow_res, s.dir_shadow_res, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -414,8 +411,7 @@ bool Renderer::saveScreenshot(const std::string& path, int width, int height) {
         std::error_code error;
         std::filesystem::create_directories(outputPath.parent_path(), error);
         if (error) {
-            std::cerr << "[Error] Failed to create screenshot directory: " << outputPath.parent_path().string() << ": " << error.message()
-                      << '\n';
+            std::cerr << "[Error] Failed to create screenshot directory: " << outputPath.parent_path().string() << ": " << error.message() << '\n';
             return false;
         }
     }
@@ -719,7 +715,7 @@ bool Renderer::renderObject(const Object& object, const Camera& camera, float as
 }
 
 void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio) {
-    if (DISABLE_SKYMAP)
+    if (!s.skymap)
         return;
 
     glDepthMask(GL_FALSE);
@@ -734,7 +730,7 @@ void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float 
 
     skyboxShader->set("view", view);
     skyboxShader->set("projection", projection);
-    skyboxShader->set("exposure", AMBIENT_INTENSITY);
+    skyboxShader->set("exposure", s.ambient);
 
     // Bind the cubemap and draw the skybox cube.
     glBindVertexArray(skyboxMesh->vao);
@@ -800,7 +796,7 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
         // Set the remaining global lighting uniforms.
         shader->set("maxReflectionLOD", 4.0f);
 
-        shader->set("ambientIntensity", AMBIENT_INTENSITY);
+        shader->set("ambientIntensity", s.ambient);
 
         shader->set("lightSpaceMatrix", lightSpaceMatrix);
     };
@@ -902,7 +898,7 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
 
 void Renderer::renderSSAO(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, float aspectRatio) {
     if (!ssaoEnabled || !prePassShader || !prePassShader->isValid() || !ssaoShader || !ssaoShader->isValid() || !ssaoBlurShader ||
-        !ssaoBlurShader->isValid() || DISABLE_SSAO) {
+        !ssaoBlurShader->isValid() || !s.ssao) {
         return;
     }
 
@@ -1065,8 +1061,6 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
 }
 
 void Renderer::renderDirShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups) {
-    if (DISABLE_SHADOW)
-        return;
     if (!dirShadowShader || !dirShadowShader->isValid())
         return;
 
@@ -1100,7 +1094,7 @@ void Renderer::renderDirShadow(Scene& scene, const std::unordered_map<const Mode
     lightSpaceMatrix = lightProjection * lightView;
 
     // Render the directional shadow map.
-    glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
+    glViewport(0, 0, s.dir_shadow_res, s.dir_shadow_res);
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
     glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -1173,17 +1167,19 @@ void Renderer::renderShadowObjects(const std::unordered_map<const Model*, std::v
 }
 
 void Renderer::renderShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups) {
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
+    if (s.shadow) {
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
 
-    renderDirShadow(scene, instanceGroups);
-    renderPointShadow(scene, instanceGroups);
+        renderDirShadow(scene, instanceGroups);
+        renderPointShadow(scene, instanceGroups);
+    }
 }
 
 void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups) {
     shadowedPointLights.clear();
 
-    if (DISABLE_SHADOW || !pointShadowShader || !pointShadowShader->isValid()) {
+    if (!pointShadowShader || !pointShadowShader->isValid()) {
         pointShadowCount = 0;
         return;
     }
@@ -1199,14 +1195,12 @@ void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Mo
     }
     const int count = static_cast<int>(shadowedPointLights.size());
 
-    constexpr int POINT_SHADOW_RES = POINT_SHADOW_RESOLUTION;
-
     glActiveTexture(GL_TEXTURE12);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointDepthMap);
 
     if (count > pointShadowCapacity) {
         pointShadowCapacity = std::max(count, std::max(1, pointShadowCapacity * 2));
-        glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT32F, POINT_SHADOW_RES, POINT_SHADOW_RES, pointShadowCapacity * 6, 0,
+        glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT32F, s.point_shadow_res, s.point_shadow_res, pointShadowCapacity * 6, 0,
                      GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
         // Configure sampling once when the texture storage grows.
@@ -1224,7 +1218,7 @@ void Renderer::renderPointShadow(Scene& scene, const std::unordered_map<const Mo
     const glm::vec3 up[] = {{0, -1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}, {0, -1, 0}, {0, -1, 0}};
 
     // Prepare the layered framebuffer and point-shadow shader.
-    glViewport(0, 0, POINT_SHADOW_RES, POINT_SHADOW_RES);
+    glViewport(0, 0, s.point_shadow_res, s.point_shadow_res);
     glBindFramebuffer(GL_FRAMEBUFFER, pointDepthFBO);
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);

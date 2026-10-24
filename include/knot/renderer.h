@@ -138,10 +138,6 @@ private:
 
     static constexpr unsigned int BRDF_SHADER_ID = 999998;
 
-    static constexpr float AMBIENT_INTENSITY = 1.0f;
-    static constexpr unsigned int SHADOW_RESOLUTION = 2048;
-    static constexpr unsigned int POINT_SHADOW_RESOLUTION = 512;
-
     GLuint brdfLUTTexture = 0;
 
     GLuint prePassFBO = 0;
