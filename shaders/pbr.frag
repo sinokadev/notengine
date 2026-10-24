@@ -49,8 +49,8 @@ uniform float exposure;
 uniform sampler2D brdfLUT;
 uniform sampler2D ssaoMap;
 uniform bool ssaoEnabled;
-uniform sampler2D shadowMap;
-uniform samplerCubeArray pointShadowMap;
+uniform sampler2DShadow shadowMap;
+uniform samplerCubeArrayShadow pointShadowMap;
 uniform int pointShadowCount;
 uniform samplerCube irradianceMap;
 uniform samplerCube prefilterMap;
@@ -144,15 +144,20 @@ float calcPointShadow(int index, vec3 normal, vec3 lightDir) {
     vec3 tangent = normalize(cross(up, direction));
     vec3 bitangent = cross(direction, tangent);
     float texelSize = 2.0 / float(textureSize(pointShadowMap, 0).x);
+    
     float cosTheta = clamp(dot(normal, lightDir), 0.0, 1.0);
     float bias = max(0.02 * (1.0 - cosTheta), 0.003) + distanceToLight * texelSize;
+
+    float compareDepth = (distanceToLight - bias) / farPlane;
 
     float shadow = 0.0;
     for (int x = -1; x <= 1; ++x) {
         for (int y = -1; y <= 1; ++y) {
             vec3 sampleDirection = direction + (tangent * float(x) + bitangent * float(y)) * texelSize;
-            float closestDepth = texture(pointShadowMap, vec4(sampleDirection, float(shadowLayer))).r * farPlane;
-            shadow += distanceToLight - bias > closestDepth ? 1.0 : 0.0;
+
+            float lightFactor = texture(pointShadowMap, vec4(sampleDirection, float(shadowLayer)), compareDepth);
+            
+            shadow += (1.0 - lightFactor);
         }
     }
     return shadow / 9.0;
@@ -167,16 +172,22 @@ float calcShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
 
     float currentDepth = projCoords.z;
     float normalLightAlignment = clamp(dot(normal, lightDir), 0.0, 1.0);
+    
     float bias = max(0.0015 * (1.0 - normalLightAlignment), 0.0002);
+    float compareDepth = currentDepth - bias;
 
     float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    vec2 texelSize = 1.0 / vec2(textureSize(shadowMap, 0));
+
     for (int x = -1; x <= 1; ++x) {
         for (int y = -1; y <= 1; ++y) {
-            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
-            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+            vec2 offset = vec2(x, y) * texelSize;
+            
+            float lightFactor = texture(shadowMap, vec3(projCoords.xy + offset, compareDepth));
+            shadow += (1.0 - lightFactor); 
         }
     }
+
     return shadow / 9.0;
 }
 
