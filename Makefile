@@ -1,14 +1,10 @@
-.PHONY: docs format
+.PHONY: docs format build cloc
 
 docs:
-	cd docs && doxygen -g Doxyfile
+	cd docs && doxygen Doxyfile
 
 format:
-	clang-format -i demo/*.cpp
-	clang-format -i src/*.cpp
-	clang-format -i include/knot/*.h
-	clang-format -i include/knot/utility/*.h
-	clang-format -i shaders/*
+	find demo src include/knot shaders -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.frag" -o -name "*.vert" \) -exec clang-format -i {} +
 
 build:
 	cmake --build --preset ninja-release-all
