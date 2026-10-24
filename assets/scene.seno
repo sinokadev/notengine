@@ -103,7 +103,7 @@
     "materials": [
         {
             "shader": "pbrShader",
-            "albedo": [0.72, 0.18, 0.08],
+            "albedo": [0.96, 0.40, 0.18],
             "metallic": 0.75,
             "roughness": 0.18,
             "ao": 1.0
