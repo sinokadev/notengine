@@ -69,8 +69,8 @@ public:
     /** @brief Sets the OpenGL viewport for a new frame.
      *  Does nothing for non-positive framebuffer dimensions. */
     void beginFrame(int framebufferWidth, int framebufferHeight);
-    /** @brief Saves the current back buffer as a PNG at the requested resolution.
-     *  @return false if the renderer, framebuffer, dimensions, or output path is invalid. */
+    /** @brief Saves the current scene as a PNG, rerendering when the requested resolution differs.
+     *  @return false if the renderer, scene, dimensions, or output path is invalid. */
     bool saveScreenshot(const std::string& path, int width, int height);
     /** @brief Enables or disables SSAO contribution in the PBR ambient lighting. */
     void setSSAOEnabled(bool enabled) {
@@ -189,5 +189,6 @@ private:
 
     int framebufferWidth = 1;
     int framebufferHeight = 1;
+    Scene* activeScene = nullptr;
 };
 } // namespace knot

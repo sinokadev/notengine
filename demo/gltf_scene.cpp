@@ -60,6 +60,7 @@ int main() {
     float lastY = 360.0f;
     bool firstMouse = true;
     bool paused = false;
+    bool screenshotRequested = false;
     int frameCount = 0;
 
     engine.repeat(1000, PRINT_FPS);
@@ -82,6 +83,11 @@ int main() {
                     for (const auto& g : groups) {
                         std::cout << "  - " << g << "\n";
                     }
+                    ev.handled = true;
+                }
+
+                if (ev.key == knot::ScanCode::F2) {
+                    screenshotRequested = true;
                     ev.handled = true;
                 }
 
@@ -134,6 +140,19 @@ int main() {
 
         if (glm::length(moveDir) > 0.0f)
             camera->move(glm::normalize(moveDir) * speedMul, dt);
+    });
+
+    engine.setRenderLoopCallback([&](float) {
+        if (!screenshotRequested)
+            return;
+
+        screenshotRequested = false;
+        const std::string path = knot::getAssetRoot() + "screenshot/ss.png";
+        if (engine.saveScreenshot(path, 3840, 2160)) {
+            std::cout << "[Info] Screenshot saved: " << path << "\n";
+        } else {
+            std::cerr << "[Error] Failed to save screenshot: " << path << "\n";
+        }
     });
 
     engine.setScene(scene);

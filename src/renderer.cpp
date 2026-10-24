@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cassert>
 #include <algorithm>
+#include <filesystem>
 #include <unordered_set>
 #include <random>
 #include <limits>
@@ -392,9 +393,30 @@ bool Renderer::saveScreenshot(const std::string& path, int width, int height) {
     }
 
     GLint maxTextureSize = 0;
+    GLint maxRenderbufferSize = 0;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
-    if (width > maxTextureSize || height > maxTextureSize) {
+    glGetIntegerv(GL_MAX_RENDERBUFFER_SIZE, &maxRenderbufferSize);
+    const GLint maxCaptureSize = std::min(maxTextureSize, maxRenderbufferSize);
+    if (width > maxCaptureSize || height > maxCaptureSize) {
+        std::cerr << "[Error] Screenshot dimensions exceed the GPU capture limit (" << maxCaptureSize << "): " << width << "x" << height << '\n';
         return false;
+    }
+
+    const bool rerenderAtTargetResolution = width != framebufferWidth || height != framebufferHeight;
+    if (rerenderAtTargetResolution && !activeScene) {
+        std::cerr << "[Error] Cannot render a high-resolution screenshot without an active scene.\n";
+        return false;
+    }
+
+    const std::filesystem::path outputPath(path);
+    if (!outputPath.parent_path().empty()) {
+        std::error_code error;
+        std::filesystem::create_directories(outputPath.parent_path(), error);
+        if (error) {
+            std::cerr << "[Error] Failed to create screenshot directory: " << outputPath.parent_path().string() << ": " << error.message()
+                      << '\n';
+            return false;
+        }
     }
 
     const std::size_t captureWidth = static_cast<std::size_t>(width);
@@ -408,88 +430,99 @@ bool Renderer::saveScreenshot(const std::string& path, int width, int height) {
     GLint previousReadBuffer = 0;
     GLint previousDrawBuffer = 0;
     GLint previousTexture = 0;
+    GLint previousRenderbuffer = 0;
     GLint previousPixelPackBuffer = 0;
     GLint previousPackAlignment = 0;
+    GLint previousActiveTexture = 0;
+    GLint previousViewport[4] = {};
+    GLfloat clearColor[4] = {};
 
     glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &previousReadFramebuffer);
     glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &previousDrawFramebuffer);
     glGetIntegerv(GL_READ_BUFFER, &previousReadBuffer);
     glGetIntegerv(GL_DRAW_BUFFER0, &previousDrawBuffer);
     glGetIntegerv(GL_TEXTURE_BINDING_2D, &previousTexture);
+    glGetIntegerv(GL_RENDERBUFFER_BINDING, &previousRenderbuffer);
     glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &previousPixelPackBuffer);
     glGetIntegerv(GL_PACK_ALIGNMENT, &previousPackAlignment);
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &previousActiveTexture);
+    glGetIntegerv(GL_VIEWPORT, previousViewport);
+    glGetFloatv(GL_COLOR_CLEAR_VALUE, clearColor);
 
-    GLuint resolveFBO = 0;
-    GLuint resolveTexture = 0;
-    GLuint outputFBO = 0;
-    GLuint outputTexture = 0;
+    std::vector<unsigned char> pixels(captureWidth * captureHeight * 4u);
+    bool captureSucceeded = true;
+    GLuint captureFBO = 0;
+    GLuint captureTexture = 0;
+    GLuint captureDepth = 0;
+    const int oldFramebufferWidth = framebufferWidth;
+    const int oldFramebufferHeight = framebufferHeight;
 
-    auto createColorTarget = [](int targetWidth, int targetHeight, GLuint& framebuffer, GLuint& texture) {
-        glGenFramebuffers(1, &framebuffer);
-        glGenTextures(1, &texture);
+    if (rerenderAtTargetResolution) {
+        glGenFramebuffers(1, &captureFBO);
+        glGenTextures(1, &captureTexture);
+        glGenRenderbuffers(1, &captureDepth);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, targetWidth, targetHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+        glBindTexture(GL_TEXTURE_2D, captureTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, captureTexture, 0);
+        glBindRenderbuffer(GL_RENDERBUFFER, captureDepth);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, captureDepth);
         glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        captureSucceeded = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
 
-        return glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
-    };
-
-    bool captureSucceeded = createColorTarget(framebufferWidth, framebufferHeight, resolveFBO, resolveTexture);
-
-    if (captureSucceeded && (width != framebufferWidth || height != framebufferHeight)) {
-        captureSucceeded = createColorTarget(width, height, outputFBO, outputTexture);
-    }
-
-    std::vector<unsigned char> pixels;
-
-    if (captureSucceeded) {
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-        glReadBuffer(GL_BACK);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, resolveFBO);
-        glDrawBuffer(GL_COLOR_ATTACHMENT0);
-        glBlitFramebuffer(0, 0, framebufferWidth, framebufferHeight, 0, 0, framebufferWidth, framebufferHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-        const GLuint finalFramebuffer = outputFBO != 0 ? outputFBO : resolveFBO;
-
-        if (finalFramebuffer != resolveFBO) {
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, resolveFBO);
-            glReadBuffer(GL_COLOR_ATTACHMENT0);
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, finalFramebuffer);
-            glDrawBuffer(GL_COLOR_ATTACHMENT0);
-            glBlitFramebuffer(0, 0, framebufferWidth, framebufferHeight, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+        if (captureSucceeded) {
+            framebufferWidth = width;
+            framebufferHeight = height;
+            resizeSSAOTargets(width, height);
+            glViewport(0, 0, width, height);
+            glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            captureSucceeded = renderScene(*activeScene, static_cast<float>(width) / static_cast<float>(height));
         }
 
-        pixels.resize(captureWidth * captureHeight * 4u);
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, finalFramebuffer);
-        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        if (captureSucceeded) {
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, captureFBO);
+            glReadBuffer(GL_COLOR_ATTACHMENT0);
+        }
+    } else {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+        glReadBuffer(GL_BACK);
+    }
+
+    if (captureSucceeded) {
         glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
         glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
     }
 
-    if (outputFBO != 0) {
-        glDeleteFramebuffers(1, &outputFBO);
-        glDeleteTextures(1, &outputTexture);
+    if (captureFBO != 0)
+        glDeleteFramebuffers(1, &captureFBO);
+    if (captureTexture != 0)
+        glDeleteTextures(1, &captureTexture);
+    if (captureDepth != 0)
+        glDeleteRenderbuffers(1, &captureDepth);
+
+    if (rerenderAtTargetResolution) {
+        framebufferWidth = oldFramebufferWidth;
+        framebufferHeight = oldFramebufferHeight;
+        resizeSSAOTargets(oldFramebufferWidth, oldFramebufferHeight);
     }
 
-    if (resolveFBO != 0) {
-        glDeleteFramebuffers(1, &resolveFBO);
-        glDeleteTextures(1, &resolveTexture);
-    }
-
+    glActiveTexture(previousActiveTexture);
     glBindTexture(GL_TEXTURE_2D, previousTexture);
+    glBindRenderbuffer(GL_RENDERBUFFER, previousRenderbuffer);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, previousReadFramebuffer);
     glReadBuffer(previousReadBuffer);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, previousDrawFramebuffer);
     glDrawBuffer(previousDrawBuffer);
     glBindBuffer(GL_PIXEL_PACK_BUFFER, previousPixelPackBuffer);
     glPixelStorei(GL_PACK_ALIGNMENT, previousPackAlignment);
+    glViewport(previousViewport[0], previousViewport[1], previousViewport[2], previousViewport[3]);
 
     if (!captureSucceeded) {
-        std::cerr << "[Error] Failed to create screenshot framebuffer.\n";
+        std::cerr << "[Error] Failed to render screenshot framebuffer.\n";
         return false;
     }
 
@@ -975,6 +1008,10 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     if (!initialized)
         return false;
 
+    activeScene = &scene;
+    GLint outputFramebuffer = 0;
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &outputFramebuffer);
+
     // var
     const auto& camera = scene.getCamera();
     auto& objectManager = scene.getObjectManager();
@@ -1008,11 +1045,15 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
 
     // Run shadow and SSAO pre-passes before the forward pass.
     renderShadow(scene, shadowGroups);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(outputFramebuffer));
+    glViewport(0, 0, framebufferWidth, framebufferHeight);
 
     // Upload the layer mapping selected for this frame, including unshadowed lights.
     processPointLights(pointLights);
 
     renderSSAO(scene, instanceGroups, aspectRatio);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(outputFramebuffer));
+    glViewport(0, 0, framebufferWidth, framebufferHeight);
 
     // Draw the sky and forward-lit geometry.
     renderSkybox(scene.getCubeMap(), camera, aspectRatio);
