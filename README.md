@@ -11,7 +11,7 @@ A code-first game engine built on OpenGL, empowering you to build everything fro
 
 2026-10-12: Anyway, It Works.
 
-<img width="1282" height="749" alt="image" src="/images/shadowmap.png" /><br>
+<img width="1282" height="749" alt="image" src="/images/sponza.png" /><br>
 
 ## Supported Features
 
