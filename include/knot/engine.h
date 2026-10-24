@@ -115,10 +115,11 @@ public:
     void shutdown();
 
     /**
-     * @brief Saves the just-rendered frame as a PNG at the requested resolution.
+     * @brief Saves the just-rendered scene as a PNG at the requested resolution.
      *
      * Call from the render loop callback to capture the current frame before
-     * the window swaps its buffers. The image is scaled to the requested size.
+     * the window swaps its buffers. When the requested resolution differs from
+     * the window resolution, the scene is rendered again at the requested size.
      *
      * @param path Output PNG path.
      * @param width Output image width in pixels.
