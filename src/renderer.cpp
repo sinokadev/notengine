@@ -19,6 +19,7 @@
 
 #define DISABLE_SKYMAP false
 #define DISABLE_SHADOW false
+#define DISABLE_SSAO false
 
 namespace knot {
 namespace {
@@ -901,7 +902,7 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
 
 void Renderer::renderSSAO(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, float aspectRatio) {
     if (!ssaoEnabled || !prePassShader || !prePassShader->isValid() || !ssaoShader || !ssaoShader->isValid() || !ssaoBlurShader ||
-        !ssaoBlurShader->isValid()) {
+        !ssaoBlurShader->isValid() || DISABLE_SSAO) {
         return;
     }
 
