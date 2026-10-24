@@ -100,3 +100,5 @@
 - [ ] resource manager(shader manager)를 싱글톤으로 바꾸기
 
 - [ ] 트랜스폼에 더티플래그 추가해서 위치나 회전, 스케일 바뀔때만 셰도우맵 재연산하도록 하기
+
+- [ ] Amazon Lumberyard Bistro 렌더링해보기
