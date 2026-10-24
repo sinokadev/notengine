@@ -45,6 +45,7 @@ uniform Material material;
 uniform vec3 cameraPos;
 uniform float maxReflectionLOD;
 uniform float ambientIntensity;
+uniform float exposure;
 uniform sampler2D brdfLUT;
 uniform sampler2D ssaoMap;
 uniform bool ssaoEnabled;
@@ -56,7 +57,7 @@ uniform samplerCube prefilterMap;
 
 #define PI 3.14159265359
 
-// ACES Tone Mapping for better contrast and saturation in highlights
+// ACES Tone Mapping
 vec3 ACESFilm(vec3 x) {
     float a = 2.51;
     float b = 0.03;
@@ -188,8 +189,8 @@ void main() {
 
     vec3 V = normalize(cameraPos - FragPos);
 
-    // Texture Sampling
-    vec3 albedo = albedoSample.rgb;
+    // Texture Sampling & sRGB to Linear conversion
+    vec3 albedo = pow(albedoSample.rgb, vec3(2.2));
     float metallic = texture(material.metallicMap, TexCoords).r;
     float roughness = texture(material.roughnessMap, TexCoords).r;
     float ao = texture(material.aoMap, TexCoords).r;
@@ -207,7 +208,7 @@ void main() {
     float dirShadow = calcShadow(LightSpaceFragPos, geometricNormal, L_dir);
     vec3 directLighting = calcPbrLight(N, V, L_dir, dirLight.diffuse, albedo, metallic, roughness, F0, dirShadow);
 
-    // Point Lights with Early Out Optimization
+    // Point Lights
     for (int i = 0; i < activePointLightCount; ++i) {
         vec3 lightPos = pointLights[i].position.xyz;
         vec3 L_point = lightPos - FragPos;
@@ -215,15 +216,14 @@ void main() {
         float radius = pointLights[i].radius;
 
         if (dist >= radius)
-            continue; // Early exit outside influence radius
+            continue;
 
-        L_point /= dist; // Normalize
+        L_point /= dist;
 
         float NdotL = dot(N, L_point);
         if (NdotL <= 0.0)
-            continue; // Skip backside lighting & shadow map reads
+            continue;
 
-        // Attenuation calculation
         float attenuation = 1.0 / (dist * dist + 0.01);
         float factor = dist / radius;
         float windowing = clamp(1.0 - factor * factor * factor * factor, 0.0, 1.0);
@@ -231,7 +231,6 @@ void main() {
 
         vec3 lightColor = pointLights[i].color.rgb * pointLights[i].color.a * attenuation;
 
-        // Compute shadow only when light intensity actually matters
         float pointShadow = 0.0;
         if (attenuation > 0.001) {
             pointShadow = calcPointShadow(i, geometricNormal, L_point);
@@ -252,16 +251,15 @@ void main() {
     vec3 prefilteredColor = textureLod(prefilterMap, R, roughness * maxReflectionLOD).rgb;
     vec2 brdf = texture(brdfLUT, vec2(NoV, roughness)).rg;
 
-    // Corrected Specular IBL calculation using Standard BRDF Integration
-    vec3 specularIBL = prefilteredColor * (F0 * brdf.x + brdf.y);
+    vec3 specularIBL = prefilteredColor * (F_ibl * brdf.x + brdf.y);
 
     float ssao = ssaoEnabled ? texture(ssaoMap, gl_FragCoord.xy / vec2(textureSize(ssaoMap, 0))).r : 1.0;
     vec3 ambient = (kD_ibl * diffuseIBL + specularIBL) * ao * ambientIntensity * ssao;
 
     vec3 finalColor = ambient + directLighting;
 
-    // ACES Tone Mapping & Gamma Correction
-    finalColor = ACESFilm(finalColor);
+    float activeExposure = exposure > 0.0 ? exposure : 1.0;
+    finalColor = ACESFilm(finalColor * activeExposure);
     finalColor = pow(finalColor, vec3(1.0 / 2.2));
 
     FragColor = vec4(finalColor, albedoSample.a);
