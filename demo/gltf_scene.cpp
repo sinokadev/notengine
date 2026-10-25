@@ -156,5 +156,9 @@ int main() {
     });
 
     engine.setScene(scene);
-    return engine.run();
+    while (1)
+    {
+        /* code */
+    }
+    
 }

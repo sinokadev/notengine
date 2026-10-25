@@ -3,6 +3,7 @@
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
+#include <knot/utility/splash.h>
 
 #include <iostream>
 
@@ -93,6 +94,7 @@ bool Engine::init(int width, int height, const std::string& title, const std::st
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         Renderer::get().beginFrame(window.getFramebufferWidth(), window.getFramebufferHeight());
+        utility::drawLoadingSplash(window.getFramebufferWidth(), window.getFramebufferHeight());
         
         window.loop();
     }
