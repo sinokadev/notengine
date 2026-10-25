@@ -31,7 +31,7 @@ int main() {
 
     std::cout << "[Info] Loading Sponza scene...\n";
 
-    if (!scene.loadGLTF(knot::getAssetRoot() + "assets/Sponza/glTF/Sponza.gltf")) {
+    if (!scene.loadGLTF(knot::getAssetRoot() + "assets/CommercialRefrigerator.glb")) {
         std::cerr << "[Error] Failed to load Sponza.gltf\n";
         return 1;
     }
