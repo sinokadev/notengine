@@ -9,7 +9,7 @@ A code-first game engine built on OpenGL, empowering you to build everything fro
 
 **PRs and issues are welcome!**
 
-2026-10-12: Anyway, It Works.
+2026-10-12: Anyway, it works.
 
 <img width="1282" height="749" alt="image" src="/images/sponza.png" /><br>
 
