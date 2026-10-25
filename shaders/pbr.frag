@@ -41,6 +41,7 @@ struct Material {
     sampler2D aoMap;
 };
 uniform Material material;
+uniform float materialOpacity;
 
 uniform vec3 cameraPos;
 uniform float maxReflectionLOD;
@@ -194,7 +195,8 @@ float calcShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
 void main() {
     // Alpha Clipping Pass
     vec4 albedoSample = texture(material.albedoMap, TexCoords);
-    if (albedoSample.a <= 0.0 || (alphaPass == 1 && albedoSample.a < 1.0) || (alphaPass == 2 && albedoSample.a >= 1.0)) {
+    float surfaceAlpha = albedoSample.a * materialOpacity;
+    if (surfaceAlpha <= 0.0 || (alphaPass == 1 && surfaceAlpha < 1.0) || (alphaPass == 2 && surfaceAlpha >= 1.0)) {
         discard;
     }
 
@@ -273,5 +275,5 @@ void main() {
     finalColor = ACESFilm(finalColor * activeExposure);
     finalColor = pow(finalColor, vec3(1.0 / 2.2));
 
-    FragColor = vec4(finalColor, albedoSample.a);
+    FragColor = vec4(finalColor, surfaceAlpha);
 }

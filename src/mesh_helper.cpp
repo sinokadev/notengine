@@ -648,6 +648,7 @@ std::shared_ptr<knot::PbrMaterial> cgltfMakeMaterial(const cgltf_material* mat, 
     glm::vec3 albedoColor(1.0f);
     float metallicFactor = 1.0f;
     float roughnessFactor = 1.0f;
+    float opacity = 1.0f;
 
     unsigned int albedoMap = 0;
     unsigned int metallicMap = 0;
@@ -666,12 +667,16 @@ std::shared_ptr<knot::PbrMaterial> cgltfMakeMaterial(const cgltf_material* mat, 
     }
 
     if (mat) {
+        // KHR_materials_transmission has no direct equivalent in this raster renderer.
+        // Approximate transmitted surfaces as translucent so the refrigerator contents remain visible.
+        if (mat->has_transmission && mat->transmission.transmission_factor > 0.0f)
+            opacity = glm::clamp(1.0f - mat->transmission.transmission_factor, 0.08f, 1.0f);
         normalMap = cgltfLoadTexture(mat->normal_texture, gltfDir, texCache);
         aoMap = cgltfLoadTexture(mat->occlusion_texture, gltfDir, texCache);
     }
 
     return std::make_shared<knot::PbrMaterial>(shader, albedoColor, metallicFactor, roughnessFactor, 1.0f, albedoMap, metallicMap, roughnessMap,
-                                               aoMap, normalMap);
+                                               aoMap, normalMap, opacity);
 }
 
 } // anonymous namespace

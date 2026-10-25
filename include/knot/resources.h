@@ -200,10 +200,10 @@ public:
      *  @param normalM Optional normal texture ID. */
     PbrMaterial(std::shared_ptr<Shader> s, glm::vec3 albedoColor = glm::vec3(1.0f), float metallicFactor = 0.0f, float roughnessFactor = 0.5f,
                 float aoFactor = 1.0f, unsigned int albedoM = 0, unsigned int metallicM = 0, unsigned int roughnessM = 0, unsigned int aoM = 0,
-                unsigned int normalM = 0)
+                unsigned int normalM = 0, float opacity = 1.0f)
         : Material(std::move(s)), albedoMap(0), metallicMap(0), roughnessMap(0), aoMap(0), normalMap(0), isAlbedoAllocated(false),
           isMetallicAllocated(false), isRoughnessAllocated(false), isAoAllocated(false), isNormalAllocated(false), baseAlbedo(albedoColor),
-          baseMetallic(metallicFactor), baseRoughness(roughnessFactor), baseAo(aoFactor) {
+          baseMetallic(metallicFactor), baseRoughness(roughnessFactor), baseAo(aoFactor), opacity(glm::clamp(opacity, 0.0f, 1.0f)) {
 
         if (albedoM != 0) {
             albedoMap = albedoM;
@@ -371,6 +371,7 @@ public:
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, normalMap);
         shader->set("material.normalMap", 4);
+        shader->set("materialOpacity", opacity);
     }
 
 public:
@@ -393,6 +394,7 @@ public:
     float baseRoughness;
     /** @brief Fallback ambient-occlusion value used when no map is provided. */
     float baseAo;
+    float opacity;
 
 private:
     bool isAlbedoAllocated = false;
