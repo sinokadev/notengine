@@ -6,6 +6,7 @@ Untitled.obj: CC0
 utah_teapot.obj: CC0 (Version 2026 by Cem Yuksel, https://graphics.cs.utah.edu/teapot/)
 audio/*: CC0
 CommercialRefrigerator.glb: https://github.com/KhronosGroup/glTF-Sample-Assets
+font.png: https://unifoundry.com/unifont/index.html (UniFont)
 
 shaders/*: Same as the LICENSE file in the project root directory.
 *.seno: Same as the LICENSE file in the project root directory.

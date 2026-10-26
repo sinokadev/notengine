@@ -49,8 +49,10 @@ inline void drawLoadingSplash(int framebufferWidth, int framebufferHeight) {
         const GLuint vs = detail::compileSplashShader(GL_VERTEX_SHADER, vertexSource);
         const GLuint fs = detail::compileSplashShader(GL_FRAGMENT_SHADER, fragmentSource);
         if (!vs || !fs) {
-            if (vs) glDeleteShader(vs);
-            if (fs) glDeleteShader(fs);
+            if (vs)
+                glDeleteShader(vs);
+            if (fs)
+                glDeleteShader(fs);
             return;
         }
         program = glCreateProgram();
@@ -68,8 +70,7 @@ inline void drawLoadingSplash(int framebufferWidth, int framebufferHeight) {
         }
 
         constexpr float vertices[] = {
-            -1.f, -1.f, 0.f, 1.f,  1.f, -1.f, 1.f, 1.f,  1.f, 1.f, 1.f, 0.f,
-            -1.f, -1.f, 0.f, 1.f,  1.f,  1.f, 1.f, 0.f, -1.f, 1.f, 0.f, 0.f,
+            -1.f, -1.f, 0.f, 1.f, 1.f, -1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 0.f, -1.f, -1.f, 0.f, 1.f, 1.f, 1.f, 1.f, 0.f, -1.f, 1.f, 0.f, 0.f,
         };
         glGenVertexArrays(1, &vao);
         GLuint vbo = 0;
@@ -90,10 +91,12 @@ inline void drawLoadingSplash(int framebufferWidth, int framebufferHeight) {
         unsigned int accumulator = 0;
         int bits = 0;
         for (const unsigned char c : pngBase64) {
-            if (c == '=') break;
+            if (c == '=')
+                break;
             const char* alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
             const char* found = std::find(alphabet, alphabet + 64, c);
-            if (found == alphabet + 64) continue;
+            if (found == alphabet + 64)
+                continue;
             accumulator = (accumulator << 6) | static_cast<unsigned int>(found - alphabet);
             bits += 6;
             if (bits >= 8) {
@@ -103,8 +106,10 @@ inline void drawLoadingSplash(int framebufferWidth, int framebufferHeight) {
         }
 
         int width = 0, height = 0, channels = 0;
-        stbi_uc* pixels = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(png.data()), static_cast<int>(png.size()), &width, &height, &channels, STBI_rgb_alpha);
-        if (!pixels) return;
+        stbi_uc* pixels = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(png.data()), static_cast<int>(png.size()), &width, &height,
+                                                &channels, STBI_rgb_alpha);
+        if (!pixels)
+            return;
         glGenTextures(1, &texture);
         glBindTexture(GL_TEXTURE_2D, texture);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -115,7 +120,8 @@ inline void drawLoadingSplash(int framebufferWidth, int framebufferHeight) {
         stbi_image_free(pixels);
     }
 
-    if (!program || !vao || !texture || framebufferWidth <= 0 || framebufferHeight <= 0) return;
+    if (!program || !vao || !texture || framebufferWidth <= 0 || framebufferHeight <= 0)
+        return;
     glViewport(0, 0, framebufferWidth, framebufferHeight);
     glDisable(GL_DEPTH_TEST);
     glUseProgram(program);
