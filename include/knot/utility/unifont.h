@@ -315,6 +315,10 @@ inline void drawText(int x, int y, std::string_view text, const std::array<float
     glGetIntegerv(GL_BLEND_DST_ALPHA, &oldBlendDstAlpha);
 
     glDisable(GL_DEPTH_TEST);
+    // The Y-flipped screen-space vertices wind clockwise in clip space, while
+    // the renderer enables CCW back-face culling for 3D geometry.
+    const GLboolean cullWasEnabled = glIsEnabled(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glUseProgram(s.program);
@@ -338,6 +342,10 @@ inline void drawText(int x, int y, std::string_view text, const std::array<float
         glEnable(GL_DEPTH_TEST);
     else
         glDisable(GL_DEPTH_TEST);
+    if (cullWasEnabled)
+        glEnable(GL_CULL_FACE);
+    else
+        glDisable(GL_CULL_FACE);
     if (!blendWasEnabled)
         glDisable(GL_BLEND);
 }
