@@ -92,13 +92,13 @@ bool Engine::init(int width, int height, const std::string& title, const std::st
     for (int i = 0; i < initialFrames; ++i) {
         glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
+
         Renderer::get().beginFrame(window.getFramebufferWidth(), window.getFramebufferHeight());
         utility::drawLoadingSplash(window.getFramebufferWidth(), window.getFramebufferHeight());
-        
+
         window.loop();
     }
-    
+
     return true;
 }
 
