@@ -1,3 +1,6 @@
+#include <array>
+#include <GLFW/glfw3.h>
+
 namespace knot {
 // Derived from SDL3 SDL_scancode.h:
 // https://github.com/libsdl-org/SDL/blob/72771ac0b41812065acda4b5c782000293d77ef5/include/SDL3/SDL_scancode.h
@@ -278,237 +281,156 @@ enum class ScanCode : unsigned int {
 
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 SinokaDev
+namespace detail {
+
+inline const std::array<ScanCode, 351>& getGlfwToScanCodeTable() {
+    static const std::array<ScanCode, 351> table = []() {
+        std::array<ScanCode, 351> t{};
+        t.fill(ScanCode::UNKNOWN);
+
+        // --- 알파벳 (물리적 QWERTY 위치 기준) ---
+        t[GLFW_KEY_A] = ScanCode::A;
+        t[GLFW_KEY_B] = ScanCode::B;
+        t[GLFW_KEY_C] = ScanCode::C;
+        t[GLFW_KEY_D] = ScanCode::D;
+        t[GLFW_KEY_E] = ScanCode::E;
+        t[GLFW_KEY_F] = ScanCode::F;
+        t[GLFW_KEY_G] = ScanCode::G;
+        t[GLFW_KEY_H] = ScanCode::H;
+        t[GLFW_KEY_I] = ScanCode::I;
+        t[GLFW_KEY_J] = ScanCode::J;
+        t[GLFW_KEY_K] = ScanCode::K;
+        t[GLFW_KEY_L] = ScanCode::L;
+        t[GLFW_KEY_M] = ScanCode::M;
+        t[GLFW_KEY_N] = ScanCode::N;
+        t[GLFW_KEY_O] = ScanCode::O;
+        t[GLFW_KEY_P] = ScanCode::P;
+        t[GLFW_KEY_Q] = ScanCode::Q;
+        t[GLFW_KEY_R] = ScanCode::R;
+        t[GLFW_KEY_S] = ScanCode::S;
+        t[GLFW_KEY_T] = ScanCode::T;
+        t[GLFW_KEY_U] = ScanCode::U;
+        t[GLFW_KEY_V] = ScanCode::V;
+        t[GLFW_KEY_W] = ScanCode::W;
+        t[GLFW_KEY_X] = ScanCode::X;
+        t[GLFW_KEY_Y] = ScanCode::Y;
+        t[GLFW_KEY_Z] = ScanCode::Z;
+
+        // --- 숫자 행 ---
+        t[GLFW_KEY_0] = ScanCode::NUM_0;
+        t[GLFW_KEY_1] = ScanCode::NUM_1;
+        t[GLFW_KEY_2] = ScanCode::NUM_2;
+        t[GLFW_KEY_3] = ScanCode::NUM_3;
+        t[GLFW_KEY_4] = ScanCode::NUM_4;
+        t[GLFW_KEY_5] = ScanCode::NUM_5;
+        t[GLFW_KEY_6] = ScanCode::NUM_6;
+        t[GLFW_KEY_7] = ScanCode::NUM_7;
+        t[GLFW_KEY_8] = ScanCode::NUM_8;
+        t[GLFW_KEY_9] = ScanCode::NUM_9;
+
+        // --- 제어 및 특수 문자 키 ---
+        t[GLFW_KEY_ENTER]         = ScanCode::RETURN;
+        t[GLFW_KEY_ESCAPE]        = ScanCode::ESCAPE;
+        t[GLFW_KEY_BACKSPACE]     = ScanCode::BACKSPACE;
+        t[GLFW_KEY_TAB]           = ScanCode::TAB;
+        t[GLFW_KEY_SPACE]         = ScanCode::SPACE;
+        t[GLFW_KEY_MINUS]         = ScanCode::MINUS;
+        t[GLFW_KEY_EQUAL]         = ScanCode::EQUALS;
+        t[GLFW_KEY_LEFT_BRACKET]  = ScanCode::LEFTBRACKET;
+        t[GLFW_KEY_RIGHT_BRACKET] = ScanCode::RIGHTBRACKET;
+        t[GLFW_KEY_BACKSLASH]     = ScanCode::BACKSLASH;
+        t[GLFW_KEY_SEMICOLON]     = ScanCode::SEMICOLON;
+        t[GLFW_KEY_APOSTROPHE]    = ScanCode::APOSTROPHE;
+        t[GLFW_KEY_GRAVE_ACCENT]  = ScanCode::GRAVE;
+        t[GLFW_KEY_COMMA]         = ScanCode::COMMA;
+        t[GLFW_KEY_PERIOD]        = ScanCode::PERIOD;
+        t[GLFW_KEY_SLASH]         = ScanCode::SLASH;
+        t[GLFW_KEY_CAPS_LOCK]     = ScanCode::CAPSLOCK;
+
+        // --- Function Keys ---
+        t[GLFW_KEY_F1]  = ScanCode::F1;
+        t[GLFW_KEY_F2]  = ScanCode::F2;
+        t[GLFW_KEY_F3]  = ScanCode::F3;
+        t[GLFW_KEY_F4]  = ScanCode::F4;
+        t[GLFW_KEY_F5]  = ScanCode::F5;
+        t[GLFW_KEY_F6]  = ScanCode::F6;
+        t[GLFW_KEY_F7]  = ScanCode::F7;
+        t[GLFW_KEY_F8]  = ScanCode::F8;
+        t[GLFW_KEY_F9]  = ScanCode::F9;
+        t[GLFW_KEY_F10] = ScanCode::F10;
+        t[GLFW_KEY_F11] = ScanCode::F11;
+        t[GLFW_KEY_F12] = ScanCode::F12;
+        t[GLFW_KEY_F13] = ScanCode::F13;
+        t[GLFW_KEY_F14] = ScanCode::F14;
+        t[GLFW_KEY_F15] = ScanCode::F15;
+        t[GLFW_KEY_F16] = ScanCode::F16;
+        t[GLFW_KEY_F17] = ScanCode::F17;
+        t[GLFW_KEY_F18] = ScanCode::F18;
+        t[GLFW_KEY_F19] = ScanCode::F19;
+        t[GLFW_KEY_F20] = ScanCode::F20;
+        t[GLFW_KEY_F21] = ScanCode::F21;
+        t[GLFW_KEY_F22] = ScanCode::F22;
+        t[GLFW_KEY_F23] = ScanCode::F23;
+        t[GLFW_KEY_F24] = ScanCode::F24;
+
+        // --- 시스템 / 이동 키 ---
+        t[GLFW_KEY_PRINT_SCREEN] = ScanCode::PRINTSCREEN;
+        t[GLFW_KEY_SCROLL_LOCK]  = ScanCode::SCROLLLOCK;
+        t[GLFW_KEY_PAUSE]        = ScanCode::PAUSE;
+        t[GLFW_KEY_INSERT]       = ScanCode::INSERT;
+        t[GLFW_KEY_HOME]         = ScanCode::HOME;
+        t[GLFW_KEY_PAGE_UP]      = ScanCode::PAGEUP;
+        t[GLFW_KEY_DELETE]       = ScanCode::DELETE;
+        t[GLFW_KEY_END]          = ScanCode::END;
+        t[GLFW_KEY_PAGE_DOWN]    = ScanCode::PAGEDOWN;
+        t[GLFW_KEY_RIGHT]        = ScanCode::RIGHT;
+        t[GLFW_KEY_LEFT]         = ScanCode::LEFT;
+        t[GLFW_KEY_DOWN]         = ScanCode::DOWN;
+        t[GLFW_KEY_UP]           = ScanCode::UP;
+        t[GLFW_KEY_NUM_LOCK]     = ScanCode::NUMLOCKCLEAR;
+
+        // --- Numpad (키패드) ---
+        t[GLFW_KEY_KP_DIVIDE]   = ScanCode::KP_DIVIDE;
+        t[GLFW_KEY_KP_MULTIPLY] = ScanCode::KP_MULTIPLY;
+        t[GLFW_KEY_KP_SUBTRACT] = ScanCode::KP_MINUS;
+        t[GLFW_KEY_KP_ADD]      = ScanCode::KP_PLUS;
+        t[GLFW_KEY_KP_ENTER]    = ScanCode::KP_ENTER;
+        t[GLFW_KEY_KP_1]        = ScanCode::KP_1;
+        t[GLFW_KEY_KP_2]        = ScanCode::KP_2;
+        t[GLFW_KEY_KP_3]        = ScanCode::KP_3;
+        t[GLFW_KEY_KP_4]        = ScanCode::KP_4;
+        t[GLFW_KEY_KP_5]        = ScanCode::KP_5;
+        t[GLFW_KEY_KP_6]        = ScanCode::KP_6;
+        t[GLFW_KEY_KP_7]        = ScanCode::KP_7;
+        t[GLFW_KEY_KP_8]        = ScanCode::KP_8;
+        t[GLFW_KEY_KP_9]        = ScanCode::KP_9;
+        t[GLFW_KEY_KP_0]        = ScanCode::KP_0;
+        t[GLFW_KEY_KP_DECIMAL]  = ScanCode::KP_PERIOD;
+        t[GLFW_KEY_KP_EQUAL]    = ScanCode::KP_EQUALS;
+
+        // --- Modifier Keys ---
+        t[GLFW_KEY_LEFT_CONTROL]  = ScanCode::LCTRL;
+        t[GLFW_KEY_LEFT_SHIFT]    = ScanCode::LSHIFT;
+        t[GLFW_KEY_LEFT_ALT]      = ScanCode::LALT;
+        t[GLFW_KEY_LEFT_SUPER]    = ScanCode::LGUI;
+        t[GLFW_KEY_RIGHT_CONTROL] = ScanCode::RCTRL;
+        t[GLFW_KEY_RIGHT_SHIFT]   = ScanCode::RSHIFT;
+        t[GLFW_KEY_RIGHT_ALT]     = ScanCode::RALT;
+        t[GLFW_KEY_RIGHT_SUPER]   = ScanCode::RGUI;
+        t[GLFW_KEY_MENU]          = ScanCode::MENU;
+
+        return t;
+    }();
+
+    return table;
+}
+
+} // namespace detail
 
 inline ScanCode convertGlfwToKnotScancode(int glfwKey) {
-    switch (glfwKey) {
-    // --- 알파벳 ---
-    case GLFW_KEY_A:
-        return ScanCode::A;
-    case GLFW_KEY_B:
-        return ScanCode::B;
-    case GLFW_KEY_C:
-        return ScanCode::C;
-    case GLFW_KEY_D:
-        return ScanCode::D;
-    case GLFW_KEY_E:
-        return ScanCode::E;
-    case GLFW_KEY_F:
-        return ScanCode::F;
-    case GLFW_KEY_G:
-        return ScanCode::G;
-    case GLFW_KEY_H:
-        return ScanCode::H;
-    case GLFW_KEY_I:
-        return ScanCode::I;
-    case GLFW_KEY_J:
-        return ScanCode::J;
-    case GLFW_KEY_K:
-        return ScanCode::K;
-    case GLFW_KEY_L:
-        return ScanCode::L;
-    case GLFW_KEY_M:
-        return ScanCode::M;
-    case GLFW_KEY_N:
-        return ScanCode::N;
-    case GLFW_KEY_O:
-        return ScanCode::O;
-    case GLFW_KEY_P:
-        return ScanCode::P;
-    case GLFW_KEY_Q:
-        return ScanCode::Q;
-    case GLFW_KEY_R:
-        return ScanCode::R;
-    case GLFW_KEY_S:
-        return ScanCode::S;
-    case GLFW_KEY_T:
-        return ScanCode::T;
-    case GLFW_KEY_U:
-        return ScanCode::U;
-    case GLFW_KEY_V:
-        return ScanCode::V;
-    case GLFW_KEY_W:
-        return ScanCode::W;
-    case GLFW_KEY_X:
-        return ScanCode::X;
-    case GLFW_KEY_Y:
-        return ScanCode::Y;
-    case GLFW_KEY_Z:
-        return ScanCode::Z;
-
-    // --- 숫자 ---
-    case GLFW_KEY_0:
-        return ScanCode::NUM_0;
-    case GLFW_KEY_1:
-        return ScanCode::NUM_1;
-    case GLFW_KEY_2:
-        return ScanCode::NUM_2;
-    case GLFW_KEY_3:
-        return ScanCode::NUM_3;
-    case GLFW_KEY_4:
-        return ScanCode::NUM_4;
-    case GLFW_KEY_5:
-        return ScanCode::NUM_5;
-    case GLFW_KEY_6:
-        return ScanCode::NUM_6;
-    case GLFW_KEY_7:
-        return ScanCode::NUM_7;
-    case GLFW_KEY_8:
-        return ScanCode::NUM_8;
-    case GLFW_KEY_9:
-        return ScanCode::NUM_9;
-
-    // --- 시스템 제어 및 주요 특수키 ---
-    case GLFW_KEY_ENTER:
-        return ScanCode::RETURN;
-    case GLFW_KEY_ESCAPE:
-        return ScanCode::ESCAPE;
-    case GLFW_KEY_BACKSPACE:
-        return ScanCode::BACKSPACE;
-    case GLFW_KEY_TAB:
-        return ScanCode::TAB;
-    case GLFW_KEY_SPACE:
-        return ScanCode::SPACE;
-    case GLFW_KEY_MINUS:
-        return ScanCode::MINUS;
-    case GLFW_KEY_EQUAL:
-        return ScanCode::EQUALS;
-    case GLFW_KEY_LEFT_BRACKET:
-        return ScanCode::LEFTBRACKET;
-    case GLFW_KEY_RIGHT_BRACKET:
-        return ScanCode::RIGHTBRACKET;
-    case GLFW_KEY_BACKSLASH:
-        return ScanCode::BACKSLASH;
-    case GLFW_KEY_SEMICOLON:
-        return ScanCode::SEMICOLON;
-    case GLFW_KEY_APOSTROPHE:
-        return ScanCode::APOSTROPHE;
-    case GLFW_KEY_GRAVE_ACCENT:
-        return ScanCode::GRAVE;
-    case GLFW_KEY_COMMA:
-        return ScanCode::COMMA;
-    case GLFW_KEY_PERIOD:
-        return ScanCode::PERIOD;
-    case GLFW_KEY_SLASH:
-        return ScanCode::SLASH;
-    case GLFW_KEY_CAPS_LOCK:
-        return ScanCode::CAPSLOCK;
-
-    // --- 기능키 (F1 ~ F12) ---
-    case GLFW_KEY_F1:
-        return ScanCode::F1;
-    case GLFW_KEY_F2:
-        return ScanCode::F2;
-    case GLFW_KEY_F3:
-        return ScanCode::F3;
-    case GLFW_KEY_F4:
-        return ScanCode::F4;
-    case GLFW_KEY_F5:
-        return ScanCode::F5;
-    case GLFW_KEY_F6:
-        return ScanCode::F6;
-    case GLFW_KEY_F7:
-        return ScanCode::F7;
-    case GLFW_KEY_F8:
-        return ScanCode::F8;
-    case GLFW_KEY_F9:
-        return ScanCode::F9;
-    case GLFW_KEY_F10:
-        return ScanCode::F10;
-    case GLFW_KEY_F11:
-        return ScanCode::F11;
-    case GLFW_KEY_F12:
-        return ScanCode::F12;
-
-    // --- 에디팅 및 네비게이션 ---
-    case GLFW_KEY_PRINT_SCREEN:
-        return ScanCode::PRINTSCREEN;
-    case GLFW_KEY_SCROLL_LOCK:
-        return ScanCode::SCROLLLOCK;
-    case GLFW_KEY_PAUSE:
-        return ScanCode::PAUSE;
-    case GLFW_KEY_INSERT:
-        return ScanCode::INSERT;
-    case GLFW_KEY_HOME:
-        return ScanCode::HOME;
-    case GLFW_KEY_PAGE_UP:
-        return ScanCode::PAGEUP;
-    case GLFW_KEY_DELETE:
-        return ScanCode::DELETE;
-    case GLFW_KEY_END:
-        return ScanCode::END;
-    case GLFW_KEY_PAGE_DOWN:
-        return ScanCode::PAGEDOWN;
-    case GLFW_KEY_RIGHT:
-        return ScanCode::RIGHT;
-    case GLFW_KEY_LEFT:
-        return ScanCode::LEFT;
-    case GLFW_KEY_DOWN:
-        return ScanCode::DOWN;
-    case GLFW_KEY_UP:
-        return ScanCode::UP;
-    case GLFW_KEY_NUM_LOCK:
-        return ScanCode::NUMLOCKCLEAR;
-
-    // --- 키패드 (Numpad) ---
-    case GLFW_KEY_KP_DIVIDE:
-        return ScanCode::KP_DIVIDE;
-    case GLFW_KEY_KP_MULTIPLY:
-        return ScanCode::KP_MULTIPLY;
-    case GLFW_KEY_KP_SUBTRACT:
-        return ScanCode::KP_MINUS;
-    case GLFW_KEY_KP_ADD:
-        return ScanCode::KP_PLUS;
-    case GLFW_KEY_KP_ENTER:
-        return ScanCode::KP_ENTER;
-    case GLFW_KEY_KP_1:
-        return ScanCode::KP_1;
-    case GLFW_KEY_KP_2:
-        return ScanCode::KP_2;
-    case GLFW_KEY_KP_3:
-        return ScanCode::KP_3;
-    case GLFW_KEY_KP_4:
-        return ScanCode::KP_4;
-    case GLFW_KEY_KP_5:
-        return ScanCode::KP_5;
-    case GLFW_KEY_KP_6:
-        return ScanCode::KP_6;
-    case GLFW_KEY_KP_7:
-        return ScanCode::KP_7;
-    case GLFW_KEY_KP_8:
-        return ScanCode::KP_8;
-    case GLFW_KEY_KP_9:
-        return ScanCode::KP_9;
-    case GLFW_KEY_KP_0:
-        return ScanCode::KP_0;
-    case GLFW_KEY_KP_DECIMAL:
-        return ScanCode::KP_PERIOD;
-    case GLFW_KEY_KP_EQUAL:
-        return ScanCode::KP_EQUALS;
-
-    // --- 모디파이어 키 ---
-    case GLFW_KEY_LEFT_CONTROL:
-        return ScanCode::LCTRL;
-    case GLFW_KEY_LEFT_SHIFT:
-        return ScanCode::LSHIFT;
-    case GLFW_KEY_LEFT_ALT:
-        return ScanCode::LALT;
-    case GLFW_KEY_LEFT_SUPER:
-        return ScanCode::LGUI;
-    case GLFW_KEY_RIGHT_CONTROL:
-        return ScanCode::RCTRL;
-    case GLFW_KEY_RIGHT_SHIFT:
-        return ScanCode::RSHIFT;
-    case GLFW_KEY_RIGHT_ALT:
-        return ScanCode::RALT;
-    case GLFW_KEY_RIGHT_SUPER:
-        return ScanCode::RGUI;
-
-    // --- 미디어 키 ---
-    case GLFW_KEY_MENU:
-        return ScanCode::MENU;
-
-    default:
+    if (glfwKey < 0 || glfwKey > 350) {
         return ScanCode::UNKNOWN;
     }
+    return detail::getGlfwToScanCodeTable()[glfwKey];
 }
 } // namespace knot
