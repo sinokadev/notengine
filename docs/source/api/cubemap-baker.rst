@@ -5,3 +5,5 @@ Cubemap baker API
 
 .. doxygenfunction:: knot::bakeCubemapToIrradianceMap
 
+.. doxygenfunction:: knot::bakeCubemapToPrefilterMap
+
