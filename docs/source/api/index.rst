@@ -5,7 +5,9 @@ API
    :maxdepth: 2
 
    engine
+   engine-settings
    scene
+   audio
    camera
    resources
    manager
