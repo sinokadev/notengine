@@ -12,6 +12,8 @@
 #include <knot/resources.h>
 #include <knot/scene.h>
 #include <knot/utility.h>
+#include <knot/utility/unifont.h>
+
 
 enum UserEvent : uint32_t { PRINT_FPS };
 
@@ -62,6 +64,7 @@ int main() {
     bool paused = false;
     bool screenshotRequested = false;
     int frameCount = 0;
+    int fps = 0;
 
     engine.repeat(1000, PRINT_FPS);
 
@@ -87,7 +90,12 @@ int main() {
                 }
 
                 if (ev.key == knot::ScanCode::F2) {
-                    screenshotRequested = true;
+                    const std::string path = knot::getAssetRoot() + "screenshot/ss.png";
+                    if (engine.saveScreenshot(path, 3840, 2160)) {
+                        std::cout << "[Info] Screenshot saved: " << path << "\n";
+                    } else {
+                        std::cerr << "[Error] Failed to save screenshot: " << path << "\n";
+                    }
                     ev.handled = true;
                 }
 
@@ -110,7 +118,7 @@ int main() {
         }
 
         if (ev.type == knot::EventType::User && ev.userCode == PRINT_FPS) {
-            std::cout << "FPS: " << frameCount << "\n";
+            fps = frameCount;
             frameCount = 0;
             ev.handled = true;
         }
@@ -143,16 +151,7 @@ int main() {
     });
 
     engine.setRenderLoopCallback([&](float) {
-        if (!screenshotRequested)
-            return;
-
-        screenshotRequested = false;
-        const std::string path = knot::getAssetRoot() + "screenshot/ss.png";
-        if (engine.saveScreenshot(path, 3840, 2160)) {
-            std::cout << "[Info] Screenshot saved: " << path << "\n";
-        } else {
-            std::cerr << "[Error] Failed to save screenshot: " << path << "\n";
-        }
+        knot::utility::drawText(12, 12, "FPS: " + std::to_string(fps));
     });
 
     engine.setScene(scene);
