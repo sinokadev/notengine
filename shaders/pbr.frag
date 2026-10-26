@@ -141,23 +141,29 @@ float calcPointShadow(int index, vec3 normal, vec3 lightDir) {
         return 0.0;
 
     vec3 direction = fromLight / distanceToLight;
+    
+    // Slope-Scaled World-Space Bias
+    float cosTheta = clamp(dot(normal, lightDir), 0.0, 1.0);
+    
+    float baseBias = 0.003;
+    float slopeBias = 0.015 * (1.0 - cosTheta);
+    float worldBias = baseBias + slopeBias;
+
+    float compareDepth = clamp((distanceToLight - worldBias) / farPlane, 0.0, 1.0);
+
+    // PCF Sampling
     vec3 up = abs(direction.y) < 0.99 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
     vec3 tangent = normalize(cross(up, direction));
     vec3 bitangent = cross(direction, tangent);
-    float texelSize = 2.0 / float(textureSize(pointShadowMap, 0).x);
-
-    float cosTheta = clamp(dot(normal, lightDir), 0.0, 1.0);
-    float bias = max(0.02 * (1.0 - cosTheta), 0.003) + distanceToLight * texelSize;
-
-    float compareDepth = (distanceToLight - bias) / farPlane;
+    
+    float texelSize = 1.0 / float(textureSize(pointShadowMap, 0).x);
 
     float shadow = 0.0;
     for (int x = -1; x <= 1; ++x) {
         for (int y = -1; y <= 1; ++y) {
-            vec3 sampleDirection = direction + (tangent * float(x) + bitangent * float(y)) * texelSize;
+            vec3 sampleDirection = direction + (tangent * float(x) + bitangent * float(y)) * (texelSize * 1.5);
 
             float lightFactor = texture(pointShadowMap, vec4(sampleDirection, float(shadowLayer)), compareDepth);
-
             shadow += (1.0 - lightFactor);
         }
     }
