@@ -98,6 +98,8 @@ inline void validate(const Json& j) {
     if (j.contains("sky")) require(j["sky"].is_object(),"sky must be an object");
     if (j.contains("camera")) {
         const auto& c=j["camera"]; require(c.is_object(),"camera must be an object");
+        const auto type=c.value("type",std::string("PerspectiveCamera"));
+        require(type=="PerspectiveCamera"||type=="Camera"||type=="OrthographicCamera"||type=="MovingCamera","Unsupported camera type");
         require(c.value("near",0.1)>0 && c.value("far",100.0)>c.value("near",0.1),"Camera requires 0 < near < far");
         require(c.value("fov",45.0)>0 && c.value("fov",45.0)<180 && c.value("size",10.0)>0,"Invalid camera FOV or size");
     }
