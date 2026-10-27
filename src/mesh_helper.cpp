@@ -75,6 +75,20 @@ void calculateMeshTangents(std::vector<Vertex>& vertices, const std::vector<unsi
     }
 }
 
+bool isValidTriangleList(const std::vector<unsigned int>& indices, std::size_t vertexCount) {
+    if (indices.size() % 3 != 0) {
+        return false;
+    }
+
+    for (unsigned int index : indices) {
+        if (index >= vertexCount) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 std::shared_ptr<Mesh> createCube() {
     auto mesh = std::make_shared<Mesh>();
     mesh->vertices = {// Front (+Z)
@@ -631,6 +645,11 @@ std::shared_ptr<knot::Mesh> cgltfPrimitiveToMesh(const cgltf_primitive& prim) {
     }
 
     mesh->indices = cgltfReadIndices(prim.indices);
+
+    if (!knot::isValidTriangleList(mesh->indices, vertexCount)) {
+        std::cerr << "[Error] GLTF: Skipping primitive with out-of-range or incomplete triangle indices\n";
+        return nullptr;
+    }
 
     if (tangents.empty() && !mesh->indices.empty()) {
         knot::calculateMeshTangents(mesh->vertices, mesh->indices);

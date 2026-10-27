@@ -2,7 +2,10 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <cstdint>
 #include <iostream>
+#include <limits>
+#include <stdexcept>
 #include <nlohmann/json.hpp>
 
 #include <knot/scene.h>
@@ -267,11 +270,21 @@ bool Scene::loadSeno(const std::string& path) {
                     }
 
                     for (const auto& index : meshData["indices"]) {
+                        // get<unsigned int>() wraps silently, so -1 or 2^32 would turn into some other index.
+                        if (!index.is_number_integer() || index.get<std::int64_t>() < 0 ||
+                            index.get<std::int64_t>() > std::numeric_limits<unsigned int>::max()) {
+                            throw std::runtime_error("Embedded mesh indices must be non-negative 32-bit integers");
+                        }
                         mesh->indices.push_back(index.get<unsigned int>());
                     }
 
                     if (mesh->vertices.empty() || mesh->indices.empty()) {
                         std::cerr << "[Error] Embedded mesh is empty" << std::endl;
+                        return false;
+                    }
+
+                    if (!isValidTriangleList(mesh->indices, mesh->vertices.size())) {
+                        std::cerr << "[Error] Embedded mesh indices must form whole triangles and stay below the vertex count" << std::endl;
                         return false;
                     }
 

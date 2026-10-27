@@ -13,6 +13,9 @@ class Object;
 /** @brief Calculates orthogonalized vertex tangents for indexed triangles.
  *  @pre @p indices is a multiple of three and all indices are valid. */
 void calculateMeshTangents(std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
+/** @brief Checks the calculateMeshTangents() precondition: whole triangles, every index below @p vertexCount.
+ *  Loaders should reject data that fails this before computing tangents or uploading it to the GPU. */
+bool isValidTriangleList(const std::vector<unsigned int>& indices, std::size_t vertexCount);
 /** @brief Creates a centered unit cube mesh. */
 std::shared_ptr<Mesh> createCube();
 /** @brief Creates a UV sphere with radius 0.5.

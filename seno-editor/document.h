@@ -93,6 +93,7 @@ inline void validate(const Json& j) {
         require(mesh.is_object() && mesh.contains("vertices") && mesh["vertices"].is_array() && mesh.contains("indices") && mesh["indices"].is_array(),"Embedded mesh needs vertices and indices arrays");
         for (const auto& v:mesh["vertices"]) require(v.is_object() && v.contains("position"),"Vertex needs position");
         for (const auto& i:mesh["indices"]) require(i.is_number_integer() && i.get<long long>()>=0 && i.get<unsigned long long>()<mesh["vertices"].size(),"Mesh index outside vertices");
+        require(mesh["indices"].size()%3==0,"Mesh indices must form whole triangles");
     }
     if (j.contains("sky")) require(j["sky"].is_object(),"sky must be an object");
     if (j.contains("camera")) {
