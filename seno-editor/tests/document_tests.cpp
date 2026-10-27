@@ -29,6 +29,10 @@ int main() {
         bad=j;bad["lights"]=Json::array({{{"type","PbrPointLight"},{"castsShadow",false}}});validate(bad);
         bad["lights"][0]["castsShadow"]="false";fails([&]{validate(bad);});
         bad=j;bad["camera"]={{"near",2},{"far",1}};fails([&]{validate(bad);});
+        bad=j;bad["camera"]={{"type","Perspective"}};fails([&]{validate(bad);});
+        bad["camera"]["type"]="OrthographicCamera";validate(bad);
+        bad=j;bad["meshes"]=Json::parse(R"([{"vertices":[{"position":[0,0,0]},{"position":[1,0,0]}],"indices":[0,1]}])");fails([&]{validate(bad);});
+        bad["meshes"][0]["indices"]={0,1,1};validate(bad);
         {std::ofstream out(file);out<<"invalid";}
         fails([&]{d.save(file);});check(read(file)=="invalid","External change preserved");
         fails([&]{loaded.open(file);});check(loaded.value==j,"Failed open preserved document");
