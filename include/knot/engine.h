@@ -315,6 +315,6 @@ private:
 
     std::vector<TimerTask> afterTimerTasks;
     std::vector<TimerTask> repeatTimerTasks;
-    int nextTimerTaskId;
+    int nextTimerTaskId = 1;
 };
 } // namespace knot
