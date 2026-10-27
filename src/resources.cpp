@@ -306,6 +306,16 @@ bool Object::isVisible(const Frustum& frustum, const glm::mat4& worldMatrix) con
     return frustum.intersectsSphere(center, radius);
 }
 
+glm::quat lookRotation(const glm::vec3& direction) {
+    const glm::vec3 front = glm::normalize(direction);
+    // quatLookAt with +Y up breaks down once front is (almost) vertical. Only in that case use the
+    // up a -Z facing transform ends with after pitching straight down/up, which keeps +X as right.
+    // Anything less vertical keeps the old +Y up result so cameras don't change roll.
+    const bool vertical = 1.0f - front.y * front.y < 1e-4f;
+    const glm::vec3 up = vertical ? glm::vec3(0.0f, 0.0f, front.y > 0.0f ? 1.0f : -1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
+    return glm::quatLookAt(front, up);
+}
+
 glm::vec3 Transform::getFront() const {
     return glm::normalize(rotation * glm::vec3(0.0f, 0.0f, -1.0f));
 }

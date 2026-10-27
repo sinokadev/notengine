@@ -66,6 +66,41 @@ int main() {
             check(errors.str().find("Failed to load mesh: " + expected) != std::string::npos,
                   "Scene loader did not resolve mesh relative to the scene file");
         }
+        // A file that fails halfway must leave the previously loaded scene alone.
+        auto keptInput=input;keptInput["lights"]=Json::array({{{"type","PbrPointLight"}}});
+        keptInput["camera"]=Json{{"type","PerspectiveCamera"}};
+        check(load(scene,keptInput),"Reload failed");
+        auto* kept=scene.getObjectManager().getObject(12);
+        auto* keptCamera=&scene.getCamera();
+        auto rejects=[&](const Json& j,const char* message) {
+            check(!load(scene,j),message);
+            check(scene.getObjectManager().getObject(12)==kept && scene.getLightManager().getPointLights().size()==1 &&
+                  &scene.getCamera()==keptCamera,"Rejected file replaced the loaded scene");
+        };
+        bad=input;bad["objects"][0]["position"]={1};rejects(bad,"Short position array accepted");
+        bad=input;bad["objects"][0]["rotation"]={1,0,0};rejects(bad,"Three-component rotation accepted");
+        bad=input;bad["objects"].push_back({{"model",5}});rejects(bad,"Out-of-range model index accepted");
+        bad=input;bad["camera"]=Json{{"type","Perspective"}};rejects(bad,"Unknown camera type accepted");
+        auto triangle=Json::parse(R"({"vertices":[{"position":[0,0,0]},{"position":[1,0,0]},{"position":[0,1,0]}]})");
+        for(Json indices:{Json{0,1,3},Json{0,1},Json{0,1,-1},Json{0,1,4294967296LL},Json{0,1,1.5}}) {
+            bad=input;auto mesh=triangle;mesh["indices"]=indices;bad["meshes"]=Json::array({mesh});
+            rejects(bad,"Invalid embedded mesh indices accepted");
+        }
+        bad=input;auto missingPosition=triangle;missingPosition["vertices"][1].erase("position");
+        missingPosition["indices"]={0,1,2};bad["meshes"]=Json::array({missingPosition});
+        rejects(bad,"Vertex without position accepted");
+        // Straight up/down used to hit the quatLookAt singularity and come out tilted 45 degrees.
+        auto sunInput=input;sunInput["lights"]=Json::array({{{"type","DirLight"}}});
+        check(load(scene,sunInput),"DirLight load failed");
+        check(glm::length(scene.getLightManager().getDirLights().at(0)->getDirection()-glm::vec3(0,-1,0))<1e-4f,"Default DirLight is not straight down");
+        for(float y:{-1.0f,1.0f}) {
+            knot::PerspectiveCamera camera(glm::vec3(0,20*-y,0));camera.lookAtTarget(glm::vec3(0));
+            check(glm::length(camera.getFront()-glm::vec3(0,y,0))<1e-4f,"Vertical lookAtTarget missed the target");
+            check(glm::length(camera.getRight()-glm::vec3(1,0,0))<1e-4f,"Vertical lookAtTarget flipped the right vector");
+        }
+        // Almost vertical but still fine for quatLookAt: keep the old +Y up result (right = -X here).
+        knot::PerspectiveCamera nearVertical(glm::vec3(0,20,-0.5f));nearVertical.lookAtTarget(glm::vec3(0));
+        check(glm::length(nearVertical.getRight()-glm::vec3(-1,0,0))<1e-3f,"Near-vertical lookAtTarget changed roll");
         fs::remove(file);std::cout<<"Seno v8 loader tests passed\n";return 0;
     } catch(const std::exception& e) {fs::remove(file);std::cerr<<e.what()<<'\n';return 1;}
 }

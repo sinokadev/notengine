@@ -93,6 +93,12 @@ int main() {
     pbr0->setAlbedoColor(glm::vec3(0.5f, 0.5f, 0.5f));
     assert(pbr0->baseAlbedo == glm::vec3(0.5f, 0.5f, 0.5f));
 
+    // The shader samples the fallback texture, not baseAlbedo, so check the texel changed too.
+    unsigned char texel[4] = {};
+    glBindTexture(GL_TEXTURE_2D, pbr0->albedoMap);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, texel);
+    assert(texel[0] == 127 && texel[1] == 127 && texel[2] == 127);
+
     auto newMat = std::make_shared<knot::AlphaMaterial>(shader, glm::vec3(0.0f, 1.0f, 0.0f));
     bool replaced = testObj->setMaterial(newMat, 1);
     assert(replaced);
