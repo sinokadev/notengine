@@ -23,6 +23,38 @@ bool isGLTFPath(const std::string& path) {
     std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
     return extension == ".gltf" || extension == ".glb";
 }
+
+// operator[] on a const json array does no bounds check, so "position": [1] used to read past
+// the end. These throw instead; loadSeno() turns the exception into a load error.
+std::vector<float> readFloats(const nlohmann::json& parent, const char* key, std::size_t count) {
+    const auto& value = parent.at(key);
+    if (!value.is_array() || value.size() != count) {
+        throw std::runtime_error(std::string("'") + key + "' must be an array of " + std::to_string(count) + " numbers");
+    }
+
+    std::vector<float> result;
+    result.reserve(count);
+    for (const auto& component : value) {
+        result.push_back(component.get<float>());
+    }
+    return result;
+}
+
+glm::vec2 readVec2(const nlohmann::json& parent, const char* key) {
+    const auto v = readFloats(parent, key, 2);
+    return glm::vec2(v[0], v[1]);
+}
+
+glm::vec3 readVec3(const nlohmann::json& parent, const char* key) {
+    const auto v = readFloats(parent, key, 3);
+    return glm::vec3(v[0], v[1], v[2]);
+}
+
+// Seno stores quaternions as [w, x, y, z].
+glm::quat readQuat(const nlohmann::json& parent, const char* key) {
+    const auto v = readFloats(parent, key, 4);
+    return glm::quat(v[0], v[1], v[2], v[3]);
+}
 } // namespace
 
 Scene::Scene() {
@@ -162,11 +194,15 @@ bool Scene::loadSeno(const std::string& path) {
             }
         }
 
-        clear();
+        // Everything below is built into locals first. The current scene is only replaced
+        // once the whole file has loaded, so a broken file no longer wipes it.
 
         // ------------------------------------------------------------
         // Sky
         // ------------------------------------------------------------
+
+        bool hasHDRSky = false;
+        std::string skyPath;
 
         if (scene.contains("sky")) {
             const auto& sky = scene["sky"];
@@ -174,11 +210,8 @@ bool Scene::loadSeno(const std::string& path) {
             const std::string type = sky.value("type", "");
 
             if (type == "HDR") {
-                std::string skyPath = sky.value("path", "");
-
-                skyPath = resolveAssetPath(skyPath);
-
-                loadHDRMap(skyPath);
+                hasHDRSky = true;
+                skyPath = resolveAssetPath(sky.value("path", ""));
             }
         }
 
@@ -238,30 +271,22 @@ bool Scene::loadSeno(const std::string& path) {
                     for (const auto& vertexData : meshData["vertices"]) {
                         Vertex vertex{};
 
-                        const auto& position = vertexData["position"];
-
-                        vertex.Position = glm::vec3(position[0].get<float>(), position[1].get<float>(), position[2].get<float>());
+                        vertex.Position = readVec3(vertexData, "position");
 
                         if (vertexData.contains("normal")) {
-                            const auto& normal = vertexData["normal"];
-
-                            vertex.Normal = glm::vec3(normal[0].get<float>(), normal[1].get<float>(), normal[2].get<float>());
+                            vertex.Normal = readVec3(vertexData, "normal");
                         } else {
                             vertex.Normal = glm::vec3(0.0f, 1.0f, 0.0f);
                         }
 
                         if (vertexData.contains("texcoord")) {
-                            const auto& uv = vertexData["texcoord"];
-
-                            vertex.TexCoords = glm::vec2(uv[0].get<float>(), uv[1].get<float>());
+                            vertex.TexCoords = readVec2(vertexData, "texcoord");
                         } else {
                             vertex.TexCoords = glm::vec2(0.0f);
                         }
 
                         if (vertexData.contains("tangent")) {
-                            const auto& tangent = vertexData["tangent"];
-
-                            vertex.Tangent = glm::vec3(tangent[0].get<float>(), tangent[1].get<float>(), tangent[2].get<float>());
+                            vertex.Tangent = readVec3(vertexData, "tangent");
                         } else {
                             vertex.Tangent = glm::vec3(0.0f);
                         }
@@ -463,6 +488,8 @@ bool Scene::loadSeno(const std::string& path) {
         // Objects
         // ------------------------------------------------------------
 
+        std::vector<std::pair<std::shared_ptr<Object>, int>> pendingObjects;
+
         if (scene.contains("objects")) {
             for (const auto& objectData : scene["objects"]) {
 
@@ -478,26 +505,19 @@ bool Scene::loadSeno(const std::string& path) {
                 object->model = models[modelIndex];
 
                 if (objectData.contains("position")) {
-                    const auto& p = objectData["position"];
-
-                    object->position = glm::vec3(p[0].get<float>(), p[1].get<float>(), p[2].get<float>());
+                    object->position = readVec3(objectData, "position");
                 }
 
                 if (objectData.contains("pivot")) {
-                    const auto& p = objectData["pivot"];
-                    object->pivot = glm::vec3(p[0].get<float>(), p[1].get<float>(), p[2].get<float>());
+                    object->pivot = readVec3(objectData, "pivot");
                 }
 
                 if (objectData.contains("scale")) {
-                    const auto& s = objectData["scale"];
-
-                    object->scale = glm::vec3(s[0].get<float>(), s[1].get<float>(), s[2].get<float>());
+                    object->scale = readVec3(objectData, "scale");
                 }
 
                 if (objectData.contains("rotation")) {
-                    const auto& r = objectData["rotation"];
-
-                    object->rotation = glm::quat(r[0].get<float>(), r[1].get<float>(), r[2].get<float>(), r[3].get<float>());
+                    object->rotation = readQuat(objectData, "rotation");
                 }
 
                 if (objectData.contains("group") && objectData["group"].is_string()) {
@@ -517,13 +537,15 @@ bool Scene::loadSeno(const std::string& path) {
                     id = objectData["id"].get<int>();
                 }
 
-                objectManager.registerObject(object, id);
+                pendingObjects.emplace_back(object, id);
             }
         }
 
         // ------------------------------------------------------------
         // Lights
         // ------------------------------------------------------------
+
+        std::vector<std::shared_ptr<Light>> pendingLights;
 
         if (scene.contains("lights")) {
             for (const auto& lightData : scene["lights"]) {
@@ -536,15 +558,11 @@ bool Scene::loadSeno(const std::string& path) {
                     float intensity = 1.0f;
 
                     if (lightData.contains("position")) {
-                        const auto& p = lightData["position"];
-
-                        position = glm::vec3(p[0].get<float>(), p[1].get<float>(), p[2].get<float>());
+                        position = readVec3(lightData, "position");
                     }
 
                     if (lightData.contains("color")) {
-                        const auto& c = lightData["color"];
-
-                        color = glm::vec3(c[0].get<float>(), c[1].get<float>(), c[2].get<float>());
+                        color = readVec3(lightData, "color");
                     }
 
                     intensity = lightData.value("intensity", 1.0f);
@@ -552,45 +570,35 @@ bool Scene::loadSeno(const std::string& path) {
                     auto light = std::make_shared<PbrPointLight>(position, color, intensity);
                     light->castsShadow = lightData.value("castsShadow", true);
 
-                    lightManager.registerLight(light);
+                    pendingLights.push_back(light);
                 }
 
                 else if (type == "DirLight") {
                     auto light = std::make_shared<DirLight>();
 
                     if (lightData.contains("color")) {
-                        const auto& c = lightData["color"];
-
-                        light->color = glm::vec3(c[0].get<float>(), c[1].get<float>(), c[2].get<float>());
+                        light->color = readVec3(lightData, "color");
                     }
 
                     light->intensity = lightData.value("intensity", 1.0f);
 
                     if (lightData.contains("ambient")) {
-                        const auto& c = lightData["ambient"];
-
-                        light->ambient = glm::vec3(c[0].get<float>(), c[1].get<float>(), c[2].get<float>());
+                        light->ambient = readVec3(lightData, "ambient");
                     }
 
                     if (lightData.contains("diffuse")) {
-                        const auto& c = lightData["diffuse"];
-
-                        light->diffuse = glm::vec3(c[0].get<float>(), c[1].get<float>(), c[2].get<float>());
+                        light->diffuse = readVec3(lightData, "diffuse");
                     }
 
                     if (lightData.contains("specular")) {
-                        const auto& c = lightData["specular"];
-
-                        light->specular = glm::vec3(c[0].get<float>(), c[1].get<float>(), c[2].get<float>());
+                        light->specular = readVec3(lightData, "specular");
                     }
 
                     if (lightData.contains("rotation")) {
-                        const auto& r = lightData["rotation"];
-
-                        light->rotation = glm::quat(r[0].get<float>(), r[1].get<float>(), r[2].get<float>(), r[3].get<float>());
+                        light->rotation = readQuat(lightData, "rotation");
                     }
 
-                    lightManager.registerLight(light);
+                    pendingLights.push_back(light);
                 }
             }
         }
@@ -598,6 +606,8 @@ bool Scene::loadSeno(const std::string& path) {
         // ------------------------------------------------------------
         // Camera
         // ------------------------------------------------------------
+
+        std::shared_ptr<Camera> pendingCamera;
 
         if (scene.contains("camera")) {
             const auto& cameraData = scene["camera"];
@@ -607,16 +617,12 @@ bool Scene::loadSeno(const std::string& path) {
             glm::vec3 position(0.0f, 0.0f, 5.0f);
 
             if (cameraData.contains("position")) {
-                const auto& p = cameraData["position"];
-
-                position = glm::vec3(p[0].get<float>(), p[1].get<float>(), p[2].get<float>());
+                position = readVec3(cameraData, "position");
             }
 
             const float nearPlane = cameraData.value("near", Camera::kNearPlane);
 
             const float farPlane = cameraData.value("far", Camera::kFarPlane);
-
-            std::shared_ptr<Camera> cam;
 
             if (type == "OrthographicCamera") {
                 const float size = cameraData.value("size", 10.0f);
@@ -624,39 +630,57 @@ bool Scene::loadSeno(const std::string& path) {
                 auto orthoCam = std::make_shared<OrthographicCamera>(position, nearPlane, farPlane, size);
 
                 if (cameraData.contains("rotation")) {
-                    const auto& r = cameraData["rotation"];
-
-                    orthoCam->rotation = glm::quat(r[0].get<float>(), r[1].get<float>(), r[2].get<float>(), r[3].get<float>());
+                    orthoCam->rotation = readQuat(cameraData, "rotation");
                 }
 
-                cam = orthoCam;
+                pendingCamera = orthoCam;
             } else if (type == "PerspectiveCamera" || type == "Camera") {
                 const float fov = cameraData.value("fov", 45.0f);
 
                 auto perspCam = std::make_shared<PerspectiveCamera>(position, fov, nearPlane, farPlane);
 
                 if (cameraData.contains("rotation")) {
-                    const auto& r = cameraData["rotation"];
-
-                    perspCam->rotation = glm::quat(r[0].get<float>(), r[1].get<float>(), r[2].get<float>(), r[3].get<float>());
+                    perspCam->rotation = readQuat(cameraData, "rotation");
                 }
 
-                cam = perspCam;
+                pendingCamera = perspCam;
             } else if (type == "MovingCamera") {
                 const float fov = cameraData.value("fov", 45.0f);
 
                 auto movingCam = std::make_shared<MovingCamera>(position, fov, nearPlane, farPlane);
 
                 if (cameraData.contains("rotation")) {
-                    const auto& r = cameraData["rotation"];
-
-                    movingCam->rotation = glm::quat(r[0].get<float>(), r[1].get<float>(), r[2].get<float>(), r[3].get<float>());
+                    movingCam->rotation = readQuat(cameraData, "rotation");
                 }
 
-                cam = movingCam;
+                pendingCamera = movingCam;
+            } else {
+                // This used to fall through with a null camera and crash on the next frame.
+                std::cerr << "[Error] Unknown camera type: " << type << std::endl;
+                return false;
             }
+        }
 
-            setCamera(cam);
+        // ------------------------------------------------------------
+        // Commit
+        // ------------------------------------------------------------
+
+        clear();
+
+        if (hasHDRSky) {
+            loadHDRMap(skyPath);
+        }
+
+        for (auto& [object, id] : pendingObjects) {
+            objectManager.registerObject(std::move(object), id);
+        }
+
+        for (auto& light : pendingLights) {
+            lightManager.registerLight(std::move(light));
+        }
+
+        if (pendingCamera) {
+            setCamera(std::move(pendingCamera));
         }
 
         return true;
