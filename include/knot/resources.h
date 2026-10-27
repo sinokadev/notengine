@@ -325,24 +325,28 @@ public:
         normalMap = texID;
     }
 
-    /** @brief Sets the fallback albedo base color. */
+    /** @brief Sets the fallback albedo base color. Has no visible effect while an albedo map is set. */
     void setAlbedoColor(const glm::vec3& color) {
         baseAlbedo = color;
+        refreshFallback(albedoMap, isAlbedoAllocated, baseAlbedo);
     }
 
-    /** @brief Sets the fallback metallic factor. */
+    /** @brief Sets the fallback metallic factor. Has no visible effect while a metallic map is set. */
     void setMetallic(float metallic) {
         baseMetallic = metallic;
+        refreshFallback(metallicMap, isMetallicAllocated, glm::vec3(baseMetallic));
     }
 
-    /** @brief Sets the fallback roughness factor. */
+    /** @brief Sets the fallback roughness factor. Has no visible effect while a roughness map is set. */
     void setRoughness(float roughness) {
         baseRoughness = roughness;
+        refreshFallback(roughnessMap, isRoughnessAllocated, glm::vec3(baseRoughness));
     }
 
-    /** @brief Sets the fallback ambient-occlusion factor. */
+    /** @brief Sets the fallback ambient-occlusion factor. Has no visible effect while an AO map is set. */
     void setAo(float ao) {
         baseAo = ao;
+        refreshFallback(aoMap, isAoAllocated, glm::vec3(baseAo));
     }
 
     /** @brief Binds PBR maps to texture units 0 through 4. */
@@ -402,6 +406,24 @@ private:
     bool isRoughnessAllocated = false;
     bool isAoAllocated = false;
     bool isNormalAllocated = false;
+
+    // The base* values only reach the shader through the 1x1 fallback textures made in the
+    // constructor, so a setter has to rewrite the texel. Done in place so the texture id stays the same.
+    static void refreshFallback(unsigned int map, bool allocated, const glm::vec3& value) {
+        if (!allocated || map == 0) {
+            return;
+        }
+
+        const glm::vec3 color = glm::clamp(value, 0.0f, 1.0f) * 255.0f;
+        const unsigned char texel[] = {static_cast<unsigned char>(color.r), static_cast<unsigned char>(color.g), static_cast<unsigned char>(color.b),
+                                       255};
+
+        GLint previous = 0;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &previous);
+        glBindTexture(GL_TEXTURE_2D, map);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, texel);
+        glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(previous));
+    }
 };
 
 /** @brief A pairing of mesh geometry and material for a sub-mesh. */
