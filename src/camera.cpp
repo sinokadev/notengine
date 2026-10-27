@@ -48,9 +48,7 @@ void Camera::lookAtTarget(glm::vec3 targetPos) {
     if (glm::length(delta) <= 0.0f)
         return;
 
-    const glm::vec3 direction = glm::normalize(delta);
-
-    rotation = glm::quatLookAt(direction, glm::vec3(0.0f, 1.0f, 0.0f));
+    rotation = lookRotation(delta);
 }
 
 const Frustum& Camera::getFrustum(float aspectRatio) const {

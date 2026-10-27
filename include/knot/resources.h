@@ -477,6 +477,10 @@ struct Model {
     }
 };
 
+/** @brief Returns a rotation whose front (-Z) faces @p direction.
+ *  Unlike glm::quatLookAt with a fixed +Y up, this stays valid for straight up/down directions. */
+glm::quat lookRotation(const glm::vec3& direction);
+
 /** @brief Position, quaternion rotation, and scale in world space. */
 class Transform {
 public:
@@ -693,7 +697,7 @@ public:
              glm::vec3 specular = glm::vec3(1.0f))
         : ambient(ambient), diffuse(diffuse), specular(specular) {
         if (glm::length(direction) > 0.0f) {
-            rotation = glm::quatLookAt(glm::normalize(direction), glm::vec3(0.0f, 1.0f, 0.0f));
+            rotation = lookRotation(direction);
         }
     }
 
