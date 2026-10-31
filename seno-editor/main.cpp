@@ -109,7 +109,7 @@ public:
         Json item;
         if(collection=="objects") {
             if(next["models"].empty()) {message="Add a mesh, material and model first."; return;}
-            item={{"position",{0,0,0}},{"pivot",{0,0,0}},{"scale",{1,1,1}},{"rotation",{1,0,0,0}},{"model",0},{"groups",{"new"}}};
+            item={{"name","new"},{"position",{0,0,0}},{"pivot",{0,0,0}},{"scale",{1,1,1}},{"rotation",{1,0,0,0}},{"model",0},{"groups",{"new"}}};
         } else if(collection=="lights") {
             item={{"type",kind},{"color",{1,1,1}},{"intensity",1.0}};
             if(kind=="DirLight") item["rotation"]={1,0,0,0}; else { item["position"]={0,3,0}; item["castsShadow"]=true; }
@@ -377,7 +377,8 @@ public:
                     auto& v=entries[i];std::string label=std::to_string(i)+"  ";
                     if(v.is_string())label+=fs::path(v.get<std::string>()).filename().string();
                     else if(v.is_object()) {
-                        if(v.contains("groups") && v["groups"].is_array() && !v["groups"].empty() && v["groups"][0].is_string())label+=v["groups"][0].get<std::string>();
+                        if(v.contains("name") && v["name"].is_string())label+=v["name"].get<std::string>();
+                        else if(v.contains("groups") && v["groups"].is_array() && !v["groups"].empty() && v["groups"][0].is_string())label+=v["groups"][0].get<std::string>();
                         else if(v.contains("group") && v["group"].is_string())label+=v["group"].get<std::string>();
                         else if(v.contains("type") && v["type"].is_string())label+=v["type"].get<std::string>();
                         else label+=collection;

@@ -20,19 +20,20 @@ int main() {
         check(resolve("{assetRoot}/model.obj") == "assets//model.obj", "Asset-root reference rebased onto scene directory");
         check(resolve("").empty(), "Empty path became a directory");
         // Empty submeshes let us exercise the real loader without an OpenGL context.
-        Json input={{"version",9},{"models",Json::array({{{"submeshes",Json::array()}}})},
-            {"objects",Json::array({{{"id",12},{"model",0},{"position",{4,5,6}},
+        Json input={{"version",10},{"models",Json::array({{{"submeshes",Json::array()}}})},
+            {"objects",Json::array({{{"id",12},{"name","player_main"},{"model",0},{"position",{4,5,6}},
                 {"pivot",{1,2,3}},{"scale",{2,3,4}},{"rotation",{0.70710678,0,0.70710678,0}}}})}};
         auto load=[&](knot::Scene& scene,const Json& j) { {std::ofstream out(file);out<<j.dump();} return scene.loadSeno(file.string()); };
         knot::Scene scene;
-        check(load(scene,input),"v8 load failed");
+        check(load(scene,input),"v10 load failed");
         auto object=scene.getObjectManager().getObject(12);
+        check(object && object->getName()=="player_main" && object->hasNamePrefix("player"),"Object name not loaded");
         check(object && object->pivot==glm::vec3(1,2,3),"Pivot not loaded");
         auto matrix=object->getWorldMatrix();
         auto pivotWorld=glm::vec3(matrix*glm::vec4(object->pivot,1));
         check(glm::length(pivotWorld-(object->position+object->pivot))<1e-4f,"Pivot moved under rotation and scale");
         check(glm::length(glm::vec3(matrix*glm::vec4(2,2,3,1))-glm::vec3(5,7,7))<1e-4f,"Pivot transform incorrect");
-        for(Json version:{Json(7),Json(9),Json("8"),Json(8.0),Json(nullptr)}) {
+        for(Json version:{Json(7),Json(9),Json("10"),Json(10.0),Json(nullptr)}) {
             auto bad=input;bad["version"]=version;
             check(!load(scene,bad),"Invalid version accepted");
             check(scene.getObjectManager().getObject(12)==object,"Invalid version cleared scene");
@@ -54,7 +55,7 @@ int main() {
         check(lights[1]->intensity==3.0f,"Unshadowed light lost intensity");
         // Exercise the actual loader without requiring OpenGL: a missing OBJ
         // reports the resolved path before GPU allocation can take place.
-        Json missing = {{"version",9},{"meshes",Json::array({"missing-model.obj"})}};
+        Json missing = {{"version",10},{"meshes",Json::array({"missing-model.obj"})}};
         { std::ofstream out(file); out << missing.dump(); }
         for (const auto& scenePath : {file, fs::relative(file, fs::current_path())}) {
             std::ostringstream errors;
@@ -101,6 +102,6 @@ int main() {
         // Almost vertical but still fine for quatLookAt: keep the old +Y up result (right = -X here).
         knot::PerspectiveCamera nearVertical(glm::vec3(0,20,-0.5f));nearVertical.lookAtTarget(glm::vec3(0));
         check(glm::length(nearVertical.getRight()-glm::vec3(-1,0,0))<1e-3f,"Near-vertical lookAtTarget changed roll");
-        fs::remove(file);std::cout<<"Seno v8 loader tests passed\n";return 0;
+        fs::remove(file);std::cout<<"Seno v10 loader tests passed\n";return 0;
     } catch(const std::exception& e) {fs::remove(file);std::cerr<<e.what()<<'\n';return 1;}
 }

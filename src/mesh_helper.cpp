@@ -866,7 +866,7 @@ std::vector<std::shared_ptr<Object>> loadSceneGLTF(const std::string& filePath, 
         }
 
         if (node->name)
-            obj->setGroup(node->name);
+            obj->setName(node->name);
 
         objects.push_back(std::move(obj));
     }
