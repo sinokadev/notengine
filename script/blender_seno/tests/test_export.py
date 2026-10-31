@@ -43,7 +43,7 @@ class ExportTest(unittest.TestCase):
             path, count, warnings = exporter.export_scene(bpy.context, folder)
             self.assertEqual(count, 1)
             scene = json.loads(path.read_text())
-            self.assertEqual(scene['version'], 8)
+            self.assertEqual(scene['version'], 10)
             self.assertNotIn('meshes', scene)
             self.assertEqual(scene['objects'][0]['position'], [1, 3, -2])
             model = Path(folder) / scene['models'][0]['obj']

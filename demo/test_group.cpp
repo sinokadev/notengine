@@ -16,6 +16,13 @@ int main() {
     // 1. Basic Object Group API tests
     {
         auto obj = std::make_shared<knot::Object>();
+        obj->setName("enemy_boss");
+        assert(obj->getName() == "enemy_boss");
+        assert(obj->hasNamePrefix("enemy"));
+        assert(!obj->hasNamePrefix("boss"));
+        obj->setName("");
+        assert(obj->getName().empty());
+        assert(obj->hasNamePrefix(""));
         assert(obj->groups.empty());
         assert(obj->getGroup() == nullptr);
         assert(!obj->isInGroup("enemy"));

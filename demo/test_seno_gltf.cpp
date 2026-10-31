@@ -76,7 +76,7 @@ void runTests() {
 
     knot::Scene scene;
     auto document = [](const std::string& path) {
-        return Json{{"version", 8},
+        return Json{{"version", 10},
                     {"models", Json::array({{{"obj", path}}})},
                     {"objects", Json::array({{{"model", 0}}, {{"model", 0}, {"position", {3, 0, 0}}}})}};
     };
@@ -86,6 +86,7 @@ void runTests() {
         require(objects.size() == 2, "object instances missing");
         require(objects.front()->model == objects.back()->model, "model sharing lost");
         require(objects.back()->position.x == 3, "Seno transform lost");
+        require(objects.front()->getName() == "Cube", "glTF node name was not loaded as the object name");
         const auto& model = objects.front()->model;
         require(!model->subMeshes.empty() && model->boundsRadius > 0, "geometry missing");
         auto material = std::dynamic_pointer_cast<knot::PbrMaterial>(model->subMeshes.front().material);
@@ -99,7 +100,7 @@ void runTests() {
         require(!scene.loadSeno(fixtures.write("invalid.seno", invalid).string()), "glTF override accepted");
     }
     for (const auto* path : {"cube.GLTF", "cube.glb"}) {
-        Json invalid{{"version", 8}, {"meshes", Json::array({path})}};
+        Json invalid{{"version", 10}, {"meshes", Json::array({path})}};
         require(!scene.loadSeno(fixtures.write("invalid.seno", invalid).string()), "glTF accepted as a bare mesh");
     }
     require(!scene.loadSeno(fixtures.write("missing.seno", document("missing.gltf")).string()), "missing glTF accepted");

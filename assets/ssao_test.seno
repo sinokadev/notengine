@@ -1,5 +1,5 @@
 {
-    "version": 9,
+    "version": 10,
     "sky": {
         "type": "HDR",
         "path": "{assetRoot}/assets/DaySkyHDRI015A_2K_HDR.hdr"

@@ -4,7 +4,7 @@ bl_info = {
     "name": "Seno Scene Exporter", "author": "Knot contributors",
     "version": (1, 0, 0), "blender": (4, 1, 0),
     "location": "File > Export > Seno Scene (folder)",
-    "description": "Export Seno v8 with external OBJ, MTL and textures",
+    "description": "Export Seno v10 with external OBJ, MTL and textures",
     "category": "Import-Export",
 }
 
@@ -156,7 +156,7 @@ class Exporter:
             obj.to_mesh_clear()
 
     def scene(self):
-        scene = {'version': 8, 'objects': [], 'models': [], 'lights': []}
+        scene = {'version': 10, 'objects': [], 'models': [], 'lights': []}
         depsgraph = self.context.evaluated_depsgraph_get()
         for instance in depsgraph.object_instances:
             obj = instance.object

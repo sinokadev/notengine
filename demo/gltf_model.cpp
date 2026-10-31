@@ -41,7 +41,7 @@ int main() {
     auto cubeObj = std::make_shared<knot::Object>(cubeModel);
     cubeObj->position = glm::vec3(0.0f);
     cubeObj->scale = glm::vec3(1.0f);
-    cubeObj->setGroup("cube");
+    cubeObj->setName("cube");
     scene.getObjectManager().registerObject(cubeObj);
 
     auto dirLight = std::make_shared<knot::DirLight>(glm::vec3(-0.3f, -1.0f, -0.5f), glm::vec3(0.08f), glm::vec3(1.0f), glm::vec3(1.0f));

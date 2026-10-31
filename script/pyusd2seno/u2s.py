@@ -557,7 +557,7 @@ class SenoExporter:
             )
 
         self.result = {
-            "version": 9,
+            "version": 10,
 
             "sky": {
                 "type": "HDR",
@@ -740,6 +740,7 @@ class SenoExporter:
             transform = get_world_transform(prim)
 
             self.result["objects"].append({
+                "name": prim.GetName(),
                 # USD pivot effects are already baked into the world transform.
                 "pivot": [0.0, 0.0, 0.0],
                 "position": transform["position"],

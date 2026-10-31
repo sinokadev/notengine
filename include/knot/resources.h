@@ -539,6 +539,24 @@ public:
     /** @brief Geometry and material drawn for this object. */
     std::shared_ptr<Model> model;
 
+    /** @brief Name assigned to this object. */
+    std::string name;
+
+    /** @brief Sets this object's name. */
+    void setName(const std::string& newName) {
+        name = newName;
+    }
+
+    /** @brief Returns this object's name. */
+    const std::string& getName() const {
+        return name;
+    }
+
+    /** @brief Reports whether this object's name starts with @p prefix. */
+    bool hasNamePrefix(const std::string& prefix) const {
+        return name.compare(0, prefix.size(), prefix) == 0;
+    }
+
     /** @brief All group names assigned to this object. */
     std::vector<std::string> groups;
 
