@@ -19,7 +19,7 @@ inline std::string read(const fs::path& path) {
     return out.str();
 }
 inline Json emptyScene() {
-    return Json{{"version",8},{"objects",Json::array()},{"lights",Json::array()},
+    return Json{{"version",9},{"objects",Json::array()},{"lights",Json::array()},
         {"meshes",Json::array()},{"materials",Json::array()},{"models",Json::array()}};
 }
 inline void require(bool ok, const std::string& message) {
@@ -27,7 +27,7 @@ inline void require(bool ok, const std::string& message) {
 }
 inline void validate(const Json& j) {
     require(j.is_object(), "Scene root must be an object");
-    require(j.contains("version") && j["version"].is_number_integer() && j["version"] == 8, "Seno requires integer version 8");
+    require(j.contains("version") && j["version"].is_number_integer() && j["version"] == 9, "Seno requires integer version 9");
     for (auto key : {"objects","lights","meshes","materials","models"})
         if (j.contains(key)) require(j[key].is_array(), std::string(key)+" must be an array");
     auto count = [&](const char* key) { return j.contains(key) ? j[key].size() : 0; };

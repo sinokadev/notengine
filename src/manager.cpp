@@ -145,9 +145,6 @@ std::vector<std::string> ObjectManager::getGroups() const {
         if (!obj) {
             continue;
         }
-        if (!obj->group.empty() && seen.insert(obj->group).second) {
-            result.push_back(obj->group);
-        }
         for (const auto& g : obj->groups) {
             if (!g.empty() && seen.insert(g).second) {
                 result.push_back(g);

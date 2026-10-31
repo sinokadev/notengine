@@ -557,7 +557,7 @@ class SenoExporter:
             )
 
         self.result = {
-            "version": 8,
+            "version": 9,
 
             "sky": {
                 "type": "HDR",

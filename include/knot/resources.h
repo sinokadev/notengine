@@ -539,8 +539,6 @@ public:
     /** @brief Geometry and material drawn for this object. */
     std::shared_ptr<Model> model;
 
-    /** @brief Primary group name assigned to this object. */
-    std::string group;
     /** @brief All group names assigned to this object. */
     std::vector<std::string> groups;
 
@@ -555,43 +553,33 @@ public:
     }
 
     /** @brief Creates an object from an existing model and assigns a group. */
-    Object(std::shared_ptr<Model> model, std::string group) : model(std::move(model)), group(std::move(group)) {
-        if (!this->group.empty()) {
-            groups.push_back(this->group);
-        }
+    Object(std::shared_ptr<Model> model, std::string group) : model(std::move(model)) {
+        addGroup(group);
     }
 
     /** @brief Creates an object from mesh geometry, a material, and assigns a group. */
     Object(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material, std::string group)
-        : model(std::make_shared<Model>(std::move(mesh), std::move(material))), group(std::move(group)) {
-        if (!this->group.empty()) {
-            groups.push_back(this->group);
-        }
+        : model(std::make_shared<Model>(std::move(mesh), std::move(material))) {
+        addGroup(group);
     }
 
     virtual ~Object() = default;
 
-    /** @brief Returns the primary group name assigned to this object. */
-    const std::string& getGroup() const {
-        return group;
+    /** @brief Returns the first group name assigned to this object, or nullptr. */
+    const char* getGroup() const {
+        return groups.empty() ? nullptr : groups.front().c_str();
     }
 
-    /** @brief Sets the primary group name for this object. */
+    /** @brief Replaces this object's groups with the given group. */
     void setGroup(const std::string& newGroup) {
-        group = newGroup;
         groups.clear();
-        if (!group.empty()) {
-            groups.push_back(group);
-        }
+        addGroup(newGroup);
     }
 
     /** @brief Adds this object to an additional group. */
     void addGroup(const std::string& newGroup) {
         if (newGroup.empty()) {
             return;
-        }
-        if (group.empty()) {
-            group = newGroup;
         }
         for (const auto& g : groups) {
             if (g == newGroup) {
@@ -603,9 +591,6 @@ public:
 
     /** @brief Removes this object from a group. */
     void removeGroup(const std::string& groupName) {
-        if (group == groupName) {
-            group = groups.size() > 1 ? (groups[0] == groupName ? groups[1] : groups[0]) : "";
-        }
         for (auto it = groups.begin(); it != groups.end();) {
             if (*it == groupName) {
                 it = groups.erase(it);
@@ -617,9 +602,6 @@ public:
 
     /** @brief Reports whether this object belongs to @p groupName. */
     bool isInGroup(const std::string& groupName) const {
-        if (!group.empty() && group == groupName) {
-            return true;
-        }
         for (const auto& g : groups) {
             if (g == groupName) {
                 return true;

@@ -16,19 +16,19 @@ int main() {
     // 1. Basic Object Group API tests
     {
         auto obj = std::make_shared<knot::Object>();
-        assert(obj->group.empty());
-        assert(obj->getGroup().empty());
+        assert(obj->groups.empty());
+        assert(obj->getGroup() == nullptr);
         assert(!obj->isInGroup("enemy"));
 
         obj->setGroup("enemy");
-        assert(obj->group == "enemy");
-        assert(obj->getGroup() == "enemy");
+        assert(obj->groups.front() == "enemy");
+        assert(std::string(obj->getGroup()) == "enemy");
         assert(obj->isInGroup("enemy"));
         assert(!obj->isInGroup("ally"));
 
-        // Direct member assignment
-        obj->group = "boss";
-        assert(obj->getGroup() == "boss");
+        // The first entry is the primary group.
+        obj->groups[0] = "boss";
+        assert(std::string(obj->getGroup()) == "boss");
         assert(obj->isInGroup("boss"));
 
         // Multi-group support
@@ -177,11 +177,11 @@ int main() {
         // Check ID 100 is in boxes
         auto* obj100 = om.getObject(100);
         assert(obj100 != nullptr);
-        assert(obj100->group == "boxes");
+        assert(obj100->groups[0] == "boxes");
         assert(obj100->isInGroup("boxes"));
 
         // Check ground object properties
-        assert(ground[0]->group == "ground");
+        assert(ground[0]->groups[0] == "ground");
         assert(ground[0]->scale.x == 200.0f);
 
         glfwDestroyWindow(window);

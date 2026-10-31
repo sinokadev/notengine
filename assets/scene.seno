@@ -1,5 +1,5 @@
 {
-    "version": 8,
+    "version": 9,
 
     "sky": {
         "type": "HDR",
@@ -9,7 +9,7 @@
     "objects": [
         {
             "id": 100,
-            "group": "boxes",
+            "groups": ["boxes"],
             "position": [0, 2, 0],
             "pivot": [0, 0, 0],
             "scale": [1, 1, 1],
@@ -17,7 +17,7 @@
             "model": 0
         },
         {
-            "group": "boxes",
+            "groups": ["boxes"],
             "position": [2, 1, 0],
             "pivot": [0, 0, 0],
             "scale": [1, 1, 1],
@@ -25,7 +25,7 @@
             "model": 0
         },
         {
-            "group": "ground",
+            "groups": ["ground"],
             "position": [0, 0, 0],
             "pivot": [0, 0, 0],
             "scale": [200, 0.1, 200],
