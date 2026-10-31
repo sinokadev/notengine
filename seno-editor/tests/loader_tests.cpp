@@ -20,7 +20,7 @@ int main() {
         check(resolve("{assetRoot}/model.obj") == "assets//model.obj", "Asset-root reference rebased onto scene directory");
         check(resolve("").empty(), "Empty path became a directory");
         // Empty submeshes let us exercise the real loader without an OpenGL context.
-        Json input={{"version",8},{"models",Json::array({{{"submeshes",Json::array()}}})},
+        Json input={{"version",9},{"models",Json::array({{{"submeshes",Json::array()}}})},
             {"objects",Json::array({{{"id",12},{"model",0},{"position",{4,5,6}},
                 {"pivot",{1,2,3}},{"scale",{2,3,4}},{"rotation",{0.70710678,0,0.70710678,0}}}})}};
         auto load=[&](knot::Scene& scene,const Json& j) { {std::ofstream out(file);out<<j.dump();} return scene.loadSeno(file.string()); };
@@ -54,7 +54,7 @@ int main() {
         check(lights[1]->intensity==3.0f,"Unshadowed light lost intensity");
         // Exercise the actual loader without requiring OpenGL: a missing OBJ
         // reports the resolved path before GPU allocation can take place.
-        Json missing = {{"version",8},{"meshes",Json::array({"missing-model.obj"})}};
+        Json missing = {{"version",9},{"meshes",Json::array({"missing-model.obj"})}};
         { std::ofstream out(file); out << missing.dump(); }
         for (const auto& scenePath : {file, fs::relative(file, fs::current_path())}) {
             std::ostringstream errors;

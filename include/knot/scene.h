@@ -79,7 +79,7 @@ public:
      *
      *  All mesh nodes in the default glTF scene are converted into knot::Objects
      *  and registered with the ObjectManager.  Each node's name (if present) is
-     *  assigned as the object's primary group.  PBR materials and textures are
+     *  assigned as the object's first group.  PBR materials and textures are
      *  loaded from the file.
      *  glTF animations are not imported or played back.
      *  @param path Absolute or relative path to the .gltf or .glb file.

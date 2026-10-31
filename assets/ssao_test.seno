@@ -1,5 +1,5 @@
 {
-    "version": 8,
+    "version": 9,
     "sky": {
         "type": "HDR",
         "path": "{assetRoot}/assets/DaySkyHDRI015A_2K_HDR.hdr"
@@ -7,7 +7,7 @@
     "objects": [
         {
             "id": 100,
-            "group": "ssao_blocks",
+            "groups": ["ssao_blocks"],
             "position": [
                 -1.78,
                 0.4368,
@@ -33,7 +33,7 @@
         },
         {
             "id": 2,
-            "group": "ssao_blocks",
+            "groups": ["ssao_blocks"],
             "position": [
                 0.0,
                 0.40040000000000003,
@@ -59,7 +59,7 @@
         },
         {
             "id": 3,
-            "group": "ssao_blocks",
+            "groups": ["ssao_blocks"],
             "position": [
                 1.78,
                 0.4368,
@@ -85,7 +85,7 @@
         },
         {
             "id": 4,
-            "group": "ssao_blocks",
+            "groups": ["ssao_blocks"],
             "position": [
                 -1.78,
                 0.40040000000000003,
@@ -111,7 +111,7 @@
         },
         {
             "id": 5,
-            "group": "ssao_blocks",
+            "groups": ["ssao_blocks"],
             "position": [
                 0.0,
                 0.4368,
@@ -137,7 +137,7 @@
         },
         {
             "id": 6,
-            "group": "ssao_blocks",
+            "groups": ["ssao_blocks"],
             "position": [
                 1.78,
                 0.40040000000000003,
@@ -163,7 +163,7 @@
         },
         {
             "id": 7,
-            "group": "ssao_blocks",
+            "groups": ["ssao_blocks"],
             "position": [
                 -1.78,
                 0.4368,
@@ -189,7 +189,7 @@
         },
         {
             "id": 8,
-            "group": "ssao_blocks",
+            "groups": ["ssao_blocks"],
             "position": [
                 0.0,
                 0.40040000000000003,
@@ -215,7 +215,7 @@
         },
         {
             "id": 9,
-            "group": "ssao_blocks",
+            "groups": ["ssao_blocks"],
             "position": [
                 1.78,
                 0.4368,
@@ -241,7 +241,7 @@
         },
         {
             "id": 10,
-            "group": "ssao_blocks",
+            "groups": ["ssao_blocks"],
             "position": [
                 -1.78,
                 1.274,
@@ -267,7 +267,7 @@
         },
         {
             "id": 11,
-            "group": "ssao_blocks",
+            "groups": ["ssao_blocks"],
             "position": [
                 0,
                 1.3104,
@@ -293,7 +293,7 @@
         },
         {
             "id": 12,
-            "group": "ssao_blocks",
+            "groups": ["ssao_blocks"],
             "position": [
                 1.78,
                 1.274,
@@ -319,7 +319,7 @@
         },
         {
             "id": 13,
-            "group": "ssao_bars",
+            "groups": ["ssao_bars"],
             "position": [
                 -0.89,
                 0.18,
@@ -345,7 +345,7 @@
         },
         {
             "id": 14,
-            "group": "ssao_bars",
+            "groups": ["ssao_bars"],
             "position": [
                 0.89,
                 0.18,
@@ -370,7 +370,7 @@
             "model": 0
         },
         {
-            "group": "ground",
+            "groups": ["ground"],
             "position": [
                 0,
                 0,

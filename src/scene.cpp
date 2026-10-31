@@ -170,8 +170,8 @@ bool Scene::loadSeno(const std::string& path) {
         file >> scene;
 
         // Reject incompatible documents before discarding the current scene or loading assets.
-        if (!scene.is_object() || !scene.contains("version") || !scene["version"].is_number_integer() || scene["version"] != 8) {
-            std::cerr << "[Error] Seno requires integer version 8" << std::endl;
+        if (!scene.is_object() || !scene.contains("version") || !scene["version"].is_number_integer() || scene["version"] != 9) {
+            std::cerr << "[Error] Seno requires integer version 9" << std::endl;
             return false;
         }
         if (scene.contains("objects")) {
@@ -520,15 +520,19 @@ bool Scene::loadSeno(const std::string& path) {
                     object->rotation = readQuat(objectData, "rotation");
                 }
 
-                if (objectData.contains("group") && objectData["group"].is_string()) {
-                    object->setGroup(objectData["group"].get<std::string>());
-                }
-
                 if (objectData.contains("groups") && objectData["groups"].is_array()) {
                     for (const auto& g : objectData["groups"]) {
                         if (g.is_string()) {
                             object->addGroup(g.get<std::string>());
                         }
+                    }
+                }
+
+                if (objectData.contains("group") && objectData["group"].is_string()) {
+                    const auto legacyGroup = objectData["group"].get<std::string>();
+                    if (!legacyGroup.empty()) {
+                        object->removeGroup(legacyGroup);
+                        object->groups.insert(object->groups.begin(), legacyGroup);
                     }
                 }
 
