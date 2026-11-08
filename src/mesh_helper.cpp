@@ -749,7 +749,9 @@ std::shared_ptr<Model> loadModelGLTF(const std::string& filePath, std::shared_pt
     return model;
 }
 
-std::vector<std::shared_ptr<Object>> loadSceneGLTF(const std::string& filePath, std::shared_ptr<Shader> pbrShader) {
+GLTFParseResult loadSceneGLTF(const std::string& filePath, std::shared_ptr<Shader> pbrShader) {
+    GLTFParseResult result;
+
     if (!pbrShader) {
         std::cerr << "[Error] GLTF: A PBR shader is required\n";
         return {};
@@ -771,8 +773,6 @@ std::vector<std::shared_ptr<Object>> loadSceneGLTF(const std::string& filePath, 
 
     const std::string gltfDir = std::filesystem::path(filePath).parent_path().string();
     std::unordered_map<std::string, unsigned int> texCache;
-
-    std::vector<std::shared_ptr<Object>> objects;
 
     const cgltf_scene* scene = data->scene;
     if (!scene && data->scenes_count > 0)
@@ -829,54 +829,83 @@ std::vector<std::shared_ptr<Object>> loadSceneGLTF(const std::string& filePath, 
             stack.push_back({node->children[ci - 1], worldMatrix});
         }
 
-        if (!node->mesh)
-            continue;
+        // Decompose TRS shared for mesh and light
+        const glm::vec3 worldPos = glm::vec3(worldMatrix[3]);
 
-        const cgltf_mesh& gltfMesh = *node->mesh;
-        auto model = std::make_shared<Model>();
+        const glm::vec3 col0 = glm::vec3(worldMatrix[0]);
+        const glm::vec3 col1 = glm::vec3(worldMatrix[1]);
+        const glm::vec3 col2 = glm::vec3(worldMatrix[2]);
 
-        for (cgltf_size pi = 0; pi < gltfMesh.primitives_count; ++pi) {
-            auto mesh = cgltfPrimitiveToMesh(gltfMesh.primitives[pi]);
-            if (!mesh)
-                continue;
+        const glm::vec3 worldScale = glm::vec3(glm::length(col0), glm::length(col1), glm::length(col2));
 
-            auto material = cgltfMakeMaterial(gltfMesh.primitives[pi].material, gltfDir, texCache, pbrShader);
-            model->subMeshes.emplace_back(std::move(mesh), std::move(material));
+        glm::quat worldRot(1.0f, 0.0f, 0.0f, 0.0f);
+        if (worldScale.x > 0.0f && worldScale.y > 0.0f && worldScale.z > 0.0f) {
+            glm::mat3 rotMat(col0 / worldScale.x, col1 / worldScale.y, col2 / worldScale.z);
+            worldRot = glm::quat_cast(rotMat);
         }
 
-        if (model->subMeshes.empty())
-            continue;
+        // ------------------------------------------------------------
+        // Light Parsing (KHR_lights_punctual)
+        // ------------------------------------------------------------
+        if (node->light) {
+            const cgltf_light* lightData = node->light;
+            const glm::vec3 color(lightData->color[0], lightData->color[1], lightData->color[2]);
+            const float intensity = lightData->intensity;
 
-        model->calculateBounds();
+            if (lightData->type == cgltf_light_type_directional) {
+                auto dirLight = std::make_shared<DirLight>();
+                dirLight->position = worldPos;
+                dirLight->rotation = worldRot;
+                dirLight->color = color;
+                dirLight->intensity = intensity;
 
-        // Decompose world matrix into T / R / S (approximate for TRS nodes)
-        auto obj = std::make_shared<Object>(std::move(model));
+                result.lights.push_back(std::move(dirLight));
+            } else if (lightData->type == cgltf_light_type_point) {
+                auto pointLight = std::make_shared<PbrPointLight>(worldPos, color, intensity);
+                pointLight->rotation = worldRot;
 
-        obj->position = glm::vec3(worldMatrix[3]);
-
-        glm::vec3 col0 = glm::vec3(worldMatrix[0]);
-        glm::vec3 col1 = glm::vec3(worldMatrix[1]);
-        glm::vec3 col2 = glm::vec3(worldMatrix[2]);
-
-        obj->scale = glm::vec3(glm::length(col0), glm::length(col1), glm::length(col2));
-
-        if (obj->scale.x > 0.0f && obj->scale.y > 0.0f && obj->scale.z > 0.0f) {
-            glm::mat3 rotMat(col0 / obj->scale.x, col1 / obj->scale.y, col2 / obj->scale.z);
-            obj->rotation = glm::quat_cast(rotMat);
+                result.lights.push_back(std::move(pointLight));
+            }
         }
 
-        if (node->name)
-            obj->setName(node->name);
+        // ------------------------------------------------------------
+        // Mesh Parsing
+        // ------------------------------------------------------------
+        if (node->mesh) {
+            const cgltf_mesh& gltfMesh = *node->mesh;
+            auto model = std::make_shared<Model>();
 
-        objects.push_back(std::move(obj));
+            for (cgltf_size pi = 0; pi < gltfMesh.primitives_count; ++pi) {
+                auto mesh = cgltfPrimitiveToMesh(gltfMesh.primitives[pi]);
+                if (!mesh)
+                    continue;
+
+                auto material = cgltfMakeMaterial(gltfMesh.primitives[pi].material, gltfDir, texCache, pbrShader);
+                model->subMeshes.emplace_back(std::move(mesh), std::move(material));
+            }
+
+            if (!model->subMeshes.empty()) {
+                model->calculateBounds();
+
+                auto obj = std::make_shared<Object>(std::move(model));
+                obj->position = worldPos;
+                obj->scale = worldScale;
+                obj->rotation = worldRot;
+
+                if (node->name)
+                    obj->setName(node->name);
+
+                result.objects.push_back(std::move(obj));
+            }
+        }
     }
 
     cgltf_free(data);
 
-    if (objects.empty())
-        std::cerr << "[Warning] GLTF: No mesh nodes found in scene: " << filePath << "\n";
+    if (result.objects.empty() && result.lights.empty())
+        std::cerr << "[Warning] GLTF: No mesh nodes or lights found in scene: " << filePath << "\n";
 
-    return objects;
+    return result;
 }
 
 } // namespace knot
