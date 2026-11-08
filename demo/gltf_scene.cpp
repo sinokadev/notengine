@@ -11,6 +11,7 @@
 #include <knot/engine.h>
 #include <knot/resources.h>
 #include <knot/scene.h>
+#include <knot/state.h>
 #include <knot/utility.h>
 #include <knot/utility/unifont.h>
 
@@ -33,7 +34,7 @@ int main() {
 
     std::cout << "[Info] Loading Sponza scene...\n";
 
-    if (!scene.loadGLTF(knot::getAssetRoot() + "assets/CommercialRefrigerator.glb")) {
+    if (!scene.loadGLTF(knot::getAssetRoot() + "assets/Sponza/glTF/Sponza.gltf")) {
         std::cerr << "[Error] Failed to load Sponza.gltf\n";
         return 1;
     }
@@ -52,6 +53,8 @@ int main() {
         auto pl = std::make_shared<knot::PbrPointLight>(pos, glm::vec3(1.0f, 0.9f, 0.75f), 20.0f);
         scene.getLightManager().registerLight(pl);
     }
+
+    knot::s.ambient = 5.0f;
 
     auto camera = std::make_shared<knot::MovingCamera>(glm::vec3(0.0f, 2.0f, 0.0f), 60.0f, 0.05f, 500.0f);
     camera->speed = 0.008f;

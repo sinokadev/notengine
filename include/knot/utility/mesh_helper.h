@@ -9,30 +9,44 @@ class Mesh;
 class Shader;
 class Model;
 class Object;
+class Light;
+
+struct GLTFParseResult {
+    std::vector<std::shared_ptr<Object>> objects;
+    std::vector<std::shared_ptr<Light>> lights;
+};
 
 /** @brief Calculates orthogonalized vertex tangents for indexed triangles.
  *  @pre @p indices is a multiple of three and all indices are valid. */
 void calculateMeshTangents(std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
+
 /** @brief Checks the calculateMeshTangents() precondition: whole triangles, every index below @p vertexCount.
  *  Loaders should reject data that fails this before computing tangents or uploading it to the GPU. */
 bool isValidTriangleList(const std::vector<unsigned int>& indices, std::size_t vertexCount);
+
 /** @brief Creates a centered unit cube mesh. */
 std::shared_ptr<Mesh> createCube();
+
 /** @brief Creates a UV sphere with radius 0.5.
  *  @param sectors Number of longitudinal segments.
  *  @param stacks Number of latitudinal segments. */
 std::shared_ptr<Mesh> createSphere(int sectors, int stacks);
+
 /** @brief Creates an XY-plane quad centered at the origin. */
 std::shared_ptr<Mesh> createPlane(float width, float height);
+
 /** @brief Creates a centered regular polygon in the XY plane.
  *  @return nullptr if @p sectors is less than three. */
 std::shared_ptr<Mesh> createRegularPolygon(int sectors, float radius);
+
 /** @brief Triangulates an ordered polygon boundary as a fan.
  *  @return nullptr if fewer than three positions are supplied. */
 std::shared_ptr<Mesh> createMeshFromVertices(const std::vector<glm::vec3>& positions);
+
 /** @brief Loads geometry from an OBJ file and uploads it to the GPU.
  *  @return The loaded mesh, or nullptr if the file cannot be parsed. */
 std::shared_ptr<Mesh> loadModelOBJ(const std::string& filePath);
+
 /** @brief Loads an OBJ file with its referenced MTL materials as a single model with sub-meshes.
  *
  *  The OBJ geometry is split into sub-meshes per material group. Each group
@@ -68,5 +82,5 @@ std::shared_ptr<Model> loadModelGLTF(const std::string& filePath, std::shared_pt
  *  @param filePath Absolute or relative path to the .gltf or .glb file.
  *  @param pbrShader PBR shader assigned to every created material.
  *  @return A list of Objects preserving the scene node hierarchy, or empty on failure. */
-std::vector<std::shared_ptr<Object>> loadSceneGLTF(const std::string& filePath, std::shared_ptr<Shader> pbrShader);
+GLTFParseResult loadSceneGLTF(const std::string& filePath, std::shared_ptr<Shader> pbrShader);
 } // namespace knot

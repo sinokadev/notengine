@@ -707,14 +707,18 @@ bool Scene::loadGLTF(const std::string& path) {
         return false;
     }
 
-    auto objects = loadSceneGLTF(path, shader);
-    if (objects.empty()) {
-        std::cerr << "[Error] GLTF: No objects loaded from: " << path << "\n";
+    GLTFParseResult result = loadSceneGLTF(path, shader);
+    if (result.objects.empty() && result.lights.empty()) {
+        std::cerr << "[Error] GLTF: No objects or lights loaded from: " << path << "\n";
         return false;
     }
-
-    for (auto& obj : objects) {
+    
+    for (auto& obj : result.objects) {
         objectManager.registerObject(obj);
+    }
+
+    for (auto& light : result.lights) {
+        lightManager.registerLight(light);
     }
 
     return true;
