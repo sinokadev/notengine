@@ -16,3 +16,4 @@ API
    key
    utility
    toolkit
+   loading-image
