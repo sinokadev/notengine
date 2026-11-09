@@ -145,8 +145,9 @@ elseif(WIN32)
     target_link_libraries(notengine PUBLIC ole32 avrt winmm)
 endif()
 
-target_compile_definitions(notengine PUBLIC
-    NOTENGINE_ASSET_ROOT="${CMAKE_SOURCE_DIR}"
+set(NOTENGINE_ASSET_ROOT "${CMAKE_SOURCE_DIR}" CACHE PATH "Path to the asset root directory")
+target_compile_definitions(notengine PUBLIC 
+    NOTENGINE_ASSET_ROOT=\"${NOTENGINE_ASSET_ROOT}\"
 )
 
 # Demo executables
