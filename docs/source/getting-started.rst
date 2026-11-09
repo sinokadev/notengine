@@ -278,7 +278,7 @@ If you need to change the asset root dynamically at runtime, use :cpp:func:`knot
 
 .. warning::
 
-   This document is currently a work in progress. Some sections may be incomplete or subject to change.
+   This document is currently under development. Some content may be incomplete, outdated, or subject to change.
 
 .. toctree::
    :maxdepth: 2
