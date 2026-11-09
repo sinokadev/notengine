@@ -19,6 +19,7 @@ release = (Path(__file__).resolve().parents[2] / 'VERSION').read_text(encoding='
 extensions = [
     "breathe",
     "sphinx_llm.txt",
+    "sphinx_design"
 ]
 
 breathe_projects = {
