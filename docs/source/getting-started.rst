@@ -207,5 +207,78 @@ macOS
 
    Due to Apple's restrictive platform policies, macOS supports OpenGL only up to version 4.1. Not Engine requires OpenGL 4.3 or later and therefore cannot be used on macOS.
 
+--------------------------------
+Quick Start
+--------------------------------
+
+The easiest way to start a new project with Not Engine is to copy ``demo.cpp``,
+which is released under the **Unlicense** (Public Domain) specifically so you can
+use it as a zero-boilerplate template.
+
+Paste the code below into ``src/main.cpp`` in the project root.
+
+.. dropdown:: View full code for demo.cpp
+   :icon: code
+
+   .. literalinclude:: ../../demo/demo.cpp
+      :language: cpp
+      :caption: demo/demo.cpp
+
+If you have built and linked the Not Engine yourself, this code will work without any modifications.
+
+Asset root
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As you look through the demo code, you may come across a function called :cpp:func:`knot::getAssetRoot`. This function returns the base directory path where the engine source code and assets are located.
+
+By default, it points to the root directory of the Not Engine source code. You can concatenate this base path with relative resource paths to access project files:
+
+.. code-block:: cpp
+
+   std::string imagePath = knot::getAssetRoot() + "assets/image.png";
+   std::string shaderPath = knot::getAssetRoot() + "shaders/alpha.vert";
+
+Default Behavior & CMake Configuration
+--------------------------------------
+
+By default, the asset root is configured during CMake setup to point to ``${CMAKE_SOURCE_DIR}``. 
+
+If you want to customize this path at build time, set the ``NOTENGINE_ASSET_ROOT`` variable in your CMake configuration:
+
+.. code-block:: cmake
+
+   # Set the asset root to the project root within CMake
+   set(NOTENGINE_ASSET_ROOT "${CMAKE_SOURCE_DIR}" CACHE PATH "Path to the asset root directory")
+   
+   target_compile_definitions(notengine PUBLIC 
+       NOTENGINE_ASSET_ROOT=\"${NOTENGINE_ASSET_ROOT}\"
+   )
+
+You can also override it via the command line:
+
+.. code-block:: bash
+
+   cmake -B build -DNOTENGINE_ASSET_ROOT="/path/to/your/project"
+
+Changing Asset Root at Runtime
+------------------------------
+
+If you need to change the asset root dynamically at runtime, use :cpp:func:`knot::setAssetRoot`:
+
+.. code-block:: cpp
+
+   #include <knot/resources.h>
+
+   // Set a new base path at runtime
+   knot::setAssetRoot("/path/to/custom/root/");
+
+.. note::
+
+   :cpp:func:`knot::getAssetRoot` guarantees that the returned path string always ends with a trailing slash (``/``), making path concatenation simple and safe.
+
+.. warning::
+
+   This document is currently a work in progress. Some sections may be incomplete or subject to change.
+
 .. toctree::
    :maxdepth: 2
