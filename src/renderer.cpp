@@ -4,6 +4,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <cassert>
+#include <cstddef>
 #include <algorithm>
 #include <filesystem>
 #include <unordered_set>
@@ -126,6 +127,8 @@ bool Renderer::init(GLADloadfunc loadProc) {
 
     auto ssaoBlurSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/ssao.vert", getAssetRoot() + "shaders/ssao_blur.frag");
     ssaoBlurShader = std::make_shared<Shader>(ssaoBlurSource, SHADOW_SHADER_ID - 4);
+
+    initParticlePass();
 
     // Create the view-space normal and depth target.
     glGenFramebuffers(1, &prePassFBO);
@@ -311,7 +314,69 @@ void Renderer::shutdown() {
     skyboxMesh.reset();
     skyboxShader.reset();
 
+    if (particleVAO != 0) {
+        if (hasContext) {
+            glDeleteVertexArrays(1, &particleVAO);
+            glDeleteBuffers(1, &particleQuadVBO);
+            glDeleteBuffers(1, &particleInstanceVBO);
+        }
+        particleVAO = 0;
+        particleQuadVBO = 0;
+        particleInstanceVBO = 0;
+    }
+
+    particleShader.reset();
+    particleInstances.clear();
+
     initialized = false;
+}
+
+void Renderer::initParticlePass() {
+    auto source = std::make_shared<ShaderSource>(ParticleShader::GetSource());
+    particleShader = std::make_shared<Shader>(source, PARTICLE_SHADER_ID);
+
+    if (!particleShader->isValid()) {
+        std::cerr << "[Error] Failed to create particle shader" << std::endl;
+        particleShader.reset();
+    }
+
+    // Unit quad drawn as a triangle strip; corners are in [-0.5, 0.5].
+    const float quad[8] = {
+        -0.5f, -0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f,
+    };
+
+    glGenVertexArrays(1, &particleVAO);
+    glGenBuffers(1, &particleQuadVBO);
+    glGenBuffers(1, &particleInstanceVBO);
+
+    glBindVertexArray(particleVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, particleQuadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), nullptr);
+    glVertexAttribDivisor(0, 0);
+
+    // The instance buffer is re-specified every frame with GL_STREAM_DRAW; the
+    // attribute layout and the divisors live on the VAO, so re-uploading the
+    // storage is all a frame needs.
+    glBindBuffer(GL_ARRAY_BUFFER, particleInstanceVBO);
+    glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STREAM_DRAW);
+
+    const auto instanceAttribute = [](GLuint location, GLint components, std::size_t offset) {
+        glEnableVertexAttribArray(location);
+        glVertexAttribPointer(location, components, GL_FLOAT, GL_FALSE, sizeof(ParticleInstance), reinterpret_cast<const void*>(offset));
+        glVertexAttribDivisor(location, 1);
+    };
+
+    instanceAttribute(4, 3, offsetof(ParticleInstance, position));
+    instanceAttribute(5, 3, offsetof(ParticleInstance, velocity));
+    instanceAttribute(6, 1, offsetof(ParticleInstance, size));
+    instanceAttribute(7, 4, offsetof(ParticleInstance, color));
+    instanceAttribute(8, 1, offsetof(ParticleInstance, normalizedAge));
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void Renderer::renderQuad() {
@@ -751,6 +816,86 @@ void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float 
     glDepthMask(GL_TRUE);
 }
 
+void Renderer::renderParticles(const std::vector<const ParticleSystem*>& systems, const Camera& camera, float aspectRatio) {
+    if (!initialized || !particleShader || !particleShader->isValid() || systems.empty())
+        return;
+
+    // Pack every live particle of every system into one contiguous instance list.
+    particleInstances.clear();
+
+    for (const ParticleSystem* system : systems) {
+        if (!system)
+            continue;
+
+        const auto& particles = system->particles();
+        const std::size_t alive = system->aliveCount();
+
+        for (std::size_t i = 0; i < alive && i < particles.size(); ++i) {
+            const Particle& particle = particles[i];
+
+            if (particle.size <= 0.0f || particle.color.a <= 0.0f)
+                continue;
+
+            particleInstances.push_back(
+                ParticleInstance{particle.position, particle.size, particle.velocity, particle.normalizedAge(), particle.color});
+        }
+    }
+
+    if (particleInstances.empty())
+        return;
+
+    glBindBuffer(GL_ARRAY_BUFFER, particleInstanceVBO);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(particleInstances.size() * sizeof(ParticleInstance)), particleInstances.data(),
+                 GL_STREAM_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // Save the pieces of state this pass borrows, then set up the translucent
+    // depth-tested / depth-write-off configuration it needs.
+    const GLboolean depthTestWasEnabled = glIsEnabled(GL_DEPTH_TEST);
+    const GLboolean cullFaceWasEnabled = glIsEnabled(GL_CULL_FACE);
+    const GLboolean blendWasEnabled = glIsEnabled(GL_BLEND);
+
+    GLboolean depthWriteWasEnabled = GL_TRUE;
+    glGetBooleanv(GL_DEPTH_WRITEMASK, &depthWriteWasEnabled);
+
+    GLint previousSrcAlpha = GL_SRC_ALPHA;
+    GLint previousDstAlpha = GL_ONE_MINUS_SRC_ALPHA;
+    glGetIntegerv(GL_BLEND_SRC_ALPHA, &previousSrcAlpha);
+    glGetIntegerv(GL_BLEND_DST_ALPHA, &previousDstAlpha);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    particleShader->use();
+    particleShader->set("view", camera.getViewMatrix());
+    particleShader->set("projection", camera.getProjectionMatrix(aspectRatio));
+    particleShader->set("stretch", particleStretch);
+    particleShader->set("maxStretch", PARTICLE_MAX_STRETCH);
+
+    glBindVertexArray(particleVAO);
+    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, static_cast<GLsizei>(particleInstances.size()));
+    glBindVertexArray(0);
+
+    // Restore the forward-pass state so whatever runs next sees what it expects.
+    glBlendFunc(static_cast<GLenum>(previousSrcAlpha), static_cast<GLenum>(previousDstAlpha));
+
+    if (!blendWasEnabled)
+        glDisable(GL_BLEND);
+
+    glDepthMask(depthWriteWasEnabled);
+
+    if (cullFaceWasEnabled)
+        glEnable(GL_CULL_FACE);
+    else
+        glDisable(GL_CULL_FACE);
+
+    if (!depthTestWasEnabled)
+        glDisable(GL_DEPTH_TEST);
+}
+
 void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, float aspectRatio) {
     const auto& camera = scene.getCamera();
     const auto dirLights = scene.getLightManager().getDirLights();
@@ -1061,6 +1206,10 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     renderSkybox(scene.getCubeMap(), camera, aspectRatio);
 
     renderObjects(scene, instanceGroups, aspectRatio);
+
+    // Particles go last: they are translucent, depth-test against the scene and
+    // blend over both the skybox and the geometry without writing depth.
+    renderParticles(scene.getParticleSystems(), camera, aspectRatio);
 
     return true;
 }
