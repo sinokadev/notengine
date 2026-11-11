@@ -104,7 +104,8 @@
                 "scene_render",
                 "ortho_test",
                 "gltf_model",
-                "gltf_scene"
+                "gltf_scene",
+                "particle_rain"
             ]
         },
         {
@@ -117,7 +118,8 @@
                 "scene_render",
                 "ortho_test",
                 "gltf_model",
-                "gltf_scene"
+                "gltf_scene",
+                "particle_rain"
             ]
         },
 
@@ -150,7 +152,8 @@
                 "scene_render",
                 "ortho_test",
                 "gltf_model",
-                "gltf_scene"
+                "gltf_scene",
+                "particle_rain"
             ]
         },
         {
@@ -164,7 +167,8 @@
                 "scene_render",
                 "ortho_test",
                 "gltf_model",
-                "gltf_scene"
+                "gltf_scene",
+                "particle_rain"
             ]
         },
 
@@ -194,7 +198,8 @@
                 "scene_render",
                 "ortho_test",
                 "gltf_model",
-                "gltf_scene"
+                "gltf_scene",
+                "particle_rain"
             ]
         },
         {
@@ -207,7 +212,8 @@
                 "scene_render",
                 "ortho_test",
                 "gltf_model",
-                "gltf_scene"
+                "gltf_scene",
+                "particle_rain"
             ]
         },
 
@@ -240,7 +246,8 @@
                 "scene_render",
                 "ortho_test",
                 "gltf_model",
-                "gltf_scene"
+                "gltf_scene",
+                "particle_rain"
             ]
         },
         {
@@ -254,7 +261,8 @@
                 "scene_render",
                 "ortho_test",
                 "gltf_model",
-                "gltf_scene"
+                "gltf_scene",
+                "particle_rain"
             ]
         },
 
@@ -287,7 +295,8 @@
                 "scene_render",
                 "ortho_test",
                 "gltf_model",
-                "gltf_scene"
+                "gltf_scene",
+                "particle_rain"
             ]
         },
         {
@@ -301,7 +310,8 @@
                 "scene_render",
                 "ortho_test",
                 "gltf_model",
-                "gltf_scene"
+                "gltf_scene",
+                "particle_rain"
             ]
         }
     ]
