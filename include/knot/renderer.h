@@ -237,8 +237,14 @@ private:
     /** @brief Velocity-to-length factor applied by the particle vertex shader. */
     float particleStretch = 0.25f;
 
-    /** @brief Upper bound on the billboard length multiplier. */
-    static constexpr float PARTICLE_MAX_STRETCH = 8.0f;
+    /**
+     * @brief Upper bound on the billboard length multiplier.
+     *
+     * A rain streak wants a length-to-width ratio well above 8, so the cap is
+     * high enough that stretch and speed choose the ratio; it still stops a
+     * bogus velocity or stretch from drawing a billboard across the screen.
+     */
+    static constexpr float PARTICLE_MAX_STRETCH = 24.0f;
 
     /** @brief Creates the billboard shader and the quad/instance buffers. */
     void initParticlePass();
