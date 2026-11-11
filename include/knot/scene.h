@@ -3,9 +3,11 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <knot/camera.h>
 #include <knot/manager.h>
+#include <knot/particle.h>
 
 namespace knot {
 
@@ -43,7 +45,33 @@ public:
     /** @brief Sets the per-frame scene update callback. */
     void setUpdateCallback(UpdateCallback callback);
 
+    /**
+     * @brief Registers a particle system that the scene advances and draws.
+     *
+     * The scene keeps a shared reference to the system, so the caller may drop
+     * its own. Registered systems are updated by update() before the update
+     * callback runs and are drawn by Renderer::renderScene() after the opaque
+     * and translucent object passes.
+     *
+     * @param system Particle system to take ownership of; null is ignored.
+     */
+    void addParticleSystem(std::shared_ptr<ParticleSystem> system);
+
+    /**
+     * @brief Returns the registered particle systems.
+     *
+     * The pointers stay valid until the next addParticleSystem(), clear() or
+     * destruction of the scene.
+     */
+    const std::vector<const ParticleSystem*>& getParticleSystems() const {
+        return particleSystemView;
+    }
+
+    /** @brief Removes every registered particle system. */
+    void clearParticleSystems();
+
     /** @brief Invokes the update callback when one is registered.
+     *  Registered particle systems are advanced first.
      *  @param dt Elapsed frame time in seconds. */
     void update(float dt);
 
@@ -92,6 +120,15 @@ private:
     ShaderManager resourceManager;
 
     UpdateCallback updateCallback;
+
+    /** @brief Particle systems owned by the scene. */
+    std::vector<std::shared_ptr<ParticleSystem>> particleSystems;
+
+    /** @brief Non-owning view of particleSystems handed to the renderer. */
+    std::vector<const ParticleSystem*> particleSystemView;
+
+    /** @brief Rebuilds particleSystemView after the owning list changes. */
+    void rebuildParticleSystemView();
 
     std::shared_ptr<Camera> camera;
 
