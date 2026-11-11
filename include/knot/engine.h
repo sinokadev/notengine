@@ -156,6 +156,26 @@ public:
     }
 
     /**
+     * @brief Pins the frame delta used by the main loop.
+     *
+     * Zero, the default, keeps the wall-clock delta. A positive value replaces
+     * it with a constant, which makes a run reproducible: the same fixed delta
+     * and the same frame count leave the scene in the same state, so headless
+     * captures can be compared pixel by pixel. Timer tasks (after/repeat) also
+     * advance by the fixed delta.
+     *
+     * @param seconds Fixed frame delta in seconds, or 0 to restore real time.
+     */
+    void setFixedDeltaTime(float seconds) {
+        fixedDeltaTime = seconds > 0.0f ? seconds : 0.0f;
+    }
+
+    /** @brief Returns the fixed frame delta, or 0 when the loop uses real time. */
+    float getFixedDeltaTime() const {
+        return fixedDeltaTime;
+    }
+
+    /**
      * @brief Gets the elapsed time since the previous frame.
      *
      * Sub-millisecond remainders are carried across frames so high frame
@@ -299,6 +319,7 @@ private:
 
     bool initialized = false;
     float deltaTime = 0.0f;
+    float fixedDeltaTime = 0.0f;
     float millisecondRemainder = 0.0f;
     int deltaTimeMs = 0;
     double lastFrame = 0.0;
