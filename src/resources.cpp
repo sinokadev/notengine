@@ -210,6 +210,10 @@ ShaderSource PbrShader::GetSource() {
     return ShaderSource(getAssetRoot() + "shaders/alpha.vert", getAssetRoot() + "shaders/pbr.frag");
 }
 
+ShaderSource ParticleShader::GetSource() {
+    return ShaderSource(getAssetRoot() + "shaders/particle.vert", getAssetRoot() + "shaders/particle.frag");
+}
+
 Model::Model(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material) {
     if (mesh || material) {
         subMeshes.emplace_back(std::move(mesh), std::move(material));
