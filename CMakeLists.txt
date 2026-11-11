@@ -167,6 +167,10 @@ add_executable(ortho_test EXCLUDE_FROM_ALL demo/ortho_test.cpp)
 target_link_libraries(ortho_test PRIVATE notengine)
 set_target_properties(ortho_test PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
+add_executable(particle_rain EXCLUDE_FROM_ALL demo/particle_rain.cpp)
+target_link_libraries(particle_rain PRIVATE notengine)
+set_target_properties(particle_rain PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+
 add_executable(test_submesh EXCLUDE_FROM_ALL demo/test_submesh.cpp)
 target_link_libraries(test_submesh PRIVATE notengine)
 set_target_properties(test_submesh PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
