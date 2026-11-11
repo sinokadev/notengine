@@ -73,7 +73,7 @@ void printUsage(const char* exe) {
               << "  --seed N          particle random seed (default 20261111)\n"
               << "  --density F       emission rate and pool size multiplier (default 1.0)\n"
               << "  --speed F         fall speed multiplier (default 1.0)\n"
-              << "  --stretch F       velocity-to-streak-length factor (default 1.0)\n"
+              << "  --stretch F       velocity-to-streak-length factor (default 2.0)\n"
               << "  --orbit           move the camera in a slow circle to show the rain follows it\n"
               << "  --width N         window width (default 1280)\n"
               << "  --height N        window height (default 720)\n"
