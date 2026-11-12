@@ -118,8 +118,7 @@ target_include_directories(notengine PUBLIC
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-# miniaudio.c includes its companion header as "miniaudio.h".  Keep this
-# implementation-only include path private; users include <miniaudio/miniaudio.h>.
+# miniaudio.c is used only as a file decoder; keep its header private.
 target_include_directories(notengine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include/miniaudio
 )
@@ -128,21 +127,13 @@ target_include_directories(notengine PRIVATE
 target_link_libraries(notengine PUBLIC
     $<BUILD_INTERFACE:glfw>
     $<BUILD_INTERFACE:glm::glm>
-    # "$<BUILD_INTERFACE:OpenAL::OpenAL>"
+    $<BUILD_INTERFACE:OpenAL::OpenAL>
     OpenGL::GL
     ${CMAKE_DL_LIBS}
 )
 
 if(UNIX AND NOT APPLE)
     target_link_libraries(notengine PUBLIC Threads::Threads m)
-elseif(APPLE)
-    target_link_libraries(notengine PUBLIC
-        "-framework CoreAudio"
-        "-framework AudioToolbox"
-        "-framework CoreFoundation"
-    )
-elseif(WIN32)
-    target_link_libraries(notengine PUBLIC ole32 avrt winmm)
 endif()
 
 set(NOTENGINE_ASSET_ROOT "${CMAKE_SOURCE_DIR}" CACHE PATH "Path to the asset root directory")
@@ -154,6 +145,10 @@ target_compile_definitions(notengine PUBLIC
 add_executable(demo EXCLUDE_FROM_ALL demo/demo.cpp)
 target_link_libraries(demo PRIVATE notengine)
 set_target_properties(demo PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+
+add_executable(spatial_audio EXCLUDE_FROM_ALL demo/spatial_audio.cpp)
+target_link_libraries(spatial_audio PRIVATE notengine)
+set_target_properties(spatial_audio PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
 add_executable(benchmark EXCLUDE_FROM_ALL demo/benchmark.cpp)
 target_link_libraries(benchmark PRIVATE notengine)
