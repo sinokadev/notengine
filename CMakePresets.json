@@ -100,6 +100,7 @@
             "configurePreset": "ninja-debug",
             "targets": [
                 "demo",
+                "spatial_audio",
                 "benchmark",
                 "scene_render",
                 "ortho_test",
@@ -113,6 +114,7 @@
             "configurePreset": "ninja-release",
             "targets": [
                 "demo",
+                "spatial_audio",
                 "benchmark",
                 "scene_render",
                 "ortho_test",
@@ -146,6 +148,7 @@
             "configuration": "Debug",
             "targets": [
                 "demo",
+                "spatial_audio",
                 "benchmark",
                 "scene_render",
                 "ortho_test",
@@ -160,6 +163,7 @@
             "configuration": "Release",
             "targets": [
                 "demo",
+                "spatial_audio",
                 "benchmark",
                 "scene_render",
                 "ortho_test",
@@ -190,6 +194,7 @@
             "configurePreset": "make-debug",
             "targets": [
                 "demo",
+                "spatial_audio",
                 "benchmark",
                 "scene_render",
                 "ortho_test",
@@ -203,6 +208,7 @@
             "configurePreset": "make-release",
             "targets": [
                 "demo",
+                "spatial_audio",
                 "benchmark",
                 "scene_render",
                 "ortho_test",
@@ -236,6 +242,7 @@
             "configuration": "Debug",
             "targets": [
                 "demo",
+                "spatial_audio",
                 "benchmark",
                 "scene_render",
                 "ortho_test",
@@ -250,6 +257,7 @@
             "configuration": "Release",
             "targets": [
                 "demo",
+                "spatial_audio",
                 "benchmark",
                 "scene_render",
                 "ortho_test",
@@ -283,6 +291,7 @@
             "configuration": "Debug",
             "targets": [
                 "demo",
+                "spatial_audio",
                 "benchmark",
                 "scene_render",
                 "ortho_test",
@@ -297,6 +306,7 @@
             "configuration": "Release",
             "targets": [
                 "demo",
+                "spatial_audio",
                 "benchmark",
                 "scene_render",
                 "ortho_test",

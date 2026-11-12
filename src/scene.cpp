@@ -712,7 +712,7 @@ bool Scene::loadGLTF(const std::string& path) {
         std::cerr << "[Error] GLTF: No objects or lights loaded from: " << path << "\n";
         return false;
     }
-    
+
     for (auto& obj : result.objects) {
         objectManager.registerObject(obj);
     }

@@ -18,6 +18,7 @@ A code-first game engine built on OpenGL, empowering you to build everything fro
 - Skymap
 - PBR shader
 - Event system
+- 3D positional audio with EFX reverb environments
 - OBJ file import
 - MTL material import (albedo, roughness, metallic, normal maps)
 - Submesh support
@@ -44,7 +45,7 @@ Renderer optimization improved performance from **1 FPS to 30 FPS** — approxim
 
 ## Build
 
-You will need the `cmake`, `ninja` (or `make`), and `glfw3` (development) packages to build this project.
+You will need the `cmake`, `ninja` (or `make`), and `glfw3` (development) packages to build this project. OpenAL Soft is also required; CMake uses an installed OpenAL package or fetches OpenAL Soft automatically.
 
 If you don't install third party libraries using package manager, then CMake installs libraries using `FetchContent` module through Git.
 
@@ -52,7 +53,7 @@ If you don't install third party libraries using package manager, then CMake ins
 
 ```bash
 sudo apt update
-sudo apt install cmake ninja-build libglfw3-dev build-essential
+sudo apt install cmake ninja-build libglfw3-dev libopenal-dev build-essential
 ```
 
 ### Instructions
@@ -75,6 +76,9 @@ Run the built demos:
 ```bash
 # Default demo
 ./build/ninja-release/demo
+
+# Spatial audio test scene
+./build/ninja-release/spatial_audio
 
 # Scene file rendering demo
 ./build/ninja-release/scene_render

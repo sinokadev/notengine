@@ -2,34 +2,49 @@
 
 #include <memory>
 #include <string>
-#include <unordered_map>
-#include <vector>
 
-#include <miniaudio/miniaudio.h>
+#include <glm/vec3.hpp>
 
 namespace knot {
 
-struct Clip {
-    std::vector<float> samples;
-    ma_uint64 frameCount = 0;
-};
-
-struct Playback {
-    ma_audio_buffer_ref buffer{};
-    ma_sound sound{};
-    bool bufferInitialized = false;
-    bool soundInitialized = false;
-    bool loop = false;
+/** @brief EFX reverb properties for a shared acoustic environment. */
+struct AudioEnvironment {
+    /** @brief Enables the reverb send for active and future sources. */
+    bool reverbEnabled = false;
+    /** @brief Echo density in [0, 1]. */
+    float density = 1.0f;
+    /** @brief Echo diffusion in [0, 1]. */
+    float diffusion = 1.0f;
+    /** @brief Overall reverb gain in [0, 1]. */
+    float gain = 0.32f;
+    /** @brief High-frequency reverb gain in [0, 1]. */
+    float gainHF = 0.89f;
+    /** @brief Reverb decay time in seconds, in [0.1, 20]. */
+    float decayTime = 1.49f;
+    /** @brief High-frequency decay ratio in [0.1, 2]. */
+    float decayHFRatio = 0.83f;
+    /** @brief Early-reflection gain in [0, 3.16]. */
+    float reflectionsGain = 0.05f;
+    /** @brief Early-reflection delay in seconds, in [0, 0.3]. */
+    float reflectionsDelay = 0.007f;
+    /** @brief Late-reverb gain in [0, 10]. */
+    float lateReverbGain = 1.26f;
+    /** @brief Late-reverb delay in seconds, in [0, 0.1]. */
+    float lateReverbDelay = 0.011f;
+    /** @brief High-frequency air absorption in [0.892, 1]. */
+    float airAbsorptionGainHF = 0.994f;
+    /** @brief Distance rolloff factor in [0, 10]. */
+    float roomRolloffFactor = 0.0f;
+    /** @brief Enables high-frequency decay limiting. */
+    bool decayHFLimit = true;
 };
 
 /**
- * @brief A standalone miniaudio-based 2D audio system.
+ * @brief A standalone OpenAL Soft-based 2D and positional audio system.
  *
- * Audio clips are fully decoded to float PCM when loaded. Playback instances
- * are organized by (groupName, soundName): the same sound can play in
- * several groups or concurrently within the same group. Format selection is
- * delegated to miniaudio; this class deliberately does not whitelist filename
- * extensions, so newly enabled miniaudio decoders work without changes to this API.
+ * Audio clips are decoded when loaded. Playback instances are organized by
+ * (groupName, soundName): the same sound can play in several groups or
+ * concurrently within the same group.
  *
  * Public methods must be called from one application thread. Audio does not
  * depend on knot::Engine and is accessed via the singleton get() method.
@@ -51,7 +66,7 @@ public:
     Audio(Audio&&) = delete;
     Audio& operator=(Audio&&) = delete;
 
-    /** @brief Opens miniaudio's default output device.
+    /** @brief Opens the default OpenAL output device.
      *  @return true when playback is available. */
     bool init();
 
@@ -65,10 +80,8 @@ public:
     bool isInitialized() const;
 
     /** @brief Decodes @p path and registers it under @p name.
-     *  The file extension is not restricted; miniaudio decides whether the
-     *  underlying file format is supported.
      *  @return false for invalid names or paths, duplicate names, decode
-     *  failures, or unavailable audio. */
+     *  failures, unsupported audio formats, or unavailable audio. */
     bool load(const std::string& path, const std::string& name);
 
     /** @brief Reports whether a clip has been successfully loaded. */
@@ -84,6 +97,35 @@ public:
      */
     bool play(const std::string& name, const std::string& groupName, float volume = 1.0f, float pitch = 1.0f, bool loop = false);
 
+    /**
+     * @brief Plays a loaded clip from a position in 3D space.
+     * @param name Name of the loaded clip.
+     * @param groupName Playback group for stopping and moving this source.
+     * @param position World-space source position.
+     * @param volume Linear gain in the inclusive range [0, 1].
+     * @param pitch Playback rate multiplier greater than zero.
+     * @param loop Whether to repeat playback.
+     * @param referenceDistance Distance at which gain is unaffected by attenuation.
+     * @param rolloff Attenuation rate beyond @p referenceDistance.
+     * @param maxDistance Maximum distance used by the distance model.
+     * @return false for invalid arguments, missing clips, or unavailable audio.
+     */
+    bool play3D(const std::string& name, const std::string& groupName, const glm::vec3& position, float volume = 1.0f, float pitch = 1.0f,
+                bool loop = false, float referenceDistance = 1.0f, float rolloff = 1.0f, float maxDistance = 100.0f);
+
+    /** @brief Sets the OpenAL listener pose, typically from the active camera. */
+    bool setListener(const glm::vec3& position, const glm::vec3& forward, const glm::vec3& up);
+
+    /** @brief Applies the shared EFX reverb environment.
+     *  @return false when the values are invalid, audio is unavailable, or EFX is unsupported. */
+    bool setEnvironment(const AudioEnvironment& environment);
+
+    /** @brief Gets the last successfully applied environment, or its defaults. */
+    AudioEnvironment getEnvironment() const;
+
+    /** @brief Moves every matching positional playback in @p groupName. */
+    void setSourcePosition(const std::string& name, const std::string& groupName, const glm::vec3& position);
+
     /** @brief Stops every active instance of @p name in all groups. */
     void stop(const std::string& name);
     /** @brief Stops every active instance in @p groupName. */
@@ -98,21 +140,10 @@ public:
     void update();
 
 private:
-    /**
-     * @brief Constructs the global Audio instance.
-     *
-     * Construction is private to enforce the singleton pattern.
-     */
+    struct Impl;
+
     Audio();
-
-    using PlaybackGroup = std::unordered_multimap<std::string, std::unique_ptr<Playback>>;
-
-    void releasePlayback(Playback& playback);
-
-    ma_engine engine{};
-    bool initialized = false;
-    std::unordered_map<std::string, Clip> clips;
-    std::unordered_map<std::string, PlaybackGroup> groups;
+    std::unique_ptr<Impl> impl;
 };
 
 } // namespace knot
