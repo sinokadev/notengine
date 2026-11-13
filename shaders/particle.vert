@@ -1,11 +1,13 @@
 #version 430 core
 
-// Instanced billboard used by knot::ParticleSystem.
+// Instanced velocity-aligned billboard used by knot::ParticleSystem.
 //
-// The quad is expanded in view space so it always faces the camera. The
-// particle velocity, also transformed into view space, gives the billboard
-// its direction: a falling raindrop becomes a vertical streak, a drifting
-// smoke puff stays nearly round.
+// The streak is built in world space along the particle's own velocity and then
+// projected, so it behaves like the line segment the particle actually sweeps in
+// one exposure: looking along the fall direction foreshortens it to a dot, and
+// looking across it keeps the full length. The quad's width axis is the
+// cross product of the velocity and the view ray, which keeps the ribbon facing
+// the camera at every camera angle.
 
 layout(location = 0) in vec2 aCorner;      // quad corner in [-0.5, 0.5]
 layout(location = 4) in vec3 iPosition;    // world-space particle center
@@ -22,23 +24,49 @@ uniform float maxStretch; // upper bound on the total length multiplier
 out vec4 vColor;
 out float vAge;
 out vec2 vCorner;
+out float vNearFade;
+
+// Distance range over which a particle fades out as it reaches the lens.
+const float kNearFadeStart = 0.35;
+const float kNearFadeEnd = 1.5;
 
 void main() {
-    vec4 viewPos = view * vec4(iPosition, 1.0);
-    vec3 viewVelocity = mat3(view) * iVelocity;
+    const float speed = length(iVelocity);
 
-    // Align the long axis with the on-screen direction of motion.
-    vec2 axis = vec2(0.0, -1.0);
-    if (length(viewVelocity.xy) > 1.0e-4) {
-        axis = normalize(viewVelocity.xy);
+    // Direction of travel in world space. A particle that is not moving (or a
+    // velocity that is numerically degenerate) still gets a sane axis instead of
+    // a division by zero.
+    vec3 axis = speed > 1.0e-4 ? iVelocity / speed : vec3(0.0, -1.0, 0.0);
+
+    // The view matrix is a rigid transform, so this is the camera position in
+    // world space without inverting the matrix on the GPU.
+    const vec3 cameraPosition = -transpose(mat3(view)) * view[3].xyz;
+    const vec3 toEye = cameraPosition - iPosition;
+
+    // Width axis: perpendicular to both the streak and the view ray, so the
+    // ribbon always presents its face to the camera.
+    vec3 side = cross(axis, toEye);
+
+    if (dot(side, side) < 1.0e-8) {
+        // The streak points straight at the camera, so any perpendicular will do.
+        const vec3 helper = abs(axis.y) < 0.9 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+        side = cross(axis, helper);
     }
 
-    float lengthScale = clamp(1.0 + stretch * length(iVelocity), 1.0, maxStretch);
-    vec2 perpendicular = vec2(-axis.y, axis.x);
+    side = normalize(side);
 
-    viewPos.xy += axis * (aCorner.y * iSize * lengthScale) + perpendicular * (aCorner.x * iSize);
+    // A still particle keeps the base size; a fast one grows into a streak up to
+    // maxStretch times its size.
+    const float lengthScale = clamp(1.0 + stretch * speed, 1.0, maxStretch);
 
-    gl_Position = projection * viewPos;
+    const vec3 worldPosition = iPosition + axis * (aCorner.y * iSize * lengthScale) + side * (aCorner.x * iSize);
+
+    gl_Position = projection * view * vec4(worldPosition, 1.0);
+
+    // A streak that passes next to the lens would cover a large part of the
+    // screen and read as a smear, which is exactly what happens when the camera
+    // sits inside the emitter box. Fade it out over the last metre instead.
+    vNearFade = smoothstep(kNearFadeStart, kNearFadeEnd, length(toEye));
 
     vColor = iColor;
     vAge = iAge;
