@@ -95,6 +95,8 @@ void Scene::clear() {
     }
 
     updateCallback = nullptr;
+
+    clearParticleSystems();
 }
 
 void Scene::releaseReflectionProbeMaps() {
@@ -179,9 +181,38 @@ void Scene::setCamera(std::shared_ptr<Camera> cam) {
 }
 
 void Scene::update(float dt) {
+    // Advance the scene-owned particle systems before user code runs, so a
+    // callback that moves a system origin still affects the next frame only
+    // in the way the caller expects.
+    for (const auto& system : particleSystems) {
+        if (system)
+            system->update(dt);
+    }
+
     if (updateCallback) {
         updateCallback(*this, dt);
     }
+}
+
+void Scene::addParticleSystem(std::shared_ptr<ParticleSystem> system) {
+    if (!system)
+        return;
+
+    particleSystems.push_back(std::move(system));
+    rebuildParticleSystemView();
+}
+
+void Scene::clearParticleSystems() {
+    particleSystems.clear();
+    particleSystemView.clear();
+}
+
+void Scene::rebuildParticleSystemView() {
+    particleSystemView.clear();
+    particleSystemView.reserve(particleSystems.size());
+
+    for (const auto& system : particleSystems)
+        particleSystemView.push_back(system.get());
 }
 
 bool Scene::loadSeno(const std::string& path) {

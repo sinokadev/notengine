@@ -116,7 +116,7 @@ int Engine::run() {
     lastFrame = glfwGetTime();
     while (!window.isClose() && !shouldQuit) {
         const double currentFrame = glfwGetTime();
-        deltaTime = static_cast<float>(currentFrame - lastFrame);
+        deltaTime = fixedDeltaTime > 0.0f ? fixedDeltaTime : static_cast<float>(currentFrame - lastFrame);
         lastFrame = currentFrame;
 
         millisecondRemainder += deltaTime * 1000.0f;

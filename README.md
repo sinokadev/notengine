@@ -23,6 +23,7 @@ A code-first game engine built on OpenGL, empowering you to build everything fro
 - MTL material import (albedo, roughness, metallic, normal maps)
 - Submesh support
 - Play Audio
+- Particle system (CPU simulation, instanced billboard rendering)
 
 ## Performance
 

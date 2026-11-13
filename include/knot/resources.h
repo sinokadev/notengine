@@ -109,6 +109,13 @@ public:
     static ShaderSource GetSource();
 };
 
+/** @brief Factory for the engine's built-in particle billboard shader sources. */
+class ParticleShader {
+public:
+    /** @brief Returns paths for the built-in particle vertex and fragment shaders. */
+    static ShaderSource GetSource();
+};
+
 /** @brief Base material that binds an associated shader program. */
 class Material {
 public:

@@ -12,6 +12,7 @@ API
    resources
    manager
    mesh
+   particle
    event
    key
    utility

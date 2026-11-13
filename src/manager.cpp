@@ -284,6 +284,20 @@ bool ShaderManager::init() {
     }
 
     defaultShaderIds.insert(pbrShader->getId());
+
+    auto particleSource = std::make_shared<ShaderSource>(ParticleShader::GetSource());
+    if (!particleSource->isValid()) {
+        std::cerr << "[Error] Failed to load default particle shader sources" << std::endl;
+        return false;
+    }
+
+    auto particleShader = createShader(particleSource, "particleShader");
+    if (!particleShader) {
+        std::cerr << "[Error] Failed to create default particle shader" << std::endl;
+        return false;
+    }
+
+    defaultShaderIds.insert(particleShader->getId());
     return true;
 }
 
