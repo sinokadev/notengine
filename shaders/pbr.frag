@@ -53,6 +53,11 @@ uniform bool ssaoEnabled;
 uniform sampler2DShadow shadowMap;
 uniform samplerCubeArrayShadow pointShadowMap;
 uniform int pointShadowCount;
+uniform float dirShadowBias;
+uniform float dirShadowSlopeBias;
+uniform float pointShadowBias;
+uniform float pointShadowSlopeBias;
+uniform int shadowPCFSteps;
 uniform samplerCube irradianceMap;
 uniform samplerCube prefilterMap;
 uniform samplerCube reflectionProbeIrradianceMap;
@@ -161,8 +166,8 @@ float calcPointShadow(int index, vec3 normal, vec3 lightDir) {
     // Slope-Scaled World-Space Bias
     float cosTheta = clamp(dot(normal, lightDir), 0.0, 1.0);
 
-    float baseBias = 0.003;
-    float slopeBias = 0.015 * (1.0 - cosTheta);
+    float baseBias = pointShadowBias;
+    float slopeBias = pointShadowSlopeBias * (1.0 - cosTheta);
     float worldBias = baseBias + slopeBias;
 
     float compareDepth = clamp((distanceToLight - worldBias) / farPlane, 0.0, 1.0);
@@ -175,15 +180,18 @@ float calcPointShadow(int index, vec3 normal, vec3 lightDir) {
     float texelSize = 1.0 / float(textureSize(pointShadowMap, 0).x);
 
     float shadow = 0.0;
-    for (int x = -1; x <= 1; ++x) {
-        for (int y = -1; y <= 1; ++y) {
+    int pcfSteps = clamp(shadowPCFSteps, 0, 4);
+    int sampleCount = 0;
+    for (int x = -pcfSteps; x <= pcfSteps; ++x) {
+        for (int y = -pcfSteps; y <= pcfSteps; ++y) {
             vec3 sampleDirection = direction + (tangent * float(x) + bitangent * float(y)) * (texelSize * 1.5);
 
             float lightFactor = texture(pointShadowMap, vec4(sampleDirection, float(shadowLayer)), compareDepth);
             shadow += (1.0 - lightFactor);
+            ++sampleCount;
         }
     }
-    return shadow / 9.0;
+    return shadow / float(sampleCount);
 }
 
 float calcShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
@@ -196,22 +204,25 @@ float calcShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
     float currentDepth = projCoords.z;
     float normalLightAlignment = clamp(dot(normal, lightDir), 0.0, 1.0);
 
-    float bias = max(0.0015 * (1.0 - normalLightAlignment), 0.0002);
+    float bias = max(dirShadowSlopeBias * (1.0 - normalLightAlignment), dirShadowBias);
     float compareDepth = currentDepth - bias;
 
     float shadow = 0.0;
     vec2 texelSize = 1.0 / vec2(textureSize(shadowMap, 0));
 
-    for (int x = -1; x <= 1; ++x) {
-        for (int y = -1; y <= 1; ++y) {
+    int pcfSteps = clamp(shadowPCFSteps, 0, 4);
+    int sampleCount = 0;
+    for (int x = -pcfSteps; x <= pcfSteps; ++x) {
+        for (int y = -pcfSteps; y <= pcfSteps; ++y) {
             vec2 offset = vec2(x, y) * texelSize;
 
             float lightFactor = texture(shadowMap, vec3(projCoords.xy + offset, compareDepth));
             shadow += (1.0 - lightFactor);
+            ++sampleCount;
         }
     }
 
-    return shadow / 9.0;
+    return shadow / float(sampleCount);
 }
 
 void main() {
