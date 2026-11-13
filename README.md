@@ -80,6 +80,9 @@ Run the built demos:
 # Spatial audio test scene
 ./build/ninja-release/spatial_audio
 
+# Reflection probe test scene (P toggles probe; R recaptures; Space pauses/moves the test reflector)
+./build/ninja-release/reflection_probe
+
 # Scene file rendering demo
 ./build/ninja-release/scene_render
 
