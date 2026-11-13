@@ -101,6 +101,7 @@
             "targets": [
                 "demo",
                 "spatial_audio",
+                "reflection_probe",
                 "benchmark",
                 "scene_render",
                 "ortho_test",
@@ -115,6 +116,7 @@
             "targets": [
                 "demo",
                 "spatial_audio",
+                "reflection_probe",
                 "benchmark",
                 "scene_render",
                 "ortho_test",
@@ -149,6 +151,7 @@
             "targets": [
                 "demo",
                 "spatial_audio",
+                "reflection_probe",
                 "benchmark",
                 "scene_render",
                 "ortho_test",
@@ -164,6 +167,7 @@
             "targets": [
                 "demo",
                 "spatial_audio",
+                "reflection_probe",
                 "benchmark",
                 "scene_render",
                 "ortho_test",
@@ -195,6 +199,7 @@
             "targets": [
                 "demo",
                 "spatial_audio",
+                "reflection_probe",
                 "benchmark",
                 "scene_render",
                 "ortho_test",
@@ -209,6 +214,7 @@
             "targets": [
                 "demo",
                 "spatial_audio",
+                "reflection_probe",
                 "benchmark",
                 "scene_render",
                 "ortho_test",
@@ -243,6 +249,7 @@
             "targets": [
                 "demo",
                 "spatial_audio",
+                "reflection_probe",
                 "benchmark",
                 "scene_render",
                 "ortho_test",
@@ -258,6 +265,7 @@
             "targets": [
                 "demo",
                 "spatial_audio",
+                "reflection_probe",
                 "benchmark",
                 "scene_render",
                 "ortho_test",
@@ -292,6 +300,7 @@
             "targets": [
                 "demo",
                 "spatial_audio",
+                "reflection_probe",
                 "benchmark",
                 "scene_render",
                 "ortho_test",
@@ -307,6 +316,7 @@
             "targets": [
                 "demo",
                 "spatial_audio",
+                "reflection_probe",
                 "benchmark",
                 "scene_render",
                 "ortho_test",

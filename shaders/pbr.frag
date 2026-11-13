@@ -55,6 +55,13 @@ uniform samplerCubeArrayShadow pointShadowMap;
 uniform int pointShadowCount;
 uniform samplerCube irradianceMap;
 uniform samplerCube prefilterMap;
+uniform samplerCube reflectionProbeIrradianceMap;
+uniform samplerCube reflectionProbePrefilterMap;
+uniform bool reflectionProbeEnabled;
+uniform vec3 reflectionProbePosition;
+uniform vec3 reflectionProbeBoundsMin;
+uniform vec3 reflectionProbeBoundsMax;
+uniform bool reflectionProbeCapture;
 
 #define PI 3.14159265359
 
@@ -100,6 +107,15 @@ vec3 computeFresnelResponse(float cosTheta, vec3 baseReflectivity) {
 
 vec3 computeFresnelWithRoughness(float cosTheta, vec3 baseReflectivity, float roughness) {
     return baseReflectivity + (max(vec3(1.0 - roughness), baseReflectivity) - baseReflectivity) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+vec3 boxProjectedDirection(vec3 worldPosition, vec3 reflectionDirection) {
+    vec3 safeDirection = mix(vec3(0.00001), reflectionDirection, greaterThan(abs(reflectionDirection), vec3(0.00001)));
+    vec3 firstPlane = (reflectionProbeBoundsMin - worldPosition) / safeDirection;
+    vec3 secondPlane = (reflectionProbeBoundsMax - worldPosition) / safeDirection;
+    vec3 furthestPlane = max(firstPlane, secondPlane);
+    float distanceToBox = min(min(furthestPlane.x, furthestPlane.y), furthestPlane.z);
+    return normalize(worldPosition + reflectionDirection * distanceToBox - reflectionProbePosition);
 }
 
 vec3 calcPbrLight(vec3 N, vec3 V, vec3 L, vec3 lightColor, vec3 albedo, float metalness, float roughness, vec3 F0, float shadowFactor) {
@@ -263,11 +279,30 @@ void main() {
     vec3 F_ibl = computeFresnelWithRoughness(NoV, F0, roughness);
     vec3 kD_ibl = (vec3(1.0) - F_ibl) * (1.0 - metallic);
 
+    float probeWeight = 0.0;
+    if (reflectionProbeEnabled && all(greaterThanEqual(FragPos, reflectionProbeBoundsMin)) &&
+        all(lessThanEqual(FragPos, reflectionProbeBoundsMax))) {
+        vec3 edgeDistance = min(FragPos - reflectionProbeBoundsMin, reflectionProbeBoundsMax - FragPos);
+        float fadeDistance = max(min(min(reflectionProbeBoundsMax.x - reflectionProbeBoundsMin.x,
+                                         reflectionProbeBoundsMax.y - reflectionProbeBoundsMin.y),
+                                     reflectionProbeBoundsMax.z - reflectionProbeBoundsMin.z) *
+                                     0.1,
+                                 0.001);
+        probeWeight = clamp(min(min(edgeDistance.x, edgeDistance.y), edgeDistance.z) / fadeDistance, 0.0, 1.0);
+    }
+
     vec3 irradiance = texture(irradianceMap, N).rgb;
+    if (probeWeight > 0.0) {
+        irradiance = mix(irradiance, texture(reflectionProbeIrradianceMap, N).rgb, probeWeight);
+    }
     vec3 diffuseIBL = irradiance * albedo;
 
     vec3 R = reflect(-V, N);
     vec3 prefilteredColor = textureLod(prefilterMap, R, roughness * maxReflectionLOD).rgb;
+    if (probeWeight > 0.0) {
+        vec3 localReflectionDirection = boxProjectedDirection(FragPos, R);
+        prefilteredColor = mix(prefilteredColor, textureLod(reflectionProbePrefilterMap, localReflectionDirection, roughness * maxReflectionLOD).rgb, probeWeight);
+    }
     vec2 brdf = texture(brdfLUT, vec2(NoV, roughness)).rg;
 
     vec3 specularIBL = prefilteredColor * (F_ibl * brdf.x + brdf.y);
@@ -276,6 +311,11 @@ void main() {
     vec3 ambient = (kD_ibl * diffuseIBL + specularIBL) * ao * ambientIntensity * ssao;
 
     vec3 finalColor = ambient + directLighting;
+
+    if (reflectionProbeCapture) {
+        FragColor = vec4(finalColor, surfaceAlpha);
+        return;
+    }
 
     float activeExposure = exposure > 0.0 ? exposure : 1.0;
     finalColor = ACESFilm(finalColor * activeExposure);
