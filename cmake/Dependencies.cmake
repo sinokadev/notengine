@@ -87,41 +87,37 @@ endif()
 find_package(OpenGL REQUIRED)
 
 ## OpenAL Soft
-# Uncomment the following code to enable it.
+find_package(OpenAL QUIET)
 
-# find_package(OpenAL QUIET)
+if(NOT TARGET OpenAL::OpenAL)
+    if(NOT NOTENGINE_FETCH_DEPENDENCIES)
+        message(FATAL_ERROR
+            "OpenAL was not found and NOTENGINE_FETCH_DEPENDENCIES is OFF."
+        )
+    endif()
 
-# if(NOT TARGET OpenAL::OpenAL)
-#     if(NOT NOTENGINE_FETCH_DEPENDENCIES)
-#         message(FATAL_ERROR
-#             "OpenAL was not found and NOTENGINE_FETCH_DEPENDENCIES is OFF."
-#         )
-#     endif()
+    message(STATUS "OpenAL not found. Fetching OpenAL Soft...")
 
-#     message(STATUS "OpenAL not found. Fetching OpenAL Soft...")
+    set(ALSOFT_UTILS OFF CACHE BOOL "" FORCE)
+    set(ALSOFT_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(ALSOFT_TESTS OFF CACHE BOOL "" FORCE)
+    set(ALSOFT_INSTALL OFF CACHE BOOL "" FORCE)
+    set(ALSOFT_INSTALL_CONFIG OFF CACHE BOOL "" FORCE)
+    set(ALSOFT_INSTALL_HRTF_DATA OFF CACHE BOOL "" FORCE)
+    set(ALSOFT_INSTALL_AMBDEC_PRESETS OFF CACHE BOOL "" FORCE)
+    set(ALSOFT_INSTALL_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(ALSOFT_INSTALL_UTILS OFF CACHE BOOL "" FORCE)
+    set(ALSOFT_UPDATE_BUILD_VERSION OFF CACHE BOOL "" FORCE)
 
-#     set(ALSOFT_UTILS OFF CACHE BOOL "" FORCE)
-#     set(ALSOFT_EXAMPLES OFF CACHE BOOL "" FORCE)
-#     set(ALSOFT_TESTS OFF CACHE BOOL "" FORCE)
+    FetchContent_Declare(
+        openal
+        GIT_REPOSITORY https://github.com/kcat/openal-soft.git
+        GIT_TAG        1.25.2
+        GIT_SHALLOW    TRUE
+    )
 
-#     set(LIBTYPE STATIC CACHE STRING "" FORCE)
-
-#     set(ALSOFT_INSTALL OFF CACHE BOOL "" FORCE)
-#     set(ALSOFT_INSTALL_CONFIG OFF CACHE BOOL "" FORCE)
-#     set(ALSOFT_INSTALL_HRTF_DATA OFF CACHE BOOL "" FORCE)
-#     set(ALSOFT_INSTALL_AMBDEC_PRESETS OFF CACHE BOOL "" FORCE)
-#     set(ALSOFT_INSTALL_EXAMPLES OFF CACHE BOOL "" FORCE)
-#     set(ALSOFT_INSTALL_UTILS OFF CACHE BOOL "" FORCE)
-
-#     FetchContent_Declare(
-#         openal
-#         GIT_REPOSITORY https://github.com/kcat/openal-soft.git
-#         GIT_TAG        1.25.2
-#         GIT_SHALLOW    TRUE
-#     )
-
-#     FetchContent_MakeAvailable(openal)
-# endif()
+    FetchContent_MakeAvailable(openal)
+endif()
 
 ## Platform dependencies
 

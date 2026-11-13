@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -10,6 +11,17 @@
 #include <knot/particle.h>
 
 namespace knot {
+
+/** @brief Local reflection probe configuration and its baked cubemaps. */
+struct ReflectionProbe {
+    glm::vec3 position{0.0f};
+    glm::vec3 boundsMin{-1.0f};
+    glm::vec3 boundsMax{1.0f};
+    int resolution = 128;
+    unsigned int cubeMap = 0;
+    unsigned int irradianceMap = 0;
+    unsigned int prefilterMap = 0;
+};
 
 /** @brief Collection of objects, lights, resources, camera, and environment maps. */
 class Scene {
@@ -93,6 +105,18 @@ public:
         return prefilterMap;
     }
 
+    /** @brief Configures the scene's local reflection probe.
+     *  A successful change invalidates any previously captured maps.
+     *  The probe position must lie inside its bounds; resolution must be a
+     *  power of two from 16 through 2048.
+     *  @return false if the position, bounds, or resolution are invalid. */
+    bool setReflectionProbe(const glm::vec3& position, const glm::vec3& boundsMin, const glm::vec3& boundsMax, int resolution = 128);
+
+    /** @brief Returns the configured reflection probe, or nullptr if none is configured. */
+    const ReflectionProbe* getReflectionProbe() const {
+        return reflectionProbe ? &*reflectionProbe : nullptr;
+    }
+
     /** @brief Loads a scene from a Seno v8 JSON file.
      *  Missing or non-integer/non-8 versions are rejected before clearing the scene.
      *  Object pivot is an optional local-space [x,y,z] vector, defaulting to zero.
@@ -115,6 +139,10 @@ public:
     bool loadGLTF(const std::string& path);
 
 private:
+    friend class Renderer;
+
+    void releaseReflectionProbeMaps();
+
     ObjectManager objectManager;
     LightManager lightManager;
     ShaderManager resourceManager;
@@ -135,6 +163,7 @@ private:
     unsigned int cubeMap = 0;
     unsigned int irradianceMap = 0;
     unsigned int prefilterMap = 0;
+    std::optional<ReflectionProbe> reflectionProbe;
 };
 
 } // namespace knot

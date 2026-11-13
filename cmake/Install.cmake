@@ -19,6 +19,7 @@ install(
 install(
     DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    PATTERN "miniaudio" EXCLUDE
 )
 
 ## Generated shader header
@@ -65,7 +66,7 @@ include(CMakeFindDependencyMacro)
 find_dependency(glfw3 CONFIG REQUIRED)
 find_dependency(glm CONFIG REQUIRED)
 find_dependency(OpenGL REQUIRED)
-# find_dependency(OpenAL REQUIRED)
+find_dependency(OpenAL REQUIRED)
 
 if(UNIX AND NOT APPLE)
     find_dependency(Threads REQUIRED)
@@ -76,7 +77,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/notengineTargets.cmake")
 target_link_libraries(notengine::notengine INTERFACE
     glfw
     glm::glm
-    # OpenAL::OpenAL
+    OpenAL::OpenAL
 )
 
 check_required_components(notengine)

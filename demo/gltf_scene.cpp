@@ -153,9 +153,7 @@ int main() {
             camera->move(glm::normalize(moveDir) * speedMul, dt);
     });
 
-    engine.setRenderLoopCallback([&](float) {
-        knot::utility::drawText(12, 12, "FPS: " + std::to_string(fps));
-    });
+    engine.setRenderLoopCallback([&](float) { knot::utility::drawText(12, 12, "FPS: " + std::to_string(fps)); });
 
     engine.setScene(scene);
     return engine.run();
