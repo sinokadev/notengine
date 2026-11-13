@@ -13,6 +13,24 @@ struct InstanceData {
     /** @brief Model-to-world matrix for one instance. */
     glm::mat4 model;
 };
+/** @brief Per-instance data uploaded for the instanced particle billboard pass.
+ *
+ * The layout is packed so the attribute offsets are stable: position and
+ * velocity are three floats each, size and normalized age are single floats
+ * and the color is the only 16-byte aligned member.
+ */
+struct ParticleInstance {
+    /** @brief World-space particle center (attribute location 4). */
+    glm::vec3 position;
+    /** @brief World-space billboard width (attribute location 6). */
+    float size;
+    /** @brief World-space velocity used to orient and stretch the quad (attribute location 5). */
+    glm::vec3 velocity;
+    /** @brief Age divided by lifetime, 0 at spawn and 1 at expiry (attribute location 8). */
+    float normalizedAge;
+    /** @brief Base color with opacity in w (attribute location 7). */
+    glm::vec4 color;
+};
 /** @brief An object paired with the world transform used for rendering. */
 struct VisibleInstance {
     /** @brief Object to render. */
@@ -117,6 +135,32 @@ public:
     void renderInstanced(const std::shared_ptr<Model>& model, const std::vector<VisibleInstance>& instances, const Camera& camera, float aspectRatio,
                          bool captureRadiance = false);
 
+    /**
+     * @brief Draws every live particle of the given systems as instanced billboards.
+     *
+     * All systems are uploaded into one dynamic instance buffer and drawn with a
+     * single glDrawArraysInstanced call. The pass assumes the forward pass has
+     * already written the scene: it keeps depth testing on, turns depth writes
+     * off, disables back-face culling (billboards have no meaningful winding)
+     * and blends with GL_SRC_ALPHA / GL_ONE_MINUS_SRC_ALPHA. Every piece of GL
+     * state it changes is restored before it returns.
+     *
+     * @param systems Particle systems to draw; null entries are skipped.
+     * @param camera View camera used to build the billboards.
+     * @param aspectRatio Viewport width-to-height ratio.
+     */
+    void renderParticles(const std::vector<const ParticleSystem*>& systems, const Camera& camera, float aspectRatio);
+
+    /** @brief Sets how strongly particle velocity lengthens the billboard (0 disables stretching). */
+    void setParticleStretch(float stretch) {
+        particleStretch = stretch > 0.0f ? stretch : 0.0f;
+    }
+
+    /** @brief Returns the current velocity-to-length factor of the particle pass. */
+    float getParticleStretch() const {
+        return particleStretch;
+    }
+
 private:
     Renderer() = default;
 
@@ -185,6 +229,32 @@ private:
     std::unordered_map<const Model*, std::vector<VisibleInstance>> culledPointShadowGroups;
 
     static constexpr unsigned int SHADOW_SHADER_ID = 999997;
+
+    static constexpr unsigned int PARTICLE_SHADER_ID = 999996;
+
+    std::shared_ptr<Shader> particleShader;
+
+    GLuint particleVAO = 0;
+    GLuint particleQuadVBO = 0;
+    GLuint particleInstanceVBO = 0;
+
+    /** @brief Scratch storage reused by renderParticles between frames. */
+    std::vector<ParticleInstance> particleInstances;
+
+    /** @brief Velocity-to-length factor applied by the particle vertex shader. */
+    float particleStretch = 0.25f;
+
+    /**
+     * @brief Upper bound on the billboard length multiplier.
+     *
+     * A rain streak wants a length-to-width ratio well above 8, so the cap is
+     * high enough that stretch and speed choose the ratio; it still stops a
+     * bogus velocity or stretch from drawing a billboard across the screen.
+     */
+    static constexpr float PARTICLE_MAX_STRETCH = 24.0f;
+
+    /** @brief Creates the billboard shader and the quad/instance buffers. */
+    void initParticlePass();
 
     std::shared_ptr<Shader> pointShadowShader;
     std::shared_ptr<Shader> dirShadowShader;
