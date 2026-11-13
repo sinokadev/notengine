@@ -7,6 +7,7 @@
 in vec4 vColor;
 in float vAge;
 in vec2 vCorner;
+in float vNearFade;
 
 out vec4 FragColor;
 
@@ -20,7 +21,7 @@ void main() {
     float fadeIn = smoothstep(0.0, 0.08, vAge);
     float fadeOut = 1.0 - smoothstep(0.6, 1.0, vAge);
 
-    float alpha = vColor.a * edge * fadeIn * fadeOut;
+    float alpha = vColor.a * edge * fadeIn * fadeOut * vNearFade;
 
     if (alpha <= 0.001) {
         discard;
