@@ -754,7 +754,8 @@ void Renderer::renderInstanced(const std::shared_ptr<Model>& model, const std::v
     }
 }
 
-void Renderer::renderSingle(const std::shared_ptr<Model>& model, const glm::mat4& worldMatrix, const Camera& camera, float aspectRatio, bool captureRadiance) {
+void Renderer::renderSingle(const std::shared_ptr<Model>& model, const glm::mat4& worldMatrix, const Camera& camera, float aspectRatio,
+                            bool captureRadiance) {
     if (!model || model->subMeshes.empty())
         return;
 
@@ -1268,6 +1269,7 @@ bool Renderer::captureReflectionProbe(Scene& scene) {
     const glm::vec3 directions[] = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
     const glm::vec3 up[] = {{0, -1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}, {0, -1, 0}, {0, -1, 0}};
 
+    // save opengl state
     GLint originalDrawFramebuffer = 0;
     GLint originalReadFramebuffer = 0;
     GLint originalViewport[4];
@@ -1280,6 +1282,7 @@ bool Renderer::captureReflectionProbe(Scene& scene) {
     GLint originalBlendEquations[2];
     GLfloat originalClearColor[4];
     GLboolean originalDepthMask = GL_TRUE;
+
     glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &originalDrawFramebuffer);
     glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &originalReadFramebuffer);
     glGetIntegerv(GL_VIEWPORT, originalViewport);
@@ -1294,15 +1297,19 @@ bool Renderer::captureReflectionProbe(Scene& scene) {
     glGetIntegerv(GL_BLEND_DST_ALPHA, &originalBlendFunctions[3]);
     glGetIntegerv(GL_BLEND_EQUATION_RGB, &originalBlendEquations[0]);
     glGetIntegerv(GL_BLEND_EQUATION_ALPHA, &originalBlendEquations[1]);
+
     glGetFloatv(GL_COLOR_CLEAR_VALUE, originalClearColor);
     glGetBooleanv(GL_DEPTH_WRITEMASK, &originalDepthMask);
+
     const GLboolean depthTestEnabled = glIsEnabled(GL_DEPTH_TEST);
     const GLboolean blendEnabled = glIsEnabled(GL_BLEND);
     const GLboolean cullFaceEnabled = glIsEnabled(GL_CULL_FACE);
     GLuint restoreCubeMapBinding = static_cast<GLuint>(originalCubeMapBinding);
+
     const unsigned int oldProbeCubeMap = probe.cubeMap;
     const unsigned int oldProbeIrradianceMap = probe.irradianceMap;
     const unsigned int oldProbePrefilterMap = probe.prefilterMap;
+
     auto restoreGLState = [&]() {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(originalDrawFramebuffer));
         glBindFramebuffer(GL_READ_FRAMEBUFFER, static_cast<GLuint>(originalReadFramebuffer));
@@ -1310,34 +1317,43 @@ bool Renderer::captureReflectionProbe(Scene& scene) {
         glDepthFunc(static_cast<GLenum>(originalDepthFunction));
         glCullFace(static_cast<GLenum>(originalCullFaceMode));
         glBindRenderbuffer(GL_RENDERBUFFER, static_cast<GLuint>(originalRenderbuffer));
+
         glBlendFuncSeparate(static_cast<GLenum>(originalBlendFunctions[0]), static_cast<GLenum>(originalBlendFunctions[1]),
                             static_cast<GLenum>(originalBlendFunctions[2]), static_cast<GLenum>(originalBlendFunctions[3]));
         glBlendEquationSeparate(static_cast<GLenum>(originalBlendEquations[0]), static_cast<GLenum>(originalBlendEquations[1]));
+
         glActiveTexture(static_cast<GLenum>(originalActiveTexture));
         glBindTexture(GL_TEXTURE_CUBE_MAP, restoreCubeMapBinding);
         glDepthMask(originalDepthMask);
         glClearColor(originalClearColor[0], originalClearColor[1], originalClearColor[2], originalClearColor[3]);
+
         if (depthTestEnabled)
             glEnable(GL_DEPTH_TEST);
         else
             glDisable(GL_DEPTH_TEST);
+
         if (blendEnabled)
             glEnable(GL_BLEND);
         else
             glDisable(GL_BLEND);
+
         if (cullFaceEnabled)
             glEnable(GL_CULL_FACE);
         else
             glDisable(GL_CULL_FACE);
     };
 
+    // create cubemap
     GLuint captureCubeMap = 0;
     GLuint captureFramebuffer = 0;
     GLuint captureDepth = 0;
+
     glGenTextures(1, &captureCubeMap);
     glBindTexture(GL_TEXTURE_CUBE_MAP, captureCubeMap);
+
     for (unsigned int face = 0; face < 6; ++face)
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, GL_RGB16F, size, size, 0, GL_RGB, GL_FLOAT, nullptr);
+
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -1346,13 +1362,16 @@ bool Renderer::captureReflectionProbe(Scene& scene) {
 
     glGenFramebuffers(1, &captureFramebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, captureFramebuffer);
+
     glGenRenderbuffers(1, &captureDepth);
     glBindRenderbuffer(GL_RENDERBUFFER, captureDepth);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, size, size);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, captureDepth);
+
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
     glReadBuffer(GL_COLOR_ATTACHMENT0);
 
+    // cubemap rendering
     std::unordered_map<const Model*, std::vector<VisibleInstance>> instances;
     for (const auto& object : scene.getObjectManager().getObjects()) {
         if (object->model && !object->model->subMeshes.empty())
@@ -1370,6 +1389,7 @@ bool Renderer::captureReflectionProbe(Scene& scene) {
     glDepthFunc(GL_LESS);
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
+
     for (unsigned int face = 0; face < 6; ++face) {
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, captureCubeMap, 0);
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -1385,14 +1405,17 @@ bool Renderer::captureReflectionProbe(Scene& scene) {
 
     glDeleteRenderbuffers(1, &captureDepth);
     glDeleteFramebuffers(1, &captureFramebuffer);
+
     if (!complete) {
         glDeleteTextures(1, &captureCubeMap);
         restoreGLState();
         return false;
     }
 
+    // ibl map baking
     const unsigned int irradiance = bakeCubemapToIrradianceMap(captureCubeMap, 32);
     const unsigned int prefilter = bakeCubemapToPrefilterMap(captureCubeMap, size);
+
     if (irradiance == 0 || prefilter == 0) {
         glDeleteTextures(1, &captureCubeMap);
         if (irradiance != 0)
@@ -1407,12 +1430,14 @@ bool Renderer::captureReflectionProbe(Scene& scene) {
     probe.cubeMap = captureCubeMap;
     probe.irradianceMap = irradiance;
     probe.prefilterMap = prefilter;
+
     if (oldProbeCubeMap != 0 && restoreCubeMapBinding == oldProbeCubeMap)
         restoreCubeMapBinding = probe.cubeMap;
     else if (oldProbeIrradianceMap != 0 && restoreCubeMapBinding == oldProbeIrradianceMap)
         restoreCubeMapBinding = probe.irradianceMap;
     else if (oldProbePrefilterMap != 0 && restoreCubeMapBinding == oldProbePrefilterMap)
         restoreCubeMapBinding = probe.prefilterMap;
+
     restoreGLState();
     return true;
 }

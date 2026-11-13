@@ -15,7 +15,6 @@
 #include <knot/utility.h>
 #include <knot/utility/unifont.h>
 
-
 enum UserEvent : uint32_t { PRINT_FPS };
 
 int main() {

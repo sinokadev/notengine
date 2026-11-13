@@ -18,7 +18,8 @@
 
 namespace {
 
-std::shared_ptr<knot::PbrMaterial> makeMaterial(const std::shared_ptr<knot::Shader>& shader, const glm::vec3& color, float metallic, float roughness) {
+std::shared_ptr<knot::PbrMaterial> makeMaterial(const std::shared_ptr<knot::Shader>& shader, const glm::vec3& color, float metallic,
+                                                float roughness) {
     return std::make_shared<knot::PbrMaterial>(shader, color, metallic, roughness);
 }
 
@@ -84,8 +85,7 @@ int main() {
     movingSphere->scale = glm::vec3(0.42f);
     scene.getObjectManager().registerObject(movingSphere);
 
-    auto sun = std::make_shared<knot::DirLight>(glm::vec3(-0.4f, -1.0f, -0.3f), glm::vec3(0.06f), glm::vec3(0.8f, 0.82f, 0.9f),
-                                                glm::vec3(1.0f));
+    auto sun = std::make_shared<knot::DirLight>(glm::vec3(-0.4f, -1.0f, -0.3f), glm::vec3(0.06f), glm::vec3(0.8f, 0.82f, 0.9f), glm::vec3(1.0f));
     scene.getLightManager().registerLight(sun);
     scene.getLightManager().registerLight(std::make_shared<knot::PbrPointLight>(glm::vec3(0.0f, 4.7f, 0.0f), glm::vec3(1.0f, 0.82f, 0.62f), 38.0f));
 

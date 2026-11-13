@@ -115,11 +115,11 @@ void Scene::releaseReflectionProbeMaps() {
 bool Scene::setReflectionProbe(const glm::vec3& position, const glm::vec3& boundsMin, const glm::vec3& boundsMax, int resolution) {
     const bool validBounds = boundsMin.x < boundsMax.x && boundsMin.y < boundsMax.y && boundsMin.z < boundsMax.z;
     const bool validResolution = resolution >= 16 && resolution <= 2048 && (resolution & (resolution - 1)) == 0;
-    const bool positionInsideBounds = position.x >= boundsMin.x && position.x <= boundsMax.x && position.y >= boundsMin.y && position.y <= boundsMax.y &&
-                                      position.z >= boundsMin.z && position.z <= boundsMax.z;
-    if (!validBounds || !validResolution || !positionInsideBounds || !std::isfinite(position.x) || !std::isfinite(position.y) || !std::isfinite(position.z) ||
-        !std::isfinite(boundsMin.x) || !std::isfinite(boundsMin.y) || !std::isfinite(boundsMin.z) || !std::isfinite(boundsMax.x) ||
-        !std::isfinite(boundsMax.y) || !std::isfinite(boundsMax.z)) {
+    const bool positionInsideBounds = position.x >= boundsMin.x && position.x <= boundsMax.x && position.y >= boundsMin.y &&
+                                      position.y <= boundsMax.y && position.z >= boundsMin.z && position.z <= boundsMax.z;
+    if (!validBounds || !validResolution || !positionInsideBounds || !std::isfinite(position.x) || !std::isfinite(position.y) ||
+        !std::isfinite(position.z) || !std::isfinite(boundsMin.x) || !std::isfinite(boundsMin.y) || !std::isfinite(boundsMin.z) ||
+        !std::isfinite(boundsMax.x) || !std::isfinite(boundsMax.y) || !std::isfinite(boundsMax.z)) {
         return false;
     }
 

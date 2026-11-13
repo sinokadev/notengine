@@ -291,14 +291,13 @@ void main() {
     vec3 kD_ibl = (vec3(1.0) - F_ibl) * (1.0 - metallic);
 
     float probeWeight = 0.0;
-    if (reflectionProbeEnabled && all(greaterThanEqual(FragPos, reflectionProbeBoundsMin)) &&
-        all(lessThanEqual(FragPos, reflectionProbeBoundsMax))) {
+    if (reflectionProbeEnabled && all(greaterThanEqual(FragPos, reflectionProbeBoundsMin)) && all(lessThanEqual(FragPos, reflectionProbeBoundsMax))) {
         vec3 edgeDistance = min(FragPos - reflectionProbeBoundsMin, reflectionProbeBoundsMax - FragPos);
-        float fadeDistance = max(min(min(reflectionProbeBoundsMax.x - reflectionProbeBoundsMin.x,
-                                         reflectionProbeBoundsMax.y - reflectionProbeBoundsMin.y),
-                                     reflectionProbeBoundsMax.z - reflectionProbeBoundsMin.z) *
-                                     0.1,
-                                 0.001);
+        float fadeDistance =
+            max(min(min(reflectionProbeBoundsMax.x - reflectionProbeBoundsMin.x, reflectionProbeBoundsMax.y - reflectionProbeBoundsMin.y),
+                    reflectionProbeBoundsMax.z - reflectionProbeBoundsMin.z) *
+                    0.1,
+                0.001);
         probeWeight = clamp(min(min(edgeDistance.x, edgeDistance.y), edgeDistance.z) / fadeDistance, 0.0, 1.0);
     }
 
@@ -312,7 +311,8 @@ void main() {
     vec3 prefilteredColor = textureLod(prefilterMap, R, roughness * maxReflectionLOD).rgb;
     if (probeWeight > 0.0) {
         vec3 localReflectionDirection = boxProjectedDirection(FragPos, R);
-        prefilteredColor = mix(prefilteredColor, textureLod(reflectionProbePrefilterMap, localReflectionDirection, roughness * maxReflectionLOD).rgb, probeWeight);
+        prefilteredColor =
+            mix(prefilteredColor, textureLod(reflectionProbePrefilterMap, localReflectionDirection, roughness * maxReflectionLOD).rgb, probeWeight);
     }
     vec2 brdf = texture(brdfLUT, vec2(NoV, roughness)).rg;
 

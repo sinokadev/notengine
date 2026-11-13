@@ -9,12 +9,12 @@
 // cross product of the velocity and the view ray, which keeps the ribbon facing
 // the camera at every camera angle.
 
-layout(location = 0) in vec2 aCorner;      // quad corner in [-0.5, 0.5]
-layout(location = 4) in vec3 iPosition;    // world-space particle center
-layout(location = 5) in vec3 iVelocity;    // world-space particle velocity
-layout(location = 6) in float iSize;       // world-space billboard width
-layout(location = 7) in vec4 iColor;       // base color, alpha is opacity
-layout(location = 8) in float iAge;        // normalized age, 0 at spawn, 1 at expiry
+layout(location = 0) in vec2 aCorner;   // quad corner in [-0.5, 0.5]
+layout(location = 4) in vec3 iPosition; // world-space particle center
+layout(location = 5) in vec3 iVelocity; // world-space particle velocity
+layout(location = 6) in float iSize;    // world-space billboard width
+layout(location = 7) in vec4 iColor;    // base color, alpha is opacity
+layout(location = 8) in float iAge;     // normalized age, 0 at spawn, 1 at expiry
 
 uniform mat4 view;
 uniform mat4 projection;
