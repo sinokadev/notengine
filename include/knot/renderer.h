@@ -90,14 +90,6 @@ public:
     /** @brief Saves the current scene as a PNG, rerendering when the requested resolution differs.
      *  @return false if the renderer, scene, dimensions, or output path is invalid. */
     bool saveScreenshot(const std::string& path, int width, int height);
-    /** @brief Enables or disables SSAO contribution in the PBR ambient lighting. */
-    void setSSAOEnabled(bool enabled) {
-        ssaoEnabled = enabled;
-    }
-    /** @brief Reports whether SSAO is currently enabled. */
-    bool isSSAOEnabled() const {
-        return ssaoEnabled;
-    }
     /** @brief Renders one model using an explicit world transform. */
     void renderSingle(const std::shared_ptr<Model>& model, const glm::mat4& worldMatrix, const Camera& camera, float aspectRatio,
                       bool captureRadiance = false);
@@ -165,12 +157,13 @@ private:
     Renderer() = default;
 
     void renderObjects(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, const Camera& camera,
-                       float aspectRatio, bool useReflectionProbe, bool useSSAO, bool captureRadiance);
+                       float aspectRatio, bool useReflectionProbe, bool useSSAO, bool captureRadiance, bool ssgiRadiancePass = false);
     void renderShadowObjects(const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups,
                              const std::shared_ptr<Shader>& shader);
     void renderDirShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups);
     void renderPointShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups);
     void renderSSAO(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, float aspectRatio);
+    void renderSSGI(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, float aspectRatio);
     void resizeSSAOTargets(int width, int height);
 
     bool initialized = false;
@@ -199,13 +192,23 @@ private:
     GLuint ssaoBlurFBO = 0;
     GLuint ssaoBlurTexture = 0;
     GLuint ssaoNoiseTexture = 0;
+    GLuint ssgiRadianceFBO = 0;
+    GLuint ssgiRadianceTexture = 0;
+    GLuint ssgiFBO = 0;
+    GLuint ssgiTexture = 0;
+    GLuint ssgiBlurFBO = 0;
+    GLuint ssgiBlurTexture = 0;
     int ssaoWidth = 0;
     int ssaoHeight = 0;
+    int ssgiWidth = 0;
+    int ssgiHeight = 0;
     std::array<glm::vec3, 32> ssaoKernel{};
     std::shared_ptr<Shader> prePassShader;
     std::shared_ptr<Shader> ssaoShader;
     std::shared_ptr<Shader> ssaoBlurShader;
-    bool ssaoEnabled = true;
+    std::shared_ptr<Shader> ssgiShader;
+    std::shared_ptr<Shader> ssgiBlurShader;
+    bool ssgiTargetsReady = false;
 
     void generateBRDFLUT();
 

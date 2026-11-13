@@ -111,6 +111,8 @@ int main() {
     double lastY = static_cast<double>(engine.getWindow().getFramebufferHeight()) * 0.5;
     float orbitAngle = 0.0f;
 
+    knot::s.reflection_probe = true;
+
     engine.setEventCallback([&](knot::Event& event) {
         if (event.type == knot::KeyInput) {
             if (event.action == knot::KeyState::PRESS) {

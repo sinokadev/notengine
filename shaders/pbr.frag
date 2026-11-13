@@ -50,6 +50,10 @@ uniform float exposure;
 uniform sampler2D brdfLUT;
 uniform sampler2D ssaoMap;
 uniform bool ssaoEnabled;
+uniform sampler2D ssgiMap;
+uniform bool ssgiEnabled;
+uniform bool ssgiRadiancePass;
+uniform float ssgiIntensity;
 uniform sampler2DShadow shadowMap;
 uniform samplerCubeArrayShadow pointShadowMap;
 uniform int pointShadowCount;
@@ -319,9 +323,15 @@ void main() {
     vec3 specularIBL = prefilteredColor * (F_ibl * brdf.x + brdf.y);
 
     float ssao = ssaoEnabled ? texture(ssaoMap, gl_FragCoord.xy / vec2(textureSize(ssaoMap, 0))).r : 1.0;
-    vec3 ambient = (kD_ibl * diffuseIBL + specularIBL) * ao * ambientIntensity * ssao;
+    vec3 diffuseSSGI = ssgiEnabled ? texture(ssgiMap, gl_FragCoord.xy / vec2(textureSize(ssgiMap, 0))).rgb * albedo : vec3(0.0);
+    vec3 ambient = (kD_ibl * (diffuseIBL + diffuseSSGI * ssgiIntensity) + specularIBL) * ao * ambientIntensity * ssao;
 
     vec3 finalColor = ambient + directLighting;
+
+    if (ssgiRadiancePass) {
+        FragColor = vec4(finalColor, 1.0);
+        return;
+    }
 
     if (reflectionProbeCapture) {
         FragColor = vec4(finalColor, surfaceAlpha);

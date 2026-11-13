@@ -149,6 +149,11 @@ bool Renderer::init(GLADloadfunc loadProc) {
     auto ssaoBlurSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/ssao.vert", getAssetRoot() + "shaders/ssao_blur.frag");
     ssaoBlurShader = std::make_shared<Shader>(ssaoBlurSource, SHADOW_SHADER_ID - 4);
 
+    auto ssgiSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/ssao.vert", getAssetRoot() + "shaders/ssgi.frag");
+    ssgiShader = std::make_shared<Shader>(ssgiSource, SHADOW_SHADER_ID - 5);
+    auto ssgiBlurSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/ssao.vert", getAssetRoot() + "shaders/ssgi_blur.frag");
+    ssgiBlurShader = std::make_shared<Shader>(ssgiBlurSource, SHADOW_SHADER_ID - 6);
+
     initParticlePass();
 
     // Create the view-space normal and depth target.
@@ -210,6 +215,53 @@ bool Renderer::init(GLADloadfunc loadProc) {
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoBlurTexture, 0);
     glDrawBuffers(1, &ssaoDrawBuffer);
+
+    glGenFramebuffers(1, &ssgiRadianceFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, ssgiRadianceFBO);
+    glGenTextures(1, &ssgiRadianceTexture);
+    glBindTexture(GL_TEXTURE_2D, ssgiRadianceTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 1, 1, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssgiRadianceTexture, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, prePassDepth, 0);
+    glDrawBuffers(1, &ssaoDrawBuffer);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cerr << "[Error] SSGI radiance framebuffer is not complete!\n";
+    }
+
+    glGenFramebuffers(1, &ssgiFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, ssgiFBO);
+    glGenTextures(1, &ssgiTexture);
+    glBindTexture(GL_TEXTURE_2D, ssgiTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 1, 1, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssgiTexture, 0);
+    glDrawBuffers(1, &ssaoDrawBuffer);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cerr << "[Error] SSGI framebuffer is not complete!\n";
+    }
+
+    glGenFramebuffers(1, &ssgiBlurFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, ssgiBlurFBO);
+    glGenTextures(1, &ssgiBlurTexture);
+    glBindTexture(GL_TEXTURE_2D, ssgiBlurTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 1, 1, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssgiBlurTexture, 0);
+    glDrawBuffers(1, &ssaoDrawBuffer);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cerr << "[Error] SSGI blur framebuffer is not complete!\n";
+    }
 
     // Build a deterministic hemisphere kernel and 4x4 rotation-noise tile.
     std::mt19937 randomGenerator(0x5A17u);
@@ -294,14 +346,22 @@ void Renderer::shutdown() {
         glDeleteFramebuffers(1, &prePassFBO);
         glDeleteFramebuffers(1, &ssaoFBO);
         glDeleteFramebuffers(1, &ssaoBlurFBO);
+        glDeleteFramebuffers(1, &ssgiRadianceFBO);
+        glDeleteFramebuffers(1, &ssgiFBO);
+        glDeleteFramebuffers(1, &ssgiBlurFBO);
         glDeleteTextures(1, &prePassTexture);
         glDeleteTextures(1, &prePassDepth);
         glDeleteTextures(1, &ssaoTexture);
         glDeleteTextures(1, &ssaoBlurTexture);
         glDeleteTextures(1, &ssaoNoiseTexture);
+        glDeleteTextures(1, &ssgiRadianceTexture);
+        glDeleteTextures(1, &ssgiTexture);
+        glDeleteTextures(1, &ssgiBlurTexture);
     }
     prePassFBO = prePassTexture = prePassDepth = ssaoFBO = ssaoTexture = ssaoBlurFBO = ssaoBlurTexture = ssaoNoiseTexture = 0;
+    ssgiRadianceFBO = ssgiRadianceTexture = ssgiFBO = ssgiTexture = ssgiBlurFBO = ssgiBlurTexture = 0;
     ssaoWidth = ssaoHeight = 0;
+    ssgiWidth = ssgiHeight = 0;
 
     if (quadVAO != 0) {
         if (hasContext) {
@@ -331,6 +391,8 @@ void Renderer::shutdown() {
     prePassShader.reset();
     ssaoShader.reset();
     ssaoBlurShader.reset();
+    ssgiShader.reset();
+    ssgiBlurShader.reset();
 
     skyboxMesh.reset();
     skyboxShader.reset();
@@ -642,6 +704,30 @@ void Renderer::resizeSSAOTargets(int width, int height) {
     glBindTexture(GL_TEXTURE_2D, ssaoBlurTexture);
     std::vector<float> fullyLit(static_cast<std::size_t>(width) * static_cast<std::size_t>(height), 1.0f);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, width, height, 0, GL_RED, GL_FLOAT, fullyLit.data());
+
+    ssgiWidth = std::max(1, width / 2);
+    ssgiHeight = std::max(1, height / 2);
+    glBindTexture(GL_TEXTURE_2D, ssgiRadianceTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+    for (GLuint texture : {ssgiTexture, ssgiBlurTexture}) {
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, ssgiWidth, ssgiHeight, 0, GL_RGBA, GL_FLOAT, nullptr);
+    }
+
+    GLint previousDrawFramebuffer = 0;
+    GLint previousReadFramebuffer = 0;
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &previousDrawFramebuffer);
+    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &previousReadFramebuffer);
+    const auto isFramebufferComplete = [](GLuint framebuffer) {
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
+        return glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+    };
+    ssgiTargetsReady = isFramebufferComplete(ssgiRadianceFBO) && isFramebufferComplete(ssgiFBO) && isFramebufferComplete(ssgiBlurFBO);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(previousDrawFramebuffer));
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, static_cast<GLuint>(previousReadFramebuffer));
+    if (!ssgiTargetsReady) {
+        std::cerr << "[Error] SSGI framebuffer targets are incomplete at " << width << "x" << height << ".\n";
+    }
 }
 
 void Renderer::processDirLights(const std::shared_ptr<Shader>& shader, const std::vector<const DirLight*>& dirLights) {
@@ -922,7 +1008,7 @@ void Renderer::renderParticles(const std::vector<const ParticleSystem*>& systems
 }
 
 void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, const Camera& camera,
-                             float aspectRatio, bool useReflectionProbe, bool useSSAO, bool captureRadiance) {
+                             float aspectRatio, bool useReflectionProbe, bool useSSAO, bool captureRadiance, bool ssgiRadiancePass) {
     const auto dirLights = scene.getLightManager().getDirLights();
     const auto pointLights = scene.getLightManager().getPointLights();
 
@@ -971,7 +1057,13 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
         glActiveTexture(GL_TEXTURE13);
         glBindTexture(GL_TEXTURE_2D, ssaoBlurTexture);
         shader->set("ssaoMap", 13);
-        shader->set("ssaoEnabled", useSSAO && ssaoEnabled);
+        shader->set("ssaoEnabled", useSSAO && s.ssao);
+        glActiveTexture(GL_TEXTURE5);
+        glBindTexture(GL_TEXTURE_2D, ssgiBlurTexture);
+        shader->set("ssgiMap", 5);
+        shader->set("ssgiEnabled", s.ssgi && !captureRadiance && !ssgiRadiancePass);
+        shader->set("ssgiRadiancePass", ssgiRadiancePass);
+        shader->set("ssgiIntensity", std::max(0.0f, s.ssgi_intensity));
 
         const auto* probe = scene.getReflectionProbe();
         const bool probeReady = s.reflection_probe && useReflectionProbe && probe && probe->irradianceMap != 0 && probe->prefilterMap != 0;
@@ -1058,6 +1150,12 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
         }
     }
 
+    if (ssgiRadiancePass) {
+        glBindVertexArray(0);
+        glDepthMask(GL_TRUE);
+        return;
+    }
+
     // Sort globally across models and instances. Depth testing remains enabled,
     // but blended fragments must not prevent farther surfaces from contributing.
     std::stable_sort(translucentDraws.begin(), translucentDraws.end(), [](const auto& a, const auto& b) { return a.depth > b.depth; });
@@ -1093,8 +1191,9 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
 }
 
 void Renderer::renderSSAO(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, float aspectRatio) {
-    if (!ssaoEnabled || !prePassShader || !prePassShader->isValid() || !ssaoShader || !ssaoShader->isValid() || !ssaoBlurShader ||
-        !ssaoBlurShader->isValid() || !s.ssao) {
+    const bool runSSAO = s.ssao && ssaoShader && ssaoShader->isValid() && ssaoBlurShader && ssaoBlurShader->isValid();
+    const bool runSSGI = s.ssgi && ssgiTargetsReady && ssgiShader && ssgiShader->isValid() && ssgiBlurShader && ssgiBlurShader->isValid();
+    if ((!runSSAO && !runSSGI) || !prePassShader || !prePassShader->isValid()) {
         return;
     }
 
@@ -1105,7 +1204,9 @@ void Renderer::renderSSAO(Scene& scene, const std::unordered_map<const Model*, s
     // Render opaque geometry into the view-space normal/depth buffer.
     glViewport(0, 0, ssaoWidth, ssaoHeight);
     glBindFramebuffer(GL_FRAMEBUFFER, prePassFBO);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    const GLfloat emptyColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+    glClearBufferfv(GL_COLOR, 0, emptyColor);
+    glClear(GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
@@ -1163,6 +1264,15 @@ void Renderer::renderSSAO(Scene& scene, const std::unordered_map<const Model*, s
         }
     }
 
+    if (!runSSAO) {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, framebufferWidth, framebufferHeight);
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        glEnable(GL_BLEND);
+        return;
+    }
+
     // Estimate ambient occlusion from the pre-pass data.
     glBindVertexArray(0);
     glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
@@ -1190,6 +1300,61 @@ void Renderer::renderSSAO(Scene& scene, const std::unordered_map<const Model*, s
     renderQuad();
 
     // Restore the main forward-rendering target and state.
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, framebufferWidth, framebufferHeight);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glEnable(GL_BLEND);
+}
+
+void Renderer::renderSSGI(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, float aspectRatio) {
+    if (!s.ssgi || !ssgiTargetsReady || !prePassShader || !prePassShader->isValid() || !ssgiShader || !ssgiShader->isValid() || !ssgiBlurShader ||
+        !ssgiBlurShader->isValid())
+        return;
+
+    const auto& camera = scene.getCamera();
+    const glm::mat4 view = camera.getViewMatrix();
+    const glm::mat4 projection = camera.getProjectionMatrix(aspectRatio);
+
+    glViewport(0, 0, ssgiWidth, ssgiHeight);
+    glBindFramebuffer(GL_FRAMEBUFFER, ssgiRadianceFBO);
+    const GLfloat emptyColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+    glClearBufferfv(GL_COLOR, 0, emptyColor);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
+    renderObjects(scene, instanceGroups, camera, aspectRatio, false, false, false, true);
+
+    glViewport(0, 0, ssgiWidth, ssgiHeight);
+    glBindFramebuffer(GL_FRAMEBUFFER, ssgiFBO);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, prePassTexture);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, ssgiRadianceTexture);
+    ssgiShader->use();
+    ssgiShader->set("gNormalDepth", 0);
+    ssgiShader->set("radianceMap", 1);
+    ssgiShader->set("projection", projection);
+    ssgiShader->set("inverseProjection", glm::inverse(projection));
+    ssgiShader->set("radius", std::max(0.01f, s.ssgi_radius));
+    renderQuad();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, ssgiBlurFBO);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, ssgiTexture);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, prePassTexture);
+    ssgiBlurShader->use();
+    ssgiBlurShader->set("ssgiInput", 0);
+    ssgiBlurShader->set("gNormalDepth", 1);
+    ssgiBlurShader->set("screenSize", glm::vec2(static_cast<float>(ssgiWidth), static_cast<float>(ssgiHeight)));
+    renderQuad();
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, framebufferWidth, framebufferHeight);
     glEnable(GL_DEPTH_TEST);
@@ -1245,6 +1410,9 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     processPointLights(pointLights);
 
     renderSSAO(scene, instanceGroups, aspectRatio);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(outputFramebuffer));
+    glViewport(0, 0, framebufferWidth, framebufferHeight);
+    renderSSGI(scene, instanceGroups, aspectRatio);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(outputFramebuffer));
     glViewport(0, 0, framebufferWidth, framebufferHeight);
 

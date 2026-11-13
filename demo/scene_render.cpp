@@ -8,6 +8,7 @@
 #include <knot/scene.h>
 #include <knot/resources.h>
 #include <knot/renderer.h>
+#include <knot/state.h>
 #include <knot/utility.h>
 #include <unordered_map>
 #include <GLFW/glfw3.h>
@@ -21,7 +22,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    glfwSetWindowTitle(engine.getWindow().getHandle(), "Knot Demo | SSAO ON (O to toggle)");
+    glfwSetWindowTitle(engine.getWindow().getHandle(), "Knot Demo | SSAO ON (O) | SSGI OFF (G)");
 
     glfwSetInputMode(engine.getWindow().getHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -120,13 +121,24 @@ int main(int argc, char** argv) {
                 }
 
                 if (event.key == knot::ScanCode::O) {
-                    auto& renderer = knot::Renderer::get();
-                    renderer.setSSAOEnabled(!renderer.isSSAOEnabled());
+                    knot::s.ssao = !knot::s.ssao;
 
-                    const char* ssaoState = renderer.isSSAOEnabled() ? "ON" : "OFF";
-                    const std::string title = std::string("Knot Demo | SSAO ") + ssaoState + " (O to toggle)";
+                    const std::string title =
+                        std::string("Knot Demo | SSAO ") + (knot::s.ssao ? "ON (O)" : "OFF (O)") + " | SSGI " + (knot::s.ssgi ? "ON (G)" : "OFF (G)");
                     glfwSetWindowTitle(engine.getWindow().getHandle(), title.c_str());
-                    std::cout << "SSAO: " << ssaoState << '\n';
+                    std::cout << "SSAO: " << (knot::s.ssao ? "ON" : "OFF") << '\n';
+
+                    event.handled = true;
+                }
+
+                if (event.key == knot::ScanCode::G) {
+                    knot::s.ssgi = !knot::s.ssgi;
+
+                    const char* ssgiState = knot::s.ssgi ? "ON" : "OFF";
+                    const std::string title =
+                        std::string("Knot Demo | SSAO ") + (knot::s.ssao ? "ON (O)" : "OFF (O)") + " | SSGI " + ssgiState + " (G)";
+                    glfwSetWindowTitle(engine.getWindow().getHandle(), title.c_str());
+                    std::cout << "SSGI: " << ssgiState << '\n';
 
                     event.handled = true;
                 }

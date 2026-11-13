@@ -101,6 +101,14 @@ int main() {
                     ev.handled = true;
                 }
 
+                if (ev.key == knot::ScanCode::G) {
+                    knot::s.ssgi = !knot::s.ssgi;
+
+                    std::cout << "SSGI: " << knot::s.ssgi << '\n';
+
+                    ev.handled = true;
+                }
+
                 keys[ev.key] = true;
             } else if (ev.action == knot::KeyState::RELEASE) {
                 keys[ev.key] = false;

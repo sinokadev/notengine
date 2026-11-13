@@ -84,6 +84,9 @@ Run the built demos:
 # Reflection probe test scene (P toggles probe; R recaptures; Space pauses/moves the test reflector)
 ./build/ninja-release/reflection_probe
 
+# SSGI color-bleeding comparison (G toggles SSGI; O toggles SSAO)
+./build/ninja-release/ssgi_demo
+
 # Scene file rendering demo
 ./build/ninja-release/scene_render
 

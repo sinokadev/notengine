@@ -85,6 +85,9 @@ To build and run the demos, run the following commands.
    # Scene file rendering demo
    ./build/ninja-release/scene_render
 
+   # SSGI color-bleeding comparison demo
+   ./build/ninja-release/ssgi_demo
+
    # Benchmark
    ./build/ninja-release/benchmark
 
@@ -147,6 +150,9 @@ To build and run the demos, run the following commands.
    # Scene file rendering demo
    .\build\vs2022\Release\scene_render.exe
 
+   # SSGI color-bleeding comparison demo
+   .\build\vs2022\Release\ssgi_demo.exe
+
    # Benchmark
    .\build\vs2022\Release\benchmark.exe
 
@@ -198,7 +204,7 @@ Build Presets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - ``<preset>-notengine``: Builds only the ``notengine`` core static library (e.g., ``ninja-release-notengine``, ``vs2022-release-notengine``)
-- ``<preset>-all``: Builds all demo executables (``demo``, ``benchmark``, ``scene_render``) and the engine library (e.g., ``ninja-release-all``, ``vs2022-release-all``)
+- ``<preset>-all``: Builds all demo executables, including ``ssgi_demo``, and the engine library (e.g., ``ninja-release-all``, ``vs2022-release-all``)
 
 macOS
 --------------------------------
