@@ -99,15 +99,16 @@ public:
         return ssaoEnabled;
     }
     /** @brief Renders one model using an explicit world transform. */
-    void renderSingle(const std::shared_ptr<Model>& model, const glm::mat4& worldMatrix, const Camera& camera, float aspectRatio);
+    void renderSingle(const std::shared_ptr<Model>& model, const glm::mat4& worldMatrix, const Camera& camera, float aspectRatio,
+                      bool captureRadiance = false);
     /** @brief Renders an object using its current transform.
      *  @return false if the renderer or object model is invalid. */
-    bool renderObject(const Object& object, const Camera& camera, float aspectRatio);
+    bool renderObject(const Object& object, const Camera& camera, float aspectRatio, bool captureRadiance = false);
     /** @brief Renders an object using a precomputed world transform.
      *  @return false if the renderer or object model is invalid. */
-    bool renderObject(const VisibleInstance& instance, const Camera& camera, float aspectRatio);
+    bool renderObject(const VisibleInstance& instance, const Camera& camera, float aspectRatio, bool captureRadiance = false);
     /** @brief Draws a cubemap skybox centered on the camera. */
-    void renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio);
+    void renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio, bool captureRadiance = false);
     /** @brief Performs frustum culling, batching, and rendering for a scene.
      *  Built-in shaders draw opaque fragments first, then translucent fragments
      *  sorted by sub-mesh center with depth writes disabled. Intersecting surfaces
@@ -117,6 +118,10 @@ public:
      *  implementing alphaPass (0 = all, 1 = opaque, 2 = translucent).
      *  @return false when the renderer has not been initialized. */
     bool renderScene(Scene& scene, float aspectRatio);
+    /** @brief Captures and bakes the scene's configured local reflection probe.
+     *  @return false if the renderer is not initialized, no probe is configured,
+     *  or the cubemap capture framebuffer is incomplete. */
+    bool captureReflectionProbe(Scene& scene);
     /** @brief Renders a Shadows. */
     void renderShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups);
 
@@ -127,7 +132,8 @@ public:
     /** @brief Converts an HDR equirectangular texture to a cubemap. */
     unsigned int bakeHDRMapToCubemap(unsigned int hdrTexture2D, int size);
     /** @brief Renders several instances of one model in a single draw call. */
-    void renderInstanced(const std::shared_ptr<Model>& model, const std::vector<VisibleInstance>& instances, const Camera& camera, float aspectRatio);
+    void renderInstanced(const std::shared_ptr<Model>& model, const std::vector<VisibleInstance>& instances, const Camera& camera, float aspectRatio,
+                         bool captureRadiance = false);
 
     /**
      * @brief Draws every live particle of the given systems as instanced billboards.
@@ -158,7 +164,8 @@ public:
 private:
     Renderer() = default;
 
-    void renderObjects(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, float aspectRatio);
+    void renderObjects(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, const Camera& camera,
+                       float aspectRatio, bool useReflectionProbe, bool useSSAO, bool captureRadiance);
     void renderShadowObjects(const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups,
                              const std::shared_ptr<Shader>& shader);
     void renderDirShadow(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups);

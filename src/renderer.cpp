@@ -12,6 +12,7 @@
 #include <limits>
 #include <knot/mesh.h>
 #include <knot/state.h>
+#include <knot/utility/cubemap_baker.h>
 
 #ifdef _WIN32
 #define STBIW_WINDOWS_UTF8
@@ -21,6 +22,26 @@
 
 namespace knot {
 namespace {
+
+class ProbeCaptureCamera final : public Camera {
+public:
+    ProbeCaptureCamera(const glm::vec3& position, const glm::vec3& direction, const glm::vec3& up) : Camera(position) {
+        this->direction = direction;
+        this->up = up;
+    }
+
+    glm::mat4 getViewMatrix() const override {
+        return glm::lookAt(position, position + direction, up);
+    }
+
+    glm::mat4 getProjectionMatrix(float) const override {
+        return glm::perspective(glm::radians(90.0f), 1.0f, nearPlane, farPlane);
+    }
+
+private:
+    glm::vec3 direction;
+    glm::vec3 up;
+};
 
 bool writePng(const std::string& path, int width, int height, std::vector<unsigned char>& pixels) {
     const std::size_t rowBytes = static_cast<std::size_t>(width) * 4u;
@@ -687,7 +708,7 @@ void Renderer::processPointLights(const std::vector<const PbrPointLight*>& point
 }
 
 void Renderer::renderInstanced(const std::shared_ptr<Model>& model, const std::vector<VisibleInstance>& instances, const Camera& camera,
-                               float aspectRatio) {
+                               float aspectRatio, bool captureRadiance) {
     if (!model || model->subMeshes.empty() || instances.empty())
         return;
 
@@ -715,6 +736,7 @@ void Renderer::renderInstanced(const std::shared_ptr<Model>& model, const std::v
         shader->use();
         subMesh.material->bind();
         shader->set("isInstanced", true);
+        shader->set("reflectionProbeCapture", captureRadiance);
 
         // Set the camera uniforms used by the material shader.
         shader->set("view", camera.getViewMatrix());
@@ -732,7 +754,7 @@ void Renderer::renderInstanced(const std::shared_ptr<Model>& model, const std::v
     }
 }
 
-void Renderer::renderSingle(const std::shared_ptr<Model>& model, const glm::mat4& worldMatrix, const Camera& camera, float aspectRatio) {
+void Renderer::renderSingle(const std::shared_ptr<Model>& model, const glm::mat4& worldMatrix, const Camera& camera, float aspectRatio, bool captureRadiance) {
     if (!model || model->subMeshes.empty())
         return;
 
@@ -749,6 +771,7 @@ void Renderer::renderSingle(const std::shared_ptr<Model>& model, const glm::mat4
 
         // Provide the transform and camera state for a single object draw.
         shader->set("isInstanced", false);
+        shader->set("reflectionProbeCapture", captureRadiance);
 
         shader->set("model", worldMatrix);
         shader->set("view", camera.getViewMatrix());
@@ -764,7 +787,7 @@ void Renderer::renderSingle(const std::shared_ptr<Model>& model, const glm::mat4
     }
 }
 
-bool Renderer::renderObject(const VisibleInstance& instance, const Camera& camera, float aspectRatio) {
+bool Renderer::renderObject(const VisibleInstance& instance, const Camera& camera, float aspectRatio, bool captureRadiance) {
     if (!initialized || !instance.object)
         return false;
 
@@ -776,15 +799,15 @@ bool Renderer::renderObject(const VisibleInstance& instance, const Camera& camer
     if (object.model->subMeshes.empty())
         return false;
 
-    renderSingle(object.model, instance.worldMatrix, camera, aspectRatio);
+    renderSingle(object.model, instance.worldMatrix, camera, aspectRatio, captureRadiance);
     return true;
 }
 
-bool Renderer::renderObject(const Object& object, const Camera& camera, float aspectRatio) {
-    return renderObject(VisibleInstance{&object, object.getWorldMatrix()}, camera, aspectRatio);
+bool Renderer::renderObject(const Object& object, const Camera& camera, float aspectRatio, bool captureRadiance) {
+    return renderObject(VisibleInstance{&object, object.getWorldMatrix()}, camera, aspectRatio, captureRadiance);
 }
 
-void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio) {
+void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float aspectRatio, bool captureRadiance) {
     if (!s.skymap)
         return;
 
@@ -800,7 +823,8 @@ void Renderer::renderSkybox(unsigned int cubemapID, const Camera& camera, float 
 
     skyboxShader->set("view", view);
     skyboxShader->set("projection", projection);
-    skyboxShader->set("exposure", s.ambient);
+    skyboxShader->set("exposure", captureRadiance ? 1.0f : s.ambient);
+    skyboxShader->set("captureRadiance", captureRadiance);
 
     // Bind the cubemap and draw the skybox cube.
     glBindVertexArray(skyboxMesh->vao);
@@ -896,8 +920,8 @@ void Renderer::renderParticles(const std::vector<const ParticleSystem*>& systems
         glDisable(GL_DEPTH_TEST);
 }
 
-void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, float aspectRatio) {
-    const auto& camera = scene.getCamera();
+void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, const Camera& camera,
+                             float aspectRatio, bool useReflectionProbe, bool useSSAO, bool captureRadiance) {
     const auto dirLights = scene.getLightManager().getDirLights();
     const auto pointLights = scene.getLightManager().getPointLights();
 
@@ -937,11 +961,31 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
         glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointDepthMap);
         shader->set("pointShadowMap", 12);
         shader->set("pointShadowCount", pointShadowCount);
+        shader->set("dirShadowBias", std::max(0.0f, s.dir_shadow_bias));
+        shader->set("dirShadowSlopeBias", std::max(0.0f, s.dir_shadow_slope_bias));
+        shader->set("pointShadowBias", std::max(0.0f, s.point_shadow_bias));
+        shader->set("pointShadowSlopeBias", std::max(0.0f, s.point_shadow_slope_bias));
+        shader->set("shadowPCFSteps", std::clamp(s.shadow_pcf_steps, 0, 4));
 
         glActiveTexture(GL_TEXTURE13);
         glBindTexture(GL_TEXTURE_2D, ssaoBlurTexture);
         shader->set("ssaoMap", 13);
-        shader->set("ssaoEnabled", ssaoEnabled);
+        shader->set("ssaoEnabled", useSSAO && ssaoEnabled);
+
+        const auto* probe = scene.getReflectionProbe();
+        const bool probeReady = s.reflection_probe && useReflectionProbe && probe && probe->irradianceMap != 0 && probe->prefilterMap != 0;
+        glActiveTexture(GL_TEXTURE14);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, probeReady ? probe->irradianceMap : scene.getIrradianceMap());
+        shader->set("reflectionProbeIrradianceMap", 14);
+        glActiveTexture(GL_TEXTURE15);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, probeReady ? probe->prefilterMap : scene.getPrefilterMap());
+        shader->set("reflectionProbePrefilterMap", 15);
+        shader->set("reflectionProbeEnabled", probeReady);
+        if (probeReady) {
+            shader->set("reflectionProbePosition", probe->position);
+            shader->set("reflectionProbeBoundsMin", probe->boundsMin);
+            shader->set("reflectionProbeBoundsMax", probe->boundsMax);
+        }
 
         // Set the remaining global lighting uniforms.
         shader->set("maxReflectionLOD", 4.0f);
@@ -1005,10 +1049,10 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
 
         // Use instancing for larger groups; draw smaller groups individually.
         if (instances.size() >= INSTANCE_THRESHOLD) { // instanced objects render
-            renderInstanced(model, instances, camera, aspectRatio);
+            renderInstanced(model, instances, camera, aspectRatio, captureRadiance);
         } else { // just render
             for (const auto& inst : instances) {
-                renderObject(inst, camera, aspectRatio);
+                renderObject(inst, camera, aspectRatio, captureRadiance);
             }
         }
     }
@@ -1029,6 +1073,7 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
         subMesh.material->bind();
 
         shader->set("alphaPass", 2);
+        shader->set("reflectionProbeCapture", captureRadiance);
         shader->set("isInstanced", false);
         shader->set("model", draw.worldMatrix);
         shader->set("view", view);
@@ -1205,12 +1250,170 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     // Draw the sky and forward-lit geometry.
     renderSkybox(scene.getCubeMap(), camera, aspectRatio);
 
-    renderObjects(scene, instanceGroups, aspectRatio);
+    renderObjects(scene, instanceGroups, camera, aspectRatio, true, true, false);
 
     // Particles go last: they are translucent, depth-test against the scene and
     // blend over both the skybox and the geometry without writing depth.
     renderParticles(scene.getParticleSystems(), camera, aspectRatio);
 
+    return true;
+}
+
+bool Renderer::captureReflectionProbe(Scene& scene) {
+    if (!initialized || !scene.reflectionProbe || glfwGetCurrentContext() == nullptr)
+        return false;
+
+    auto& probe = *scene.reflectionProbe;
+    const int size = probe.resolution;
+    const glm::vec3 directions[] = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
+    const glm::vec3 up[] = {{0, -1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}, {0, -1, 0}, {0, -1, 0}};
+
+    GLint originalDrawFramebuffer = 0;
+    GLint originalReadFramebuffer = 0;
+    GLint originalViewport[4];
+    GLint originalDepthFunction = GL_LESS;
+    GLint originalCullFaceMode = GL_BACK;
+    GLint originalRenderbuffer = 0;
+    GLint originalActiveTexture = GL_TEXTURE0;
+    GLint originalCubeMapBinding = 0;
+    GLint originalBlendFunctions[4];
+    GLint originalBlendEquations[2];
+    GLfloat originalClearColor[4];
+    GLboolean originalDepthMask = GL_TRUE;
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &originalDrawFramebuffer);
+    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &originalReadFramebuffer);
+    glGetIntegerv(GL_VIEWPORT, originalViewport);
+    glGetIntegerv(GL_DEPTH_FUNC, &originalDepthFunction);
+    glGetIntegerv(GL_CULL_FACE_MODE, &originalCullFaceMode);
+    glGetIntegerv(GL_RENDERBUFFER_BINDING, &originalRenderbuffer);
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &originalActiveTexture);
+    glGetIntegerv(GL_TEXTURE_BINDING_CUBE_MAP, &originalCubeMapBinding);
+    glGetIntegerv(GL_BLEND_SRC_RGB, &originalBlendFunctions[0]);
+    glGetIntegerv(GL_BLEND_DST_RGB, &originalBlendFunctions[1]);
+    glGetIntegerv(GL_BLEND_SRC_ALPHA, &originalBlendFunctions[2]);
+    glGetIntegerv(GL_BLEND_DST_ALPHA, &originalBlendFunctions[3]);
+    glGetIntegerv(GL_BLEND_EQUATION_RGB, &originalBlendEquations[0]);
+    glGetIntegerv(GL_BLEND_EQUATION_ALPHA, &originalBlendEquations[1]);
+    glGetFloatv(GL_COLOR_CLEAR_VALUE, originalClearColor);
+    glGetBooleanv(GL_DEPTH_WRITEMASK, &originalDepthMask);
+    const GLboolean depthTestEnabled = glIsEnabled(GL_DEPTH_TEST);
+    const GLboolean blendEnabled = glIsEnabled(GL_BLEND);
+    const GLboolean cullFaceEnabled = glIsEnabled(GL_CULL_FACE);
+    GLuint restoreCubeMapBinding = static_cast<GLuint>(originalCubeMapBinding);
+    const unsigned int oldProbeCubeMap = probe.cubeMap;
+    const unsigned int oldProbeIrradianceMap = probe.irradianceMap;
+    const unsigned int oldProbePrefilterMap = probe.prefilterMap;
+    auto restoreGLState = [&]() {
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(originalDrawFramebuffer));
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, static_cast<GLuint>(originalReadFramebuffer));
+        glViewport(originalViewport[0], originalViewport[1], originalViewport[2], originalViewport[3]);
+        glDepthFunc(static_cast<GLenum>(originalDepthFunction));
+        glCullFace(static_cast<GLenum>(originalCullFaceMode));
+        glBindRenderbuffer(GL_RENDERBUFFER, static_cast<GLuint>(originalRenderbuffer));
+        glBlendFuncSeparate(static_cast<GLenum>(originalBlendFunctions[0]), static_cast<GLenum>(originalBlendFunctions[1]),
+                            static_cast<GLenum>(originalBlendFunctions[2]), static_cast<GLenum>(originalBlendFunctions[3]));
+        glBlendEquationSeparate(static_cast<GLenum>(originalBlendEquations[0]), static_cast<GLenum>(originalBlendEquations[1]));
+        glActiveTexture(static_cast<GLenum>(originalActiveTexture));
+        glBindTexture(GL_TEXTURE_CUBE_MAP, restoreCubeMapBinding);
+        glDepthMask(originalDepthMask);
+        glClearColor(originalClearColor[0], originalClearColor[1], originalClearColor[2], originalClearColor[3]);
+        if (depthTestEnabled)
+            glEnable(GL_DEPTH_TEST);
+        else
+            glDisable(GL_DEPTH_TEST);
+        if (blendEnabled)
+            glEnable(GL_BLEND);
+        else
+            glDisable(GL_BLEND);
+        if (cullFaceEnabled)
+            glEnable(GL_CULL_FACE);
+        else
+            glDisable(GL_CULL_FACE);
+    };
+
+    GLuint captureCubeMap = 0;
+    GLuint captureFramebuffer = 0;
+    GLuint captureDepth = 0;
+    glGenTextures(1, &captureCubeMap);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, captureCubeMap);
+    for (unsigned int face = 0; face < 6; ++face)
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, GL_RGB16F, size, size, 0, GL_RGB, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    glGenFramebuffers(1, &captureFramebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, captureFramebuffer);
+    glGenRenderbuffers(1, &captureDepth);
+    glBindRenderbuffer(GL_RENDERBUFFER, captureDepth);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, size, size);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, captureDepth);
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+    glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+    std::unordered_map<const Model*, std::vector<VisibleInstance>> instances;
+    for (const auto& object : scene.getObjectManager().getObjects()) {
+        if (object->model && !object->model->subMeshes.empty())
+            instances[object->model.get()].push_back({object.get(), object->getWorldMatrix()});
+    }
+
+    renderShadow(scene, instances);
+    processPointLights(scene.getLightManager().getPointLights());
+
+    bool complete = true;
+    glBindFramebuffer(GL_FRAMEBUFFER, captureFramebuffer);
+    glViewport(0, 0, size, size);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
+    for (unsigned int face = 0; face < 6; ++face) {
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, captureCubeMap, 0);
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+            complete = false;
+            break;
+        }
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        ProbeCaptureCamera camera(probe.position, directions[face], up[face]);
+        renderSkybox(scene.getCubeMap(), camera, 1.0f, true);
+        renderObjects(scene, instances, camera, 1.0f, false, false, true);
+    }
+
+    glDeleteRenderbuffers(1, &captureDepth);
+    glDeleteFramebuffers(1, &captureFramebuffer);
+    if (!complete) {
+        glDeleteTextures(1, &captureCubeMap);
+        restoreGLState();
+        return false;
+    }
+
+    const unsigned int irradiance = bakeCubemapToIrradianceMap(captureCubeMap, 32);
+    const unsigned int prefilter = bakeCubemapToPrefilterMap(captureCubeMap, size);
+    if (irradiance == 0 || prefilter == 0) {
+        glDeleteTextures(1, &captureCubeMap);
+        if (irradiance != 0)
+            glDeleteTextures(1, &irradiance);
+        if (prefilter != 0)
+            glDeleteTextures(1, &prefilter);
+        restoreGLState();
+        return false;
+    }
+
+    scene.releaseReflectionProbeMaps();
+    probe.cubeMap = captureCubeMap;
+    probe.irradianceMap = irradiance;
+    probe.prefilterMap = prefilter;
+    if (oldProbeCubeMap != 0 && restoreCubeMapBinding == oldProbeCubeMap)
+        restoreCubeMapBinding = probe.cubeMap;
+    else if (oldProbeIrradianceMap != 0 && restoreCubeMapBinding == oldProbeIrradianceMap)
+        restoreCubeMapBinding = probe.irradianceMap;
+    else if (oldProbePrefilterMap != 0 && restoreCubeMapBinding == oldProbePrefilterMap)
+        restoreCubeMapBinding = probe.prefilterMap;
+    restoreGLState();
     return true;
 }
 
