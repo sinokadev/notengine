@@ -10,8 +10,8 @@ struct EngineSettings {
     bool shadow = true;
     /** @brief Enables screen-space ambient occlusion. */
     bool ssao = true;
-    /** @brief Enables local reflection-probe contributions to image-based lighting. */
-    bool reflection_probe = true;
+    /** @brief Enables local reflection-probe contributions to image-based lighting. (Experimental features) */
+    bool reflection_probe = false;
 
     /** @brief Ambient light strength. */
     float ambient = 1.0f;
