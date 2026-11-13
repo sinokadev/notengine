@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := all
-.PHONY: all docs format cloc
+.PHONY: all docs format cloc setting
 
 docs:
 	cd docs && doxygen Doxyfile
@@ -9,6 +9,9 @@ format:
 
 all:
 	cmake --build --preset ninja-release-all
+
+setting:
+	cmake --preset ninja-release
 
 cloc:
 	cloc --include-ext=cpp,h,frag,vert --force-lang="C++",frag --force-lang="C++",vert ./src ./include/knot ./shaders
