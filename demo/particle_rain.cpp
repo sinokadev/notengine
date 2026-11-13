@@ -59,6 +59,8 @@ struct Options {
     float speed = 1.0f;
     float stretch = 2.0f;
     bool orbit = false;
+    float pitch = -6.0f;
+    float yaw = 0.0f;
 };
 
 void printUsage(const char* exe) {
@@ -74,6 +76,8 @@ void printUsage(const char* exe) {
               << "  --density F       emission rate and pool size multiplier (default 1.0)\n"
               << "  --speed F         fall speed multiplier (default 1.0)\n"
               << "  --stretch F       velocity-to-streak-length factor (default 2.0)\n"
+              << "  --pitch DEG       camera pitch in degrees, positive looks up (default -6)\n"
+              << "  --yaw DEG         camera yaw in degrees (default 0)\n"
               << "  --orbit           move the camera in a slow circle to show the rain follows it\n"
               << "  --width N         window width (default 1280)\n"
               << "  --height N        window height (default 720)\n"
@@ -158,6 +162,18 @@ int parseArgs(int argc, char** argv, Options& opt) {
         } else if (arg == "--stretch" && hasValue) {
             if (!parseFloat(argv[++i], opt.stretch) || opt.stretch < 0.0f) {
                 std::cerr << "[Error] --stretch needs a non-negative number\n";
+                return 1;
+            }
+        } else if (arg == "--pitch" && hasValue) {
+            if (!parseFloat(argv[++i], opt.pitch)) {
+                std::cerr << "[Error] --pitch needs a number of degrees\n";
+                return 1;
+            }
+
+            opt.pitch = glm::clamp(opt.pitch, -89.0f, 89.0f);
+        } else if (arg == "--yaw" && hasValue) {
+            if (!parseFloat(argv[++i], opt.yaw)) {
+                std::cerr << "[Error] --yaw needs a number of degrees\n";
                 return 1;
             }
         } else if (arg == "--orbit") {
@@ -290,11 +306,11 @@ int main(int argc, char** argv) {
 
     auto camera = std::make_shared<knot::MovingCamera>(glm::vec3(0.0f, 2.0f, 10.0f));
 
-    // Look slightly down so the floor is in frame and the streaks read against it.
-    // MovingCamera exposes pitch only through rotate(), which scales by sensitivity.
-    constexpr float kPitchDownDegrees = 6.0f;
-
-    camera->rotate(0.0f, -kPitchDownDegrees / camera->sensitivity);
+    // The default pitch looks slightly down so the floor is in frame and the
+    // streaks read against it; --pitch/--yaw override it, which is how a capture
+    // can look straight up or down. MovingCamera exposes pitch only through
+    // rotate(), and rotate() scales its arguments by sensitivity.
+    camera->rotate(opt.yaw / camera->sensitivity, opt.pitch / camera->sensitivity);
 
     scene.setCamera(camera);
 
