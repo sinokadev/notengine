@@ -172,8 +172,12 @@ bool Renderer::init(GLADloadfunc loadProc) {
     ssgiShader = ShaderManager::get().createInternalShader(ssgiSource, "internal.ssgi");
     auto ssgiBlurSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/ssao.vert", getAssetRoot() + "shaders/ssgi_blur.frag");
     ssgiBlurShader = ShaderManager::get().createInternalShader(ssgiBlurSource, "internal.ssgiBlur");
+    auto postProcessPassthroughSource =
+        std::make_shared<ShaderSource>(getAssetRoot() + "shaders/postprocess.vert", getAssetRoot() + "shaders/postprocess_passthrough.frag");
+    postProcessPassthroughShader = ShaderManager::get().createInternalShader(postProcessPassthroughSource, "internal.postProcessPassthrough");
 
-    if (!dirShadowShader || !pointShadowShader || !prePassShader || !ssaoShader || !ssaoBlurShader || !ssgiShader || !ssgiBlurShader) {
+    if (!dirShadowShader || !pointShadowShader || !prePassShader || !ssaoShader || !ssaoBlurShader || !ssgiShader || !ssgiBlurShader ||
+        !postProcessPassthroughShader) {
         shutdown();
         return false;
     }
@@ -290,6 +294,38 @@ bool Renderer::init(GLADloadfunc loadProc) {
         std::cerr << "[Error] SSGI blur framebuffer is not complete!\n";
     }
 
+    glGenFramebuffers(1, &sceneColorFBO);
+    glGenTextures(1, &sceneColorTexture);
+    glGenTextures(1, &sceneDepthTexture);
+    glBindFramebuffer(GL_FRAMEBUFFER, sceneColorFBO);
+    glBindTexture(GL_TEXTURE_2D, sceneColorTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 1, 1, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sceneColorTexture, 0);
+    glBindTexture(GL_TEXTURE_2D, sceneDepthTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, 1, 1, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, sceneDepthTexture, 0);
+
+    glGenFramebuffers(static_cast<GLsizei>(postProcessFBOs.size()), postProcessFBOs.data());
+    glGenTextures(static_cast<GLsizei>(postProcessTextures.size()), postProcessTextures.data());
+    for (std::size_t i = 0; i < postProcessFBOs.size(); ++i) {
+        glBindFramebuffer(GL_FRAMEBUFFER, postProcessFBOs[i]);
+        glBindTexture(GL_TEXTURE_2D, postProcessTextures[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 1, 1, 0, GL_RGBA, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, postProcessTextures[i], 0);
+    }
+
     // Build a deterministic hemisphere kernel and 4x4 rotation-noise tile.
     std::mt19937 randomGenerator(0x5A17u);
     std::uniform_real_distribution<float> randomUnit(0.0f, 1.0f);
@@ -321,6 +357,10 @@ bool Renderer::init(GLADloadfunc loadProc) {
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     resizeSSAOTargets(framebufferWidth, framebufferHeight);
+    if (!resizePostProcessTargets(framebufferWidth, framebufferHeight)) {
+        shutdown();
+        return false;
+    }
 
     // Set texture units and upload the kernel once during initialization.
     ssaoShader->use();
@@ -334,6 +374,9 @@ bool Renderer::init(GLADloadfunc loadProc) {
     ssaoBlurShader->use();
     ssaoBlurShader->set("ssaoInput", 0);
     ssaoBlurShader->set("gNormalDepth", 1);
+
+    postProcessPassthroughShader->use();
+    postProcessPassthroughShader->set("u_InputTex", kPostProcessInputTextureUnit);
 
     glGenFramebuffers(1, &pointDepthFBO);
     glGenTextures(1, &pointDepthMap);
@@ -376,6 +419,8 @@ void Renderer::shutdown() {
         glDeleteFramebuffers(1, &ssgiRadianceFBO);
         glDeleteFramebuffers(1, &ssgiFBO);
         glDeleteFramebuffers(1, &ssgiBlurFBO);
+        glDeleteFramebuffers(1, &sceneColorFBO);
+        glDeleteFramebuffers(static_cast<GLsizei>(postProcessFBOs.size()), postProcessFBOs.data());
         glDeleteTextures(1, &prePassTexture);
         glDeleteTextures(1, &prePassDepth);
         glDeleteTextures(1, &ssaoTexture);
@@ -384,11 +429,19 @@ void Renderer::shutdown() {
         glDeleteTextures(1, &ssgiRadianceTexture);
         glDeleteTextures(1, &ssgiTexture);
         glDeleteTextures(1, &ssgiBlurTexture);
+        glDeleteTextures(1, &sceneColorTexture);
+        glDeleteTextures(1, &sceneDepthTexture);
+        glDeleteTextures(static_cast<GLsizei>(postProcessTextures.size()), postProcessTextures.data());
     }
     prePassFBO = prePassTexture = prePassDepth = ssaoFBO = ssaoTexture = ssaoBlurFBO = ssaoBlurTexture = ssaoNoiseTexture = 0;
     ssgiRadianceFBO = ssgiRadianceTexture = ssgiFBO = ssgiTexture = ssgiBlurFBO = ssgiBlurTexture = 0;
+    sceneColorFBO = sceneColorTexture = sceneDepthTexture = 0;
+    postProcessFBOs.fill(0);
+    postProcessTextures.fill(0);
     ssaoWidth = ssaoHeight = 0;
     ssgiWidth = ssgiHeight = 0;
+    postProcessWidth = postProcessHeight = 0;
+    postProcessTargetsReady = false;
 
     if (quadVAO != 0) {
         if (hasContext) {
@@ -420,6 +473,8 @@ void Renderer::shutdown() {
     ssaoBlurShader.reset();
     ssgiShader.reset();
     ssgiBlurShader.reset();
+    postProcessPassthroughShader.reset();
+    postProcessPasses.clear();
 
     skyboxMesh.reset();
     skyboxShader.reset();
@@ -658,10 +713,13 @@ bool Renderer::saveScreenshot(const std::string& path, int width, int height) {
             framebufferWidth = width;
             framebufferHeight = height;
             resizeSSAOTargets(width, height);
+            captureSucceeded = resizePostProcessTargets(width, height);
             glViewport(0, 0, width, height);
             glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            captureSucceeded = renderScene(*activeScene, static_cast<float>(width) / static_cast<float>(height));
+            if (captureSucceeded) {
+                captureSucceeded = renderScene(*activeScene, static_cast<float>(width) / static_cast<float>(height));
+            }
         }
 
         if (captureSucceeded) {
@@ -690,6 +748,7 @@ bool Renderer::saveScreenshot(const std::string& path, int width, int height) {
         framebufferWidth = oldFramebufferWidth;
         framebufferHeight = oldFramebufferHeight;
         resizeSSAOTargets(oldFramebufferWidth, oldFramebufferHeight);
+        resizePostProcessTargets(oldFramebufferWidth, oldFramebufferHeight);
     }
 
     glActiveTexture(previousActiveTexture);
@@ -760,6 +819,51 @@ void Renderer::resizeSSAOTargets(int width, int height) {
     if (!ssgiTargetsReady) {
         std::cerr << "[Error] SSGI framebuffer targets are incomplete at " << width << "x" << height << ".\n";
     }
+}
+
+bool Renderer::resizePostProcessTargets(int width, int height) {
+    if (width <= 0 || height <= 0) {
+        return false;
+    }
+    if (width == postProcessWidth && height == postProcessHeight && postProcessTargetsReady) {
+        return true;
+    }
+
+    GLint previousDrawFramebuffer = 0;
+    GLint previousReadFramebuffer = 0;
+    GLint previousTexture = 0;
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &previousDrawFramebuffer);
+    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &previousReadFramebuffer);
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &previousTexture);
+
+    glBindTexture(GL_TEXTURE_2D, sceneColorTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glBindTexture(GL_TEXTURE_2D, sceneDepthTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nullptr);
+
+    for (GLuint texture : postProcessTextures) {
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+    }
+
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, sceneColorFBO);
+    bool complete = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+    for (GLuint framebuffer : postProcessFBOs) {
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
+        complete = (glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE) && complete;
+    }
+
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(previousDrawFramebuffer));
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, static_cast<GLuint>(previousReadFramebuffer));
+    glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(previousTexture));
+
+    postProcessWidth = width;
+    postProcessHeight = height;
+    postProcessTargetsReady = complete;
+    if (!complete) {
+        std::cerr << "[Error] Post-processing framebuffer targets are incomplete at " << width << "x" << height << ".\n";
+    }
+    return complete;
 }
 
 void Renderer::processDirLights(const std::shared_ptr<Shader>& shader, const std::vector<const DirLight*>& dirLights) {
@@ -1384,6 +1488,7 @@ void Renderer::renderSSGI(Scene& scene, const std::unordered_map<const Model*, s
     ssgiBlurShader->use();
     ssgiBlurShader->set("ssgiInput", 0);
     ssgiBlurShader->set("gNormalDepth", 1);
+
     ssgiBlurShader->set("screenSize", glm::vec2(static_cast<float>(ssgiWidth), static_cast<float>(ssgiHeight)));
     renderQuad();
 
@@ -1448,6 +1553,14 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(outputFramebuffer));
     glViewport(0, 0, framebufferWidth, framebufferHeight);
 
+    if (!resizePostProcessTargets(framebufferWidth, framebufferHeight)) {
+        return false;
+    }
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, sceneColorFBO);
+    glViewport(0, 0, framebufferWidth, framebufferHeight);
+    glDepthMask(GL_TRUE);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     // Draw the sky and forward-lit geometry.
     renderSkybox(scene.getCubeMap(), camera, aspectRatio);
 
@@ -1457,6 +1570,113 @@ bool Renderer::renderScene(Scene& scene, float aspectRatio) {
     // blend over both the skybox and the geometry without writing depth.
     renderParticles(scene.getParticleSystems(), camera, aspectRatio);
 
+    if (!renderPostProcessing(static_cast<GLuint>(outputFramebuffer))) {
+        return false;
+    }
+
+    return true;
+}
+
+bool Renderer::addPostProcessShader(std::shared_ptr<Shader> shader, PostProcessSetup setup) {
+    if (!shader || !shader->isValid()) {
+        return false;
+    }
+    postProcessPasses.push_back(PostProcessPass{std::move(shader), std::move(setup)});
+    return true;
+}
+
+bool Renderer::removePostProcessShader(const std::shared_ptr<Shader>& shader) {
+    const auto pass = std::find_if(postProcessPasses.begin(), postProcessPasses.end(),
+                                   [&shader](const PostProcessPass& registered) { return registered.shader == shader; });
+    if (pass == postProcessPasses.end()) {
+        return false;
+    }
+    postProcessPasses.erase(pass);
+    return true;
+}
+
+void Renderer::clearPostProcessShaders() {
+    postProcessPasses.clear();
+}
+
+bool Renderer::renderPostProcessing(GLuint outputFramebuffer) {
+    if (!postProcessTargetsReady || !sceneColorTexture || !sceneDepthTexture) {
+        std::cerr << "[Error] Post-processing targets are unavailable.\n";
+        return false;
+    }
+
+    const GLboolean depthTestEnabled = glIsEnabled(GL_DEPTH_TEST);
+    const GLboolean blendEnabled = glIsEnabled(GL_BLEND);
+    const GLboolean cullFaceEnabled = glIsEnabled(GL_CULL_FACE);
+    GLboolean depthMask = GL_TRUE;
+    GLint previousActiveTexture = GL_TEXTURE0;
+    std::array<GLint, 3> previousTextureBindings{};
+    glGetBooleanv(GL_DEPTH_WRITEMASK, &depthMask);
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &previousActiveTexture);
+    for (std::size_t i = 0; i < previousTextureBindings.size(); ++i) {
+        glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(i));
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &previousTextureBindings[i]);
+    }
+
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glDisable(GL_BLEND);
+    glDisable(GL_CULL_FACE);
+
+    GLuint inputTexture = sceneColorTexture;
+    std::size_t nextTarget = 0;
+    const glm::ivec2 resolution(framebufferWidth, framebufferHeight);
+    const std::size_t passCount = std::max<std::size_t>(1, postProcessPasses.size());
+    for (std::size_t i = 0; i < passCount; ++i) {
+        const bool isFinalPass = i + 1 == passCount;
+        const GLuint targetFramebuffer = isFinalPass ? outputFramebuffer : postProcessFBOs[nextTarget];
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, targetFramebuffer);
+        glViewport(0, 0, framebufferWidth, framebufferHeight);
+
+        const PostProcessPass* pass = postProcessPasses.empty() ? nullptr : &postProcessPasses[i];
+        const std::shared_ptr<Shader>& shader = pass ? pass->shader : postProcessPassthroughShader;
+        shader->use();
+        if (pass && pass->setup) {
+            pass->setup(*shader, sceneColorTexture, sceneDepthTexture, resolution);
+        }
+        shader->set("u_InputTex", kPostProcessInputTextureUnit);
+        shader->set("u_SceneColorTex", kPostProcessSceneColorTextureUnit);
+        shader->set("u_SceneDepthTex", kPostProcessSceneDepthTextureUnit);
+        shader->set("u_Resolution", glm::vec2(static_cast<float>(framebufferWidth), static_cast<float>(framebufferHeight)));
+        shader->set("u_TexelSize", glm::vec2(1.0f / static_cast<float>(framebufferWidth), 1.0f / static_cast<float>(framebufferHeight)));
+
+        glActiveTexture(GL_TEXTURE0 + kPostProcessInputTextureUnit);
+        glBindTexture(GL_TEXTURE_2D, inputTexture);
+        glActiveTexture(GL_TEXTURE0 + kPostProcessSceneColorTextureUnit);
+        glBindTexture(GL_TEXTURE_2D, sceneColorTexture);
+        glActiveTexture(GL_TEXTURE0 + kPostProcessSceneDepthTextureUnit);
+        glBindTexture(GL_TEXTURE_2D, sceneDepthTexture);
+        glActiveTexture(GL_TEXTURE0);
+        renderQuad();
+
+        if (!isFinalPass) {
+            inputTexture = postProcessTextures[nextTarget];
+            nextTarget = 1 - nextTarget;
+        }
+    }
+
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, outputFramebuffer);
+    glViewport(0, 0, framebufferWidth, framebufferHeight);
+    glDepthMask(depthMask);
+    if (depthTestEnabled) {
+        glEnable(GL_DEPTH_TEST);
+    }
+    if (blendEnabled) {
+        glEnable(GL_BLEND);
+    }
+    if (cullFaceEnabled) {
+        glEnable(GL_CULL_FACE);
+    }
+    for (std::size_t i = 0; i < previousTextureBindings.size(); ++i) {
+        glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(i));
+        glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(previousTextureBindings[i]));
+    }
+    glActiveTexture(static_cast<GLenum>(previousActiveTexture));
     return true;
 }
 

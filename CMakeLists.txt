@@ -158,6 +158,10 @@ add_executable(ssgi_demo EXCLUDE_FROM_ALL demo/ssgi_demo.cpp)
 target_link_libraries(ssgi_demo PRIVATE notengine)
 set_target_properties(ssgi_demo PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
+add_executable(bloom_demo EXCLUDE_FROM_ALL demo/bloom_demo.cpp)
+target_link_libraries(bloom_demo PRIVATE notengine)
+set_target_properties(bloom_demo PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+
 add_executable(benchmark EXCLUDE_FROM_ALL demo/benchmark.cpp)
 target_link_libraries(benchmark PRIVATE notengine)
 set_target_properties(benchmark PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")

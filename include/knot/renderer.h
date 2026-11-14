@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <array>
+#include <functional>
 #include <string>
 #include <knot/camera.h>
 #include <knot/resources.h>
@@ -56,6 +57,18 @@ struct GPUMovingPointLight {
 /** @brief OpenGL renderer for scenes, meshes, lights, and skyboxes. */
 class Renderer {
 public:
+    static constexpr int kPostProcessInputTextureUnit = 0;
+    static constexpr int kPostProcessSceneColorTextureUnit = 1;
+    static constexpr int kPostProcessSceneDepthTextureUnit = 2;
+
+    /** @brief Configures additional uniforms and textures for a post-processing shader.
+     *  @param shader Shader bound for the pass.
+     *  @param sceneColorTexture Original scene color texture before post-processing.
+     *  @param sceneDepthTexture Original scene depth texture before post-processing.
+     *  @param resolution Active framebuffer dimensions. */
+    using PostProcessSetup =
+        std::function<void(const Shader&, GLuint sceneColorTexture, GLuint sceneDepthTexture, const glm::ivec2& resolution)>;
+
     /** @brief Get the singleton instance of the Renderer.
      * @return Reference to the single Renderer instance. */
     static Renderer& get();
@@ -110,6 +123,17 @@ public:
      *  implementing alphaPass (0 = all, 1 = opaque, 2 = translucent).
      *  @return false when the renderer has not been initialized. */
     bool renderScene(Scene& scene, float aspectRatio);
+    /** @brief Adds a full-screen post-processing shader to the ordered render chain.
+     *
+     * Every shader receives u_InputTex, u_SceneColorTex, u_SceneDepthTex, u_Resolution,
+     * and u_TexelSize uniforms. The input textures are bound to texture units 0, 1, and 2.
+     * The optional setup callback can set custom uniforms and bind extra textures on units 3+.
+     * @return false when the shader is null or invalid. */
+    bool addPostProcessShader(std::shared_ptr<Shader> shader, PostProcessSetup setup = {});
+    /** @brief Removes the first matching registered post-processing shader. */
+    bool removePostProcessShader(const std::shared_ptr<Shader>& shader);
+    /** @brief Removes all registered post-processing shaders. */
+    void clearPostProcessShaders();
     /** @brief Captures and bakes the scene's configured local reflection probe.
      *  @return false if the renderer is not initialized, no probe is configured,
      *  or the cubemap capture framebuffer is incomplete. */
@@ -156,6 +180,11 @@ public:
 private:
     Renderer() = default;
 
+    struct PostProcessPass {
+        std::shared_ptr<Shader> shader;
+        PostProcessSetup setup;
+    };
+
     void renderObjects(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, const Camera& camera,
                        float aspectRatio, bool useReflectionProbe, bool useSSAO, bool captureRadiance, bool ssgiRadiancePass = false);
     void renderShadowObjects(const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups,
@@ -165,6 +194,8 @@ private:
     void renderSSAO(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, float aspectRatio);
     void renderSSGI(Scene& scene, const std::unordered_map<const Model*, std::vector<VisibleInstance>>& instanceGroups, float aspectRatio);
     void resizeSSAOTargets(int width, int height);
+    bool resizePostProcessTargets(int width, int height);
+    bool renderPostProcessing(GLuint outputFramebuffer);
 
     bool initialized = false;
 
@@ -194,16 +225,26 @@ private:
     GLuint ssgiTexture = 0;
     GLuint ssgiBlurFBO = 0;
     GLuint ssgiBlurTexture = 0;
+    GLuint sceneColorFBO = 0;
+    GLuint sceneColorTexture = 0;
+    GLuint sceneDepthTexture = 0;
+    std::array<GLuint, 2> postProcessFBOs{};
+    std::array<GLuint, 2> postProcessTextures{};
     int ssaoWidth = 0;
     int ssaoHeight = 0;
     int ssgiWidth = 0;
     int ssgiHeight = 0;
+    int postProcessWidth = 0;
+    int postProcessHeight = 0;
+    bool postProcessTargetsReady = false;
     std::array<glm::vec3, 32> ssaoKernel{};
     std::shared_ptr<Shader> prePassShader;
     std::shared_ptr<Shader> ssaoShader;
     std::shared_ptr<Shader> ssaoBlurShader;
     std::shared_ptr<Shader> ssgiShader;
     std::shared_ptr<Shader> ssgiBlurShader;
+    std::shared_ptr<Shader> postProcessPassthroughShader;
+    std::vector<PostProcessPass> postProcessPasses;
     bool ssgiTargetsReady = false;
 
     bool generateBRDFLUT();
