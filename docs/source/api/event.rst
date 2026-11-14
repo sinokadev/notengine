@@ -6,7 +6,9 @@ Events and input API
 
 .. doxygenenum:: knot::EventType
 
-``Event`` values are emitted through ``Engine::setEventCallback``. Keyboard
-and mouse values use ``ScanCode``, ``KeyState``, and ``MouseKey`` from
+:cpp:class:`knot::Event` values are emitted through
+:cpp:func:`knot::Engine::setEventCallback`. Keyboard and mouse values use
+:cpp:class:`knot::ScanCode`, :cpp:class:`knot::KeyState`, and
+:cpp:class:`knot::MouseKey` from
 ``knot/key.h``.
 

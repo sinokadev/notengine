@@ -15,5 +15,4 @@ headers and are listed here as well.
    tween
    loading-splash
    unifont
-   state
 

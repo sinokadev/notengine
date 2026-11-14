@@ -1,8 +1,8 @@
 Unifont text rendering
 ======================
 
-The header-only ``knot::utility::drawText`` helper draws the bundled 8x16
-Unifont bitmap as pixel-aligned text. Include
+:cpp:func:`knot::utility::drawText` helper draws the bundled 8x16 Unifont
+bitmap as pixel-aligned text. Include
 ``<knot/utility/unifont.h>`` and call it after setting the OpenGL viewport,
 typically near the end of a frame callback.
 

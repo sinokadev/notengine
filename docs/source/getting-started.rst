@@ -5,6 +5,8 @@ Getting Started
 This document provides instructions for building Not Engine, running the demos,
 and an overview of its basic features for users who are new to Not Engine.
 
+.. include:: _includes/wip-warning.inc
+
 --------------------------------
 Installation
 --------------------------------
@@ -88,6 +90,9 @@ To build and run the demos, run the following commands.
    # SSGI color-bleeding comparison demo
    ./build/ninja-release/ssgi_demo
 
+   # Bloom post-processing demo
+   ./build/ninja-release/bloom_demo
+
    # Benchmark
    ./build/ninja-release/benchmark
 
@@ -153,6 +158,9 @@ To build and run the demos, run the following commands.
    # SSGI color-bleeding comparison demo
    .\build\vs2022\Release\ssgi_demo.exe
 
+   # Bloom post-processing demo
+   .\build\vs2022\Release\bloom_demo.exe
+
    # Benchmark
    .\build\vs2022\Release\benchmark.exe
 
@@ -204,7 +212,7 @@ Build Presets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - ``<preset>-notengine``: Builds only the ``notengine`` core static library (e.g., ``ninja-release-notengine``, ``vs2022-release-notengine``)
-- ``<preset>-all``: Builds all demo executables, including ``ssgi_demo``, and the engine library (e.g., ``ninja-release-all``, ``vs2022-release-all``)
+- ``<preset>-all``: Builds the selected demos (including ``ssgi_demo`` and ``bloom_demo``) and the engine library (e.g., ``ninja-release-all``, ``vs2022-release-all``)
 
 macOS
 --------------------------------
@@ -235,14 +243,43 @@ If you have built and linked the Not Engine yourself, this code will work withou
 Source and engine roots
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The game source root is the base directory for game-owned files such as models, HDR images, and audio. It defaults to the process working directory and can be changed at runtime:
+The game source root can be set as a CMake default with
+``NOTENGINE_SOURCE_ROOT``. When it is not set, it defaults to the process
+working directory. Configure it with:
+
+.. code-block:: bash
+
+   cmake -S . -B build -DNOTENGINE_SOURCE_ROOT="/path/to/game"
+
+You can set both roots from a parent project's ``CMakeLists.txt`` before
+including Not Engine with ``add_subdirectory``:
+
+.. code-block:: cmake
+
+   set(NOTENGINE_SOURCE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}" CACHE PATH "Game source root")
+   set(NOTENGINE_ENGINE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/external/notengine" CACHE PATH "Not Engine source root")
+   add_subdirectory(external/notengine)
+
+The application can override that default at runtime. Use the root when
+constructing paths to game-owned files:
 
 .. code-block:: cpp
 
    std::string imagePath = knot::getSourceRoot() + "assets/image.png";
    knot::setSourceRoot("/path/to/game/");
 
-The Not Engine source root is separate. Built-in engine resources are resolved from this root, which CMake defaults to the Not Engine source directory. It can be overridden at configure time:
+Calling :cpp:func:`knot::setSourceRoot` with an empty path resets to the
+CMake-configured root, or to the process working directory if CMake did not
+configure one.
+
+It is not automatically prepended by every resource-loading function. Scene
+files can refer to it explicitly with the ``{sourceRoot}`` path token; see
+:doc:`api/scene-asset-path`. The runtime shader registry also uses
+SourceRoot-relative keys.
+
+The Not Engine source root is separate. Built-in engine resources are resolved
+from this root, which CMake defaults to the Not Engine source directory. It can
+also be configured from the command line:
 
 .. code-block:: bash
 
@@ -256,11 +293,8 @@ or at runtime:
 
 .. note::
 
-   :cpp:func:`knot::getSourceRoot` and :cpp:func:`knot::getEngineRoot` return paths with a trailing separator.
-
-.. warning::
-
-   This document is currently under development. Some content may be incomplete, outdated, or subject to change.
+   :cpp:func:`knot::getSourceRoot` and :cpp:func:`knot::getEngineRoot` return
+   paths with a trailing path separator (usually ``/`` on Linux).
 
 .. toctree::
    :maxdepth: 2

@@ -7,7 +7,7 @@
 Not Engine documentation
 ========================
 
-Welcome to the Not Engine documentation. Although this documentation is a work in progress, the API specifications are ready. For practical usage examples, please refer to `our demo code <https://github.com/sinokadev/notengine/tree/main/demo>`_. If you find any errors, please report them via `GitHub Issues <https://github.com/sinokadev/notengine>`_.
+Welcome to the Not Engine documentation. For practical usage examples, see the `demo code <https://github.com/sinokadev/notengine/tree/main/demo>`_. If you find an error, report it through `GitHub Issues <https://github.com/sinokadev/notengine/issues>`_.
 
 .. warning::
 
@@ -19,5 +19,6 @@ Welcome to the Not Engine documentation. Although this documentation is a work i
    :maxdepth: 2
 
    getting-started
+   engine/index
    glossary
    api/index
