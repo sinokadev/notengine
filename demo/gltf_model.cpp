@@ -29,7 +29,7 @@ int main() {
 
     scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
-    auto pbrShader = scene.getShaderManager().getShader("pbrShader");
+    auto pbrShader = knot::ShaderManager::get().getShader("pbrShader");
 
     auto cubeModel = knot::loadModelGLTF(knot::getAssetRoot() + "assets/Cube/glTF/Cube.gltf", pbrShader);
 

@@ -1,12 +1,16 @@
 #include <knot/utility/cubemap_baker.h>
 
 #include <glad/gl.h>
+#include <knot/manager.h>
 #include <knot/renderer.h>
 
 namespace knot {
 unsigned int bakeHDRMapToCubemap(unsigned int hdrTexture2D, int size) {
     auto bakeSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/cubemap_bake.vert", getAssetRoot() + "shaders/cubemap_bake.frag");
-    std::shared_ptr<Shader> bakeShader = std::make_shared<Shader>(bakeSource, 1999999);
+    std::shared_ptr<Shader> bakeShader = ShaderManager::get().createInternalShader(bakeSource, "internal.cubemapBake");
+    if (!bakeShader) {
+        return 0;
+    }
 
     std::shared_ptr<Mesh> boxMesh = createCube();
 
@@ -83,7 +87,10 @@ unsigned int bakeCubemapToIrradianceMap(unsigned int envCubemapID, int size = 32
     // 1. 컨벌루션 쉐이더 및 큐브 메쉬 로드
     auto irradSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/irradiance_convolution.vert",
                                                       getAssetRoot() + "shaders/irradiance_convolution.frag");
-    std::shared_ptr<Shader> irradShader = std::make_shared<Shader>(irradSource, 2000000); // 셰이더 ID 겹치지 않게 예시 설정
+    std::shared_ptr<Shader> irradShader = ShaderManager::get().createInternalShader(irradSource, "internal.irradiance");
+    if (!irradShader) {
+        return 0;
+    }
 
     std::shared_ptr<Mesh> boxMesh = createCube();
 
@@ -160,7 +167,10 @@ unsigned int bakeCubemapToIrradianceMap(unsigned int envCubemapID, int size = 32
 unsigned int bakeCubemapToPrefilterMap(unsigned int envCubemapID, int size) {
     // 1. Prefilter 셰이더 및 큐브 메쉬 로드
     auto prefilterSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/prefilter.vert", getAssetRoot() + "shaders/prefilter.frag");
-    std::shared_ptr<Shader> prefilterShader = std::make_shared<Shader>(prefilterSource, 2000001);
+    std::shared_ptr<Shader> prefilterShader = ShaderManager::get().createInternalShader(prefilterSource, "internal.prefilter");
+    if (!prefilterShader) {
+        return 0;
+    }
 
     std::shared_ptr<Mesh> boxMesh = createCube();
 

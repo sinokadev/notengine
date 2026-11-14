@@ -3,6 +3,7 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <knot/resources.h>
+#include <knot/manager.h>
 #include <knot/utility/mesh_helper.h>
 
 int main() {
@@ -33,7 +34,7 @@ int main() {
     }
 
     auto shaderSource = std::make_shared<knot::ShaderSource>(knot::AlphaShader::GetSource());
-    auto shader = std::make_shared<knot::Shader>(shaderSource, 1);
+    auto shader = knot::ShaderManager::get().createShader(shaderSource, "demo.test_submesh");
 
     // 1. multi-submesh test
     std::string objPath = knot::getAssetRoot() + "assets/test_submesh.obj";

@@ -44,7 +44,7 @@ int main() {
     knot::Scene scene;
     scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
-    auto shader = scene.getShaderManager().getShader("pbrShader");
+    auto shader = knot::ShaderManager::get().getShader("pbrShader");
     if (!shader) {
         std::cerr << "[Error] Failed to create the PBR shader\n";
         return 1;

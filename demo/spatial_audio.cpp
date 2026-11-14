@@ -64,7 +64,7 @@ int main() {
     }
 
     knot::Scene scene;
-    auto alphaShader = scene.getShaderManager().getShader("alphaShader");
+    auto alphaShader = knot::ShaderManager::get().getShader("alphaShader");
     if (!alphaShader) {
         std::cerr << "[Error] Failed to create the alpha shader" << std::endl;
         audio.shutdown();

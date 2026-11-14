@@ -57,11 +57,7 @@ glm::quat readQuat(const nlohmann::json& parent, const char* key) {
 }
 } // namespace
 
-Scene::Scene() {
-    if (glad_glCreateShader != nullptr) {
-        resourceManager.init();
-    }
-}
+Scene::Scene() = default;
 
 Scene::~Scene() {
     shutdown();
@@ -130,7 +126,6 @@ bool Scene::setReflectionProbe(const glm::vec3& position, const glm::vec3& bound
 
 void Scene::shutdown() {
     clear();
-    resourceManager.shutdown();
 }
 
 void Scene::loadHDRMap(const std::string& path) {
@@ -162,10 +157,6 @@ ObjectManager& Scene::getObjectManager() {
 
 LightManager& Scene::getLightManager() {
     return lightManager;
-}
-
-ShaderManager& Scene::getShaderManager() {
-    return resourceManager;
 }
 
 Camera& Scene::getCamera() {
@@ -417,7 +408,7 @@ bool Scene::loadSeno(const std::string& path) {
                 const std::string shaderName = materialData.value("shader", "");
 
                 if (shaderName == "pbrShader") {
-                    auto shader = resourceManager.getShader("pbrShader");
+                    auto shader = ShaderManager::get().getShader("pbrShader");
 
                     if (!shader) {
                         std::cerr << "[Error] Failed to find shader: " << shaderName << std::endl;
@@ -480,7 +471,7 @@ bool Scene::loadSeno(const std::string& path) {
                         return false;
                     }
 
-                    auto shader = resourceManager.getShader("pbrShader");
+                    auto shader = ShaderManager::get().getShader("pbrShader");
 
                     if (!shader) {
                         std::cerr << "[Error] Failed to find shader: "
@@ -763,7 +754,7 @@ bool Scene::loadSeno(const std::string& path) {
 }
 
 bool Scene::loadGLTF(const std::string& path) {
-    auto shader = resourceManager.getShader("pbrShader");
+    auto shader = ShaderManager::get().getShader("pbrShader");
     if (!shader) {
         std::cerr << "[Error] GLTF: pbrShader not found in ShaderManager\n";
         return false;

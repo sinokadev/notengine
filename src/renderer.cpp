@@ -11,6 +11,7 @@
 #include <random>
 #include <limits>
 #include <knot/mesh.h>
+#include <knot/manager.h>
 #include <knot/state.h>
 #include <knot/utility/cubemap_baker.h>
 
@@ -62,6 +63,7 @@ bool writePng(const std::string& path, int width, int height, std::vector<unsign
 } // namespace
 
 Renderer& Renderer::get() {
+    ShaderManager::get();
     static Renderer instance;
     return instance;
 }
@@ -71,6 +73,10 @@ Renderer::~Renderer() {
 }
 
 bool Renderer::init(GLADloadfunc loadProc) {
+    if (initialized) {
+        return true;
+    }
+
     std::cout << "[Info] Not Engine Renderer Init" << std::endl;
 
     // Load GL
@@ -78,6 +84,12 @@ bool Renderer::init(GLADloadfunc loadProc) {
         std::cerr << "[Error] Failed to load OpenGL functions" << std::endl;
         return false;
     }
+
+    if (!ShaderManager::get().init()) {
+        ShaderManager::get().shutdown();
+        return false;
+    }
+    initialized = true;
 
     // GL Config
     glEnable(GL_DEPTH_TEST);
@@ -93,9 +105,16 @@ bool Renderer::init(GLADloadfunc loadProc) {
     // Sky Map and IBL
     skyboxMesh = createCube();
     auto skyboxSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/skybox.vert", getAssetRoot() + "shaders/skybox.frag");
-    skyboxShader = std::make_shared<Shader>(skyboxSource, SKYBOX_SHADER_ID);
+    skyboxShader = ShaderManager::get().createInternalShader(skyboxSource, "internal.skybox");
+    if (!skyboxShader) {
+        shutdown();
+        return false;
+    }
 
-    generateBRDFLUT();
+    if (!generateBRDFLUT()) {
+        shutdown();
+        return false;
+    }
 
     // Shadow Map
     glGenFramebuffers(1, &depthMapFBO);
@@ -133,28 +152,36 @@ bool Renderer::init(GLADloadfunc loadProc) {
     // Shadow Shader
     auto dirShadowSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/dir_shadow.vert", getAssetRoot() + "shaders/dir_shadow.frag");
 
-    dirShadowShader = std::make_shared<Shader>(dirShadowSource, SHADOW_SHADER_ID);
+    dirShadowShader = ShaderManager::get().createInternalShader(dirShadowSource, "internal.dirShadow");
 
     auto pointShadowSource =
         std::make_shared<ShaderSource>(getAssetRoot() + "shaders/point_shadow.vert", getAssetRoot() + "shaders/point_shadow.frag");
 
-    pointShadowShader = std::make_shared<Shader>(pointShadowSource, SHADOW_SHADER_ID - 1);
+    pointShadowShader = ShaderManager::get().createInternalShader(pointShadowSource, "internal.pointShadow");
 
     auto prePassSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/prepass.vert", getAssetRoot() + "shaders/prepass.frag");
-    prePassShader = std::make_shared<Shader>(prePassSource, SHADOW_SHADER_ID - 2);
+    prePassShader = ShaderManager::get().createInternalShader(prePassSource, "internal.prePass");
 
     auto ssaoSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/ssao.vert", getAssetRoot() + "shaders/ssao.frag");
-    ssaoShader = std::make_shared<Shader>(ssaoSource, SHADOW_SHADER_ID - 3);
+    ssaoShader = ShaderManager::get().createInternalShader(ssaoSource, "internal.ssao");
 
     auto ssaoBlurSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/ssao.vert", getAssetRoot() + "shaders/ssao_blur.frag");
-    ssaoBlurShader = std::make_shared<Shader>(ssaoBlurSource, SHADOW_SHADER_ID - 4);
+    ssaoBlurShader = ShaderManager::get().createInternalShader(ssaoBlurSource, "internal.ssaoBlur");
 
     auto ssgiSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/ssao.vert", getAssetRoot() + "shaders/ssgi.frag");
-    ssgiShader = std::make_shared<Shader>(ssgiSource, SHADOW_SHADER_ID - 5);
+    ssgiShader = ShaderManager::get().createInternalShader(ssgiSource, "internal.ssgi");
     auto ssgiBlurSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/ssao.vert", getAssetRoot() + "shaders/ssgi_blur.frag");
-    ssgiBlurShader = std::make_shared<Shader>(ssgiBlurSource, SHADOW_SHADER_ID - 6);
+    ssgiBlurShader = ShaderManager::get().createInternalShader(ssgiBlurSource, "internal.ssgiBlur");
 
-    initParticlePass();
+    if (!dirShadowShader || !pointShadowShader || !prePassShader || !ssaoShader || !ssaoBlurShader || !ssgiShader || !ssgiBlurShader) {
+        shutdown();
+        return false;
+    }
+
+    if (!initParticlePass()) {
+        shutdown();
+        return false;
+    }
 
     // Create the view-space normal and depth target.
     glGenFramebuffers(1, &prePassFBO);
@@ -311,12 +338,12 @@ bool Renderer::init(GLADloadfunc loadProc) {
     glGenFramebuffers(1, &pointDepthFBO);
     glGenTextures(1, &pointDepthMap);
 
-    initialized = true;
     return true;
 }
 
 void Renderer::shutdown() {
     if (!initialized) {
+        ShaderManager::get().shutdown();
         return;
     }
 
@@ -411,16 +438,15 @@ void Renderer::shutdown() {
     particleShader.reset();
     particleInstances.clear();
 
+    ShaderManager::get().shutdown();
     initialized = false;
 }
 
-void Renderer::initParticlePass() {
-    auto source = std::make_shared<ShaderSource>(ParticleShader::GetSource());
-    particleShader = std::make_shared<Shader>(source, PARTICLE_SHADER_ID);
-
-    if (!particleShader->isValid()) {
+bool Renderer::initParticlePass() {
+    particleShader = ShaderManager::get().getShader("particleShader");
+    if (!particleShader) {
         std::cerr << "[Error] Failed to create particle shader" << std::endl;
-        particleShader.reset();
+        return false;
     }
 
     // Unit quad drawn as a triangle strip; corners are in [-0.5, 0.5].
@@ -460,6 +486,7 @@ void Renderer::initParticlePass() {
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    return true;
 }
 
 void Renderer::renderQuad() {
@@ -484,7 +511,7 @@ void Renderer::renderQuad() {
     glBindVertexArray(0);
 }
 
-void Renderer::generateBRDFLUT() {
+bool Renderer::generateBRDFLUT() {
     // gen texture
     glGenTextures(1, &brdfLUTTexture);
     glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
@@ -502,7 +529,11 @@ void Renderer::generateBRDFLUT() {
 
     // get shader
     auto brdfSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/brdf.vert", getAssetRoot() + "shaders/brdf.frag");
-    std::shared_ptr<Shader> brdfShader = std::make_shared<Shader>(brdfSource, BRDF_SHADER_ID);
+    std::shared_ptr<Shader> brdfShader = ShaderManager::get().createInternalShader(brdfSource, "internal.brdf");
+    if (!brdfShader) {
+        glDeleteFramebuffers(1, &captureFBO);
+        return false;
+    }
 
     // viewport backup
     GLint prevViewport[4];
@@ -524,6 +555,7 @@ void Renderer::generateBRDFLUT() {
     glViewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3]);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDeleteFramebuffers(1, &captureFBO);
+    return true;
 }
 
 void Renderer::beginFrame(int fbWidth, int fbHeight) {

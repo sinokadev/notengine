@@ -136,27 +136,38 @@ private:
     unsigned int nextId = 1;
 };
 
-/** @brief Owns shader programs created for a scene. */
+/** @brief Owns user and engine-internal shader programs. */
 class ShaderManager {
 public:
-    ShaderManager() = default;
+    /** @brief Returns the process-wide shader manager. */
+    static ShaderManager& get();
+
     ~ShaderManager();
 
-    /** @brief Creates the built-in alpha and PBR shaders.
-     *  @return true if both default shaders were created. */
+    ShaderManager(const ShaderManager&) = delete;
+    ShaderManager& operator=(const ShaderManager&) = delete;
+    ShaderManager(ShaderManager&&) = delete;
+    ShaderManager& operator=(ShaderManager&&) = delete;
+
+    /** @brief Creates the built-in alpha, PBR, and particle shaders.
+     *  @return true if all built-in shaders were created. */
     bool init();
-    /** @brief Releases every managed shader and resets ID allocation. */
+    /** @brief Releases user shaders while retaining engine-internal shaders. */
     void clear();
-    /** @brief Releases all shader resources. Equivalent to clear(). */
+    /** @brief Releases all shader resources, including engine-internal shaders. */
     void shutdown();
 
-    /** @brief Compiles and registers a named shader program.
+    /** @brief Compiles and registers a named user shader program.
      *  @param ss Source files for the vertex and fragment stages.
      *  @param name Lookup name for the new shader.
      *  @return The compiled shader, or nullptr when the source or compilation is invalid. */
     std::shared_ptr<Shader> createShader(std::shared_ptr<ShaderSource> ss, const std::string& name);
 
-    /** @brief Removes a non-default shader.
+    /** @brief Compiles and registers a protected engine-internal shader program.
+     *  Repeated calls with an existing internal name return its registered shader. */
+    std::shared_ptr<Shader> createInternalShader(std::shared_ptr<ShaderSource> ss, const std::string& name);
+
+    /** @brief Removes a user shader.
      *  @return true when the shader existed and was removable. */
     bool removeShader(unsigned int id);
 
@@ -171,8 +182,11 @@ public:
     }
 
 private:
+    ShaderManager() = default;
+    std::shared_ptr<Shader> createShaderImpl(std::shared_ptr<ShaderSource> ss, const std::string& name, bool isInternal);
+
     std::list<std::shared_ptr<Shader>> shaders;
-    std::unordered_set<unsigned int> defaultShaderIds;
+    std::unordered_set<unsigned int> internalShaderIds;
     std::unordered_map<unsigned int, std::list<std::shared_ptr<Shader>>::iterator> idToIterator;
     std::unordered_map<std::string, unsigned int> nameToId;
 

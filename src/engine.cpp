@@ -1,4 +1,5 @@
 #include <knot/engine.h>
+#include <knot/manager.h>
 #include <knot/version.h>
 
 #include <glad/gl.h>
@@ -136,16 +137,13 @@ int Engine::run() {
 }
 
 void Engine::shutdown() {
-    if (!initialized) {
-        return;
-    }
-
     if (scene) {
         scene->shutdown();
         scene = nullptr;
     }
 
     Renderer::get().shutdown();
+    ShaderManager::get().shutdown();
 
     eventCallback = nullptr;
     renderLoopCallback = nullptr;

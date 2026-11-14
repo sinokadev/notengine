@@ -274,7 +274,7 @@ int main(int argc, char** argv) {
 
     scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
-    auto shader = scene.getShaderManager().getShader("pbrShader");
+    auto shader = knot::ShaderManager::get().getShader("pbrShader");
 
     // The floor: a unit cube flattened into a slab the rain falls onto. The demo
     // cube model (assets/Untitled.obj) carries the engine logo texture, which

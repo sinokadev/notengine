@@ -174,13 +174,9 @@ private:
 
     static constexpr std::size_t INSTANCE_THRESHOLD = 4;
 
-    static constexpr unsigned int SKYBOX_SHADER_ID = 999999;
-
     std::shared_ptr<Mesh> skyboxMesh;
 
     std::shared_ptr<Shader> skyboxShader;
-
-    static constexpr unsigned int BRDF_SHADER_ID = 999998;
 
     GLuint brdfLUTTexture = 0;
 
@@ -210,7 +206,7 @@ private:
     std::shared_ptr<Shader> ssgiBlurShader;
     bool ssgiTargetsReady = false;
 
-    void generateBRDFLUT();
+    bool generateBRDFLUT();
 
     void renderQuad();
 
@@ -230,10 +226,6 @@ private:
     std::unordered_map<const PbrPointLight*, int> pointShadowLayerLookup;
     std::vector<GPUMovingPointLight> gpuPointLights;
     std::unordered_map<const Model*, std::vector<VisibleInstance>> culledPointShadowGroups;
-
-    static constexpr unsigned int SHADOW_SHADER_ID = 999997;
-
-    static constexpr unsigned int PARTICLE_SHADER_ID = 999996;
 
     std::shared_ptr<Shader> particleShader;
 
@@ -257,7 +249,7 @@ private:
     static constexpr float PARTICLE_MAX_STRETCH = 24.0f;
 
     /** @brief Creates the billboard shader and the quad/instance buffers. */
-    void initParticlePass();
+    bool initParticlePass();
 
     std::shared_ptr<Shader> pointShadowShader;
     std::shared_ptr<Shader> dirShadowShader;

@@ -1,6 +1,7 @@
 #include <knot/manager.h>
 
 #include <iostream>
+#include <utility>
 
 namespace knot {
 
@@ -240,36 +241,59 @@ std::vector<const PbrPointLight*> LightManager::getPointLights() const {
     return result;
 }
 
+ShaderManager& ShaderManager::get() {
+    static ShaderManager instance;
+    return instance;
+}
+
 ShaderManager::~ShaderManager() {
     shutdown();
 }
 
 void ShaderManager::clear() {
+    for (auto it = shaders.begin(); it != shaders.end();) {
+        const unsigned int id = (*it)->getId();
+        if (internalShaderIds.find(id) != internalShaderIds.end()) {
+            ++it;
+            continue;
+        }
+
+        idToIterator.erase(id);
+        for (auto nameIt = nameToId.begin(); nameIt != nameToId.end();) {
+            if (nameIt->second == id) {
+                nameIt = nameToId.erase(nameIt);
+            } else {
+                ++nameIt;
+            }
+        }
+        it = shaders.erase(it);
+    }
+}
+
+void ShaderManager::shutdown() {
     shaders.clear();
-    defaultShaderIds.clear();
+    internalShaderIds.clear();
     idToIterator.clear();
     nameToId.clear();
     nextId = 1;
 }
 
-void ShaderManager::shutdown() {
-    clear();
-}
-
 bool ShaderManager::init() {
+    if (getShader("alphaShader") && getShader("pbrShader") && getShader("particleShader")) {
+        return true;
+    }
+
     auto alphaSource = std::make_shared<ShaderSource>(AlphaShader::GetSource());
     if (!alphaSource->isValid()) {
         std::cerr << "[Error] Failed to load default alpha shader sources" << std::endl;
         return false;
     }
 
-    auto alphaShader = createShader(alphaSource, "alphaShader");
+    auto alphaShader = createInternalShader(alphaSource, "alphaShader");
     if (!alphaShader) {
         std::cerr << "[Error] Failed to create default alpha shader" << std::endl;
         return false;
     }
-
-    defaultShaderIds.insert(alphaShader->getId());
 
     auto pbrSource = std::make_shared<ShaderSource>(PbrShader::GetSource());
     if (!pbrSource->isValid()) {
@@ -277,13 +301,11 @@ bool ShaderManager::init() {
         return false;
     }
 
-    auto pbrShader = createShader(pbrSource, "pbrShader");
+    auto pbrShader = createInternalShader(pbrSource, "pbrShader");
     if (!pbrShader) {
         std::cerr << "[Error] Failed to create default pbr shader" << std::endl;
         return false;
     }
-
-    defaultShaderIds.insert(pbrShader->getId());
 
     auto particleSource = std::make_shared<ShaderSource>(ParticleShader::GetSource());
     if (!particleSource->isValid()) {
@@ -291,19 +313,39 @@ bool ShaderManager::init() {
         return false;
     }
 
-    auto particleShader = createShader(particleSource, "particleShader");
+    auto particleShader = createInternalShader(particleSource, "particleShader");
     if (!particleShader) {
         std::cerr << "[Error] Failed to create default particle shader" << std::endl;
         return false;
     }
 
-    defaultShaderIds.insert(particleShader->getId());
     return true;
 }
 
 std::shared_ptr<Shader> ShaderManager::createShader(std::shared_ptr<ShaderSource> ss, const std::string& name) {
+    return createShaderImpl(std::move(ss), name, false);
+}
+
+std::shared_ptr<Shader> ShaderManager::createInternalShader(std::shared_ptr<ShaderSource> ss, const std::string& name) {
+    const auto existing = nameToId.find(name);
+    if (existing != nameToId.end()) {
+        if (internalShaderIds.find(existing->second) != internalShaderIds.end()) {
+            return getShader(existing->second);
+        }
+        std::cerr << "[Error] Shader name is already registered: '" << name << "'" << std::endl;
+        return nullptr;
+    }
+    return createShaderImpl(std::move(ss), name, true);
+}
+
+std::shared_ptr<Shader> ShaderManager::createShaderImpl(std::shared_ptr<ShaderSource> ss, const std::string& name, bool isInternal) {
     if (!ss || !ss->isValid()) {
         std::cerr << "[Error] Invalid shader source for '" << name << "'" << std::endl;
+        return nullptr;
+    }
+
+    if (nameToId.find(name) != nameToId.end()) {
+        std::cerr << "[Error] Shader name is already registered: '" << name << "'" << std::endl;
         return nullptr;
     }
 
@@ -319,12 +361,15 @@ std::shared_ptr<Shader> ShaderManager::createShader(std::shared_ptr<ShaderSource
     auto it = --shaders.end();
     idToIterator[newId] = it;
     nameToId[name] = newId;
+    if (isInternal) {
+        internalShaderIds.insert(newId);
+    }
 
     return shader;
 }
 
 bool ShaderManager::removeShader(unsigned int id) {
-    if (defaultShaderIds.find(id) != defaultShaderIds.end()) {
+    if (internalShaderIds.find(id) != internalShaderIds.end()) {
         return false;
     }
 
