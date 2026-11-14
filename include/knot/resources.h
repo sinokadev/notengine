@@ -23,9 +23,11 @@ struct Frustum;
 unsigned int createSolidColorTexture(glm::vec3 color);
 
 /** @brief Sets the game source root used to resolve game-owned files.
- *  An empty path resets the root to the current working directory. */
+ *  An empty path resets to the CMake-configured default, or the current working
+ *  directory if unset. */
 void setSourceRoot(const std::string& root);
-/** @brief Returns the game source root, defaulting to the current working directory. */
+/** @brief Returns the game source root, defaulting to the CMake-configured path
+ *  or current working directory. */
 const std::string& getSourceRoot();
 /** @brief Sets the Not Engine source root used for engine-owned resources.
  *  An empty path resets it to the CMake-configured default. */

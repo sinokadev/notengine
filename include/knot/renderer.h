@@ -128,13 +128,22 @@ public:
      * Every shader receives u_InputTex, u_SceneColorTex, u_SceneDepthTex, u_Resolution,
      * and u_TexelSize uniforms. The input textures are bound to texture units 0, 1, and 2.
      * The optional setup callback can set custom uniforms and bind extra textures on units 3+.
+     * @see removePostProcessShader()
+     * @see clearPostProcessShaders()
      * @return false when the shader is null or invalid. */
     bool addPostProcessShader(std::shared_ptr<Shader> shader, PostProcessSetup setup = {});
-    /** @brief Removes the first matching registered post-processing shader. */
+    /** @brief Removes the first matching registered post-processing shader.
+     *  @see addPostProcessShader()
+     *  @see clearPostProcessShaders() */
     bool removePostProcessShader(const std::shared_ptr<Shader>& shader);
-    /** @brief Removes all registered post-processing shaders. */
+    /** @brief Removes all registered post-processing shaders.
+     *  @see addPostProcessShader()
+     *  @see removePostProcessShader() */
     void clearPostProcessShaders();
-    /** @brief Captures and bakes the scene's configured local reflection probe.
+    /** @brief Captures six views of the scene and bakes the configured probe's
+     *  irradiance and specular maps.
+     *
+     *  Call with an active OpenGL context after configuring the probe and scene.
      *  @return false if the renderer is not initialized, no probe is configured,
      *  or the cubemap capture framebuffer is incomplete. */
     bool captureReflectionProbe(Scene& scene);

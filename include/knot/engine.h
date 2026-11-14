@@ -77,8 +77,8 @@ public:
      * Initializes the application window and renderer, configures input
      * callbacks, enables VSync, and prepares the engine for the main loop.
      *
-     * If sourceRoot is empty and no source root was configured, the engine
-     * uses the process working directory.
+     * If sourceRoot is empty, the engine uses the CMake-configured source root,
+     * or the process working directory when none was configured.
      *
      * @param width The initial window width in pixels.
      * @param height The initial window height in pixels.

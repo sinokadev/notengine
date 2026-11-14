@@ -137,8 +137,10 @@ if(UNIX AND NOT APPLE)
 endif()
 
 set(NOTENGINE_ENGINE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}" CACHE PATH "Path to the Not Engine source root")
+set(NOTENGINE_SOURCE_ROOT "" CACHE PATH "Default game source root; empty uses the process working directory")
 target_compile_definitions(notengine PRIVATE
     NOTENGINE_ENGINE_ROOT=\"${NOTENGINE_ENGINE_ROOT}\"
+    NOTENGINE_SOURCE_ROOT=\"${NOTENGINE_SOURCE_ROOT}\"
 )
 
 # Demo executables

@@ -25,6 +25,12 @@ std::string sourceRoot;
 std::mutex runtimeShaderSourcesMutex;
 std::unordered_map<std::string, std::string> runtimeShaderSources;
 
+#ifdef NOTENGINE_SOURCE_ROOT
+constexpr const char* kDefaultSourceRoot = NOTENGINE_SOURCE_ROOT;
+#else
+constexpr const char* kDefaultSourceRoot = "";
+#endif
+
 #ifdef NOTENGINE_ENGINE_ROOT
 constexpr const char* kDefaultEngineRoot = NOTENGINE_ENGINE_ROOT;
 #else
@@ -85,12 +91,12 @@ unsigned int compileShader(unsigned int type, const char* source, const char* la
 } // namespace
 
 void setSourceRoot(const std::string& root) {
-    sourceRoot = normalizeRoot(root);
+    sourceRoot = normalizeRoot(root.empty() ? kDefaultSourceRoot : root);
 }
 
 const std::string& getSourceRoot() {
     if (sourceRoot.empty()) {
-        sourceRoot = normalizeRoot("");
+        sourceRoot = normalizeRoot(kDefaultSourceRoot);
     }
     return sourceRoot;
 }
