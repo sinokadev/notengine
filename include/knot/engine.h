@@ -77,17 +77,17 @@ public:
      * Initializes the application window and renderer, configures input
      * callbacks, enables VSync, and prepares the engine for the main loop.
      *
-     * If assetRoot is empty, the engine uses the default asset root
-     * configured at compile time when available.
+     * If sourceRoot is empty and no source root was configured, the engine
+     * uses the process working directory.
      *
      * @param width The initial window width in pixels.
      * @param height The initial window height in pixels.
      * @param title The title of the application window.
-     * @param assetRoot The root directory used to locate engine assets.
+     * @param sourceRoot The game source root used to locate game-owned files.
      *
      * @return true if initialization succeeds, false otherwise.
      */
-    bool init(int width, int height, const std::string& title, const std::string& assetRoot = "");
+    bool init(int width, int height, const std::string& title, const std::string& sourceRoot = "");
 
     /**
      * @brief Runs the main engine loop.

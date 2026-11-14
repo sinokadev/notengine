@@ -14,7 +14,7 @@ Engine::~Engine() {
     shutdown();
 }
 
-bool Engine::init(int width, int height, const std::string& title, const std::string& assetRoot) {
+bool Engine::init(int width, int height, const std::string& title, const std::string& sourceRoot) {
     this->width = width;
     this->height = height;
     this->title = title;
@@ -23,12 +23,10 @@ bool Engine::init(int width, int height, const std::string& title, const std::st
 
     std::cout << "[Info] Init..." << std::endl;
 
-    if (!assetRoot.empty()) {
-        setAssetRoot(assetRoot);
+    if (!sourceRoot.empty()) {
+        setSourceRoot(sourceRoot);
     } else {
-#ifdef NOTENGINE_ASSET_ROOT
-        setAssetRoot(NOTENGINE_ASSET_ROOT);
-#endif
+        getSourceRoot();
     }
 
     if (!window.init(width, height, title)) {

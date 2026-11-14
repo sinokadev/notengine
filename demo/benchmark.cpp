@@ -38,9 +38,9 @@ int main() {
 
     knot::Scene scene;
 
-    scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
+    scene.loadHDRMap(knot::getSourceRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
-    auto mesh = knot::loadModelOBJ(knot::getAssetRoot() + "assets/notbox.obj");
+    auto mesh = knot::loadModelOBJ(knot::getSourceRoot() + "assets/notbox.obj");
 
     auto shader = knot::ShaderManager::get().getShader("pbrShader");
 

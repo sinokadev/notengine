@@ -22,10 +22,16 @@ struct Frustum;
 /** @brief Creates a 1x1 RGBA texture from a color. */
 unsigned int createSolidColorTexture(glm::vec3 color);
 
-/** @brief Sets the base directory used by built-in asset paths. */
-void setAssetRoot(const std::string& root);
-/** @brief Returns the configured base directory for engine assets. */
-const std::string& getAssetRoot();
+/** @brief Sets the game source root used to resolve game-owned files.
+ *  An empty path resets the root to the current working directory. */
+void setSourceRoot(const std::string& root);
+/** @brief Returns the game source root, defaulting to the current working directory. */
+const std::string& getSourceRoot();
+/** @brief Sets the Not Engine source root used for engine-owned resources.
+ *  An empty path resets it to the CMake-configured default. */
+void setEngineRoot(const std::string& root);
+/** @brief Returns the Not Engine source root configured by CMake or set by the application. */
+const std::string& getEngineRoot();
 
 /** @brief Loads vertex and fragment shader source files. */
 class ShaderSource {

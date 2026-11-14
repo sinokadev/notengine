@@ -29,11 +29,11 @@ int main() {
 
     knot::Scene scene;
 
-    scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
+    scene.loadHDRMap(knot::getSourceRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
     std::cout << "[Info] Loading Sponza scene...\n";
 
-    if (!scene.loadGLTF(knot::getAssetRoot() + "assets/Sponza/glTF/Sponza.gltf")) {
+    if (!scene.loadGLTF(knot::getSourceRoot() + "assets/Sponza/glTF/Sponza.gltf")) {
         std::cerr << "[Error] Failed to load Sponza.gltf\n";
         return 1;
     }
@@ -92,7 +92,7 @@ int main() {
                 }
 
                 if (ev.key == knot::ScanCode::F2) {
-                    const std::string path = knot::getAssetRoot() + "screenshot/ss.png";
+                    const std::string path = knot::getSourceRoot() + "screenshot/ss.png";
                     if (engine.saveScreenshot(path, 3840, 2160)) {
                         std::cout << "[Info] Screenshot saved: " << path << "\n";
                     } else {

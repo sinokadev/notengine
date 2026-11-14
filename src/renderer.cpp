@@ -104,7 +104,7 @@ bool Renderer::init(GLADloadfunc loadProc) {
 
     // Sky Map and IBL
     skyboxMesh = createCube();
-    auto skyboxSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/skybox.vert", getAssetRoot() + "shaders/skybox.frag");
+    auto skyboxSource = std::make_shared<ShaderSource>(getEngineRoot() + "shaders/skybox.vert", getEngineRoot() + "shaders/skybox.frag");
     skyboxShader = ShaderManager::get().createInternalShader(skyboxSource, "internal.skybox");
     if (!skyboxShader) {
         shutdown();
@@ -150,30 +150,30 @@ bool Renderer::init(GLADloadfunc loadProc) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Shadow Shader
-    auto dirShadowSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/dir_shadow.vert", getAssetRoot() + "shaders/dir_shadow.frag");
+    auto dirShadowSource = std::make_shared<ShaderSource>(getEngineRoot() + "shaders/dir_shadow.vert", getEngineRoot() + "shaders/dir_shadow.frag");
 
     dirShadowShader = ShaderManager::get().createInternalShader(dirShadowSource, "internal.dirShadow");
 
     auto pointShadowSource =
-        std::make_shared<ShaderSource>(getAssetRoot() + "shaders/point_shadow.vert", getAssetRoot() + "shaders/point_shadow.frag");
+        std::make_shared<ShaderSource>(getEngineRoot() + "shaders/point_shadow.vert", getEngineRoot() + "shaders/point_shadow.frag");
 
     pointShadowShader = ShaderManager::get().createInternalShader(pointShadowSource, "internal.pointShadow");
 
-    auto prePassSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/prepass.vert", getAssetRoot() + "shaders/prepass.frag");
+    auto prePassSource = std::make_shared<ShaderSource>(getEngineRoot() + "shaders/prepass.vert", getEngineRoot() + "shaders/prepass.frag");
     prePassShader = ShaderManager::get().createInternalShader(prePassSource, "internal.prePass");
 
-    auto ssaoSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/ssao.vert", getAssetRoot() + "shaders/ssao.frag");
+    auto ssaoSource = std::make_shared<ShaderSource>(getEngineRoot() + "shaders/ssao.vert", getEngineRoot() + "shaders/ssao.frag");
     ssaoShader = ShaderManager::get().createInternalShader(ssaoSource, "internal.ssao");
 
-    auto ssaoBlurSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/ssao.vert", getAssetRoot() + "shaders/ssao_blur.frag");
+    auto ssaoBlurSource = std::make_shared<ShaderSource>(getEngineRoot() + "shaders/ssao.vert", getEngineRoot() + "shaders/ssao_blur.frag");
     ssaoBlurShader = ShaderManager::get().createInternalShader(ssaoBlurSource, "internal.ssaoBlur");
 
-    auto ssgiSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/ssao.vert", getAssetRoot() + "shaders/ssgi.frag");
+    auto ssgiSource = std::make_shared<ShaderSource>(getEngineRoot() + "shaders/ssao.vert", getEngineRoot() + "shaders/ssgi.frag");
     ssgiShader = ShaderManager::get().createInternalShader(ssgiSource, "internal.ssgi");
-    auto ssgiBlurSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/ssao.vert", getAssetRoot() + "shaders/ssgi_blur.frag");
+    auto ssgiBlurSource = std::make_shared<ShaderSource>(getEngineRoot() + "shaders/ssao.vert", getEngineRoot() + "shaders/ssgi_blur.frag");
     ssgiBlurShader = ShaderManager::get().createInternalShader(ssgiBlurSource, "internal.ssgiBlur");
     auto postProcessPassthroughSource =
-        std::make_shared<ShaderSource>(getAssetRoot() + "shaders/postprocess.vert", getAssetRoot() + "shaders/postprocess_passthrough.frag");
+        std::make_shared<ShaderSource>(getEngineRoot() + "shaders/postprocess.vert", getEngineRoot() + "shaders/postprocess_passthrough.frag");
     postProcessPassthroughShader = ShaderManager::get().createInternalShader(postProcessPassthroughSource, "internal.postProcessPassthrough");
 
     if (!dirShadowShader || !pointShadowShader || !prePassShader || !ssaoShader || !ssaoBlurShader || !ssgiShader || !ssgiBlurShader ||
@@ -583,7 +583,7 @@ bool Renderer::generateBRDFLUT() {
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdfLUTTexture, 0);
 
     // get shader
-    auto brdfSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/brdf.vert", getAssetRoot() + "shaders/brdf.frag");
+    auto brdfSource = std::make_shared<ShaderSource>(getEngineRoot() + "shaders/brdf.vert", getEngineRoot() + "shaders/brdf.frag");
     std::shared_ptr<Shader> brdfShader = ShaderManager::get().createInternalShader(brdfSource, "internal.brdf");
     if (!brdfShader) {
         glDeleteFramebuffers(1, &captureFBO);

@@ -28,7 +28,7 @@ int main() {
     if (audio.init()) {
         engine.setMakingMusic(true);
 
-        const std::string audioDirectory = knot::getAssetRoot() + "assets/audio/";
+        const std::string audioDirectory = knot::getSourceRoot() + "assets/audio/";
         const std::string testWavPath = audioDirectory + "test_wav.wav";
         const std::string testMp3Path = audioDirectory + "test_mp3.mp3";
 
@@ -57,11 +57,11 @@ int main() {
 
     knot::Scene scene;
 
-    scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
+    scene.loadHDRMap(knot::getSourceRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
     auto shader = knot::ShaderManager::get().getShader("pbrShader");
 
-    auto model = knot::loadModelOBJWithMTL(knot::getAssetRoot() + "assets/Untitled.obj", shader);
+    auto model = knot::loadModelOBJWithMTL(knot::getSourceRoot() + "assets/Untitled.obj", shader);
 
     auto cubeObject = std::make_shared<knot::Object>(model);
 

@@ -53,7 +53,7 @@ int main() {
     knot::s.ssgi_radius = 2.5f;
 
     knot::Scene scene;
-    scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
+    scene.loadHDRMap(knot::getSourceRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
     auto shader = knot::ShaderManager::get().getShader("pbrShader");
     if (!shader) {

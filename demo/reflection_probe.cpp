@@ -42,7 +42,7 @@ int main() {
     engine.setClearColor(0.035f, 0.045f, 0.065f, 1.0f);
 
     knot::Scene scene;
-    scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
+    scene.loadHDRMap(knot::getSourceRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
     auto shader = knot::ShaderManager::get().getShader("pbrShader");
     if (!shader) {

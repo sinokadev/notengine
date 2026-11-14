@@ -68,7 +68,7 @@ int main() {
     knot::s.ambient = 0.12f;
 
     knot::Scene scene;
-    scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
+    scene.loadHDRMap(knot::getSourceRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
     auto pbrShader = knot::ShaderManager::get().getShader("pbrShader");
     if (!pbrShader) {
@@ -76,14 +76,14 @@ int main() {
         return 1;
     }
 
-    auto bloomVertex = knot::getAssetRoot() + "shaders/postprocess.vert";
+    auto bloomVertex = knot::getEngineRoot() + "shaders/postprocess.vert";
     auto& shaderManager = knot::ShaderManager::get();
     auto extractShader = shaderManager.createShader(
-        std::make_shared<knot::ShaderSource>(bloomVertex, knot::getAssetRoot() + "shaders/bloom_extract.frag"), "demo.bloom.extract");
+        std::make_shared<knot::ShaderSource>(bloomVertex, knot::getEngineRoot() + "shaders/bloom_extract.frag"), "demo.bloom.extract");
     auto blurShader = shaderManager.createShader(
-        std::make_shared<knot::ShaderSource>(bloomVertex, knot::getAssetRoot() + "shaders/bloom_blur.frag"), "demo.bloom.blur");
+        std::make_shared<knot::ShaderSource>(bloomVertex, knot::getEngineRoot() + "shaders/bloom_blur.frag"), "demo.bloom.blur");
     auto compositeShader = shaderManager.createShader(
-        std::make_shared<knot::ShaderSource>(bloomVertex, knot::getAssetRoot() + "shaders/bloom_composite.frag"), "demo.bloom.composite");
+        std::make_shared<knot::ShaderSource>(bloomVertex, knot::getEngineRoot() + "shaders/bloom_composite.frag"), "demo.bloom.composite");
     if (!extractShader || !blurShader || !compositeShader) {
         std::cerr << "[Error] Failed to compile the bloom post-processing shaders.\n";
         return 1;
@@ -129,8 +129,8 @@ int main() {
 
     auto sphere = knot::createSphere(32, 24);
     auto emissiveShader = shaderManager.createShader(
-        std::make_shared<knot::ShaderSource>(knot::getAssetRoot() + "shaders/emissive_surface.vert",
-                                             knot::getAssetRoot() + "shaders/emissive_surface.frag"),
+        std::make_shared<knot::ShaderSource>(knot::getEngineRoot() + "shaders/emissive_surface.vert",
+                                             knot::getEngineRoot() + "shaders/emissive_surface.frag"),
         "demo.emissiveSurface");
     if (!emissiveShader) {
         std::cerr << "[Error] Failed to compile the emissive scene shader.\n";

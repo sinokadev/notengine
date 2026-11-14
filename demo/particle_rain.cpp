@@ -272,7 +272,7 @@ int main(int argc, char** argv) {
 
     knot::Scene scene;
 
-    scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
+    scene.loadHDRMap(knot::getSourceRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
     auto shader = knot::ShaderManager::get().getShader("pbrShader");
 

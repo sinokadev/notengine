@@ -6,7 +6,7 @@
 
 namespace knot {
 unsigned int bakeHDRMapToCubemap(unsigned int hdrTexture2D, int size) {
-    auto bakeSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/cubemap_bake.vert", getAssetRoot() + "shaders/cubemap_bake.frag");
+    auto bakeSource = std::make_shared<ShaderSource>(getEngineRoot() + "shaders/cubemap_bake.vert", getEngineRoot() + "shaders/cubemap_bake.frag");
     std::shared_ptr<Shader> bakeShader = ShaderManager::get().createInternalShader(bakeSource, "internal.cubemapBake");
     if (!bakeShader) {
         return 0;
@@ -85,8 +85,8 @@ unsigned int bakeHDRMapToCubemap(unsigned int hdrTexture2D, int size) {
 
 unsigned int bakeCubemapToIrradianceMap(unsigned int envCubemapID, int size = 32) {
     // 1. 컨벌루션 쉐이더 및 큐브 메쉬 로드
-    auto irradSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/irradiance_convolution.vert",
-                                                      getAssetRoot() + "shaders/irradiance_convolution.frag");
+    auto irradSource = std::make_shared<ShaderSource>(getEngineRoot() + "shaders/irradiance_convolution.vert",
+                                                      getEngineRoot() + "shaders/irradiance_convolution.frag");
     std::shared_ptr<Shader> irradShader = ShaderManager::get().createInternalShader(irradSource, "internal.irradiance");
     if (!irradShader) {
         return 0;
@@ -166,7 +166,7 @@ unsigned int bakeCubemapToIrradianceMap(unsigned int envCubemapID, int size = 32
 
 unsigned int bakeCubemapToPrefilterMap(unsigned int envCubemapID, int size) {
     // 1. Prefilter 셰이더 및 큐브 메쉬 로드
-    auto prefilterSource = std::make_shared<ShaderSource>(getAssetRoot() + "shaders/prefilter.vert", getAssetRoot() + "shaders/prefilter.frag");
+    auto prefilterSource = std::make_shared<ShaderSource>(getEngineRoot() + "shaders/prefilter.vert", getEngineRoot() + "shaders/prefilter.frag");
     std::shared_ptr<Shader> prefilterShader = ShaderManager::get().createInternalShader(prefilterSource, "internal.prefilter");
     if (!prefilterShader) {
         return 0;

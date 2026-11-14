@@ -58,7 +58,11 @@ Scene types
 Global functions
 ----------------
 
-.. doxygenfunction:: knot::setAssetRoot
+.. doxygenfunction:: knot::setSourceRoot
 
-.. doxygenfunction:: knot::getAssetRoot
+.. doxygenfunction:: knot::getSourceRoot
+
+.. doxygenfunction:: knot::setEngineRoot
+
+.. doxygenfunction:: knot::getEngineRoot
 

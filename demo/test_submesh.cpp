@@ -37,7 +37,7 @@ int main() {
     auto shader = knot::ShaderManager::get().createShader(shaderSource, "demo.test_submesh");
 
     // 1. multi-submesh test
-    std::string objPath = knot::getAssetRoot() + "assets/test_submesh.obj";
+    std::string objPath = knot::getSourceRoot() + "assets/test_submesh.obj";
     auto model = knot::loadModelOBJWithMTL(objPath, shader);
 
     if (!model) {
@@ -75,7 +75,7 @@ int main() {
     }
 
     // 2. single-submesh test with Untitled.obj
-    std::string untitledPath = knot::getAssetRoot() + "assets/Untitled.obj";
+    std::string untitledPath = knot::getSourceRoot() + "assets/Untitled.obj";
     auto untitledModel = knot::loadModelOBJWithMTL(untitledPath, shader);
     if (!untitledModel) {
         std::cerr << "[FAIL] Untitled.obj model is nullptr!\n";

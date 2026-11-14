@@ -30,14 +30,14 @@ int main(int argc, char** argv) {
 
     knot::Scene scene;
 
-    const std::string scenePath = argc > 1 ? argv[1] : knot::getAssetRoot() + "assets/scene.seno";
+    const std::string scenePath = argc > 1 ? argv[1] : knot::getSourceRoot() + "assets/scene.seno";
     if (!scene.loadSeno(scenePath)) {
         std::cerr << "[Error] Failed to load demo scene" << std::endl;
         return 1;
     }
 
     // Scene file path and initial HDR
-    scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
+    scene.loadHDRMap(knot::getSourceRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
     if (argc > 1) {
         auto camera = std::make_shared<knot::MovingCamera>(glm::vec3(0.0f, 4.2f, 10.5f));
@@ -189,7 +189,7 @@ int main(int argc, char** argv) {
                             std::cerr << "[Error] Failed to reload scene\n";
                         } else {
                             // Re-apply HDR (keeps behavior consistent with initial load)
-                            scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
+                            scene.loadHDRMap(knot::getSourceRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
                             // Re-apply update callback since loadSeno clears callbacks
                             scene.setUpdateCallback(updateCallback);

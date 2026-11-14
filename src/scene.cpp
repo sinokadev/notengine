@@ -217,7 +217,7 @@ bool Scene::loadSeno(const std::string& path) {
     try {
         const auto sceneDirectory = std::filesystem::absolute(path).parent_path();
         const auto resolveAssetPath = [&sceneDirectory](const std::string& assetPath) {
-            return resolveSceneAssetPath(assetPath, sceneDirectory, getAssetRoot());
+            return resolveSceneAssetPath(assetPath, sceneDirectory, getSourceRoot());
         };
         nlohmann::json scene;
         file >> scene;

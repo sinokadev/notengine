@@ -27,11 +27,11 @@ int main() {
 
     knot::Scene scene;
 
-    scene.loadHDRMap(knot::getAssetRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
+    scene.loadHDRMap(knot::getSourceRoot() + "assets/DaySkyHDRI015A_2K_HDR.hdr");
 
     auto pbrShader = knot::ShaderManager::get().getShader("pbrShader");
 
-    auto cubeModel = knot::loadModelGLTF(knot::getAssetRoot() + "assets/Cube/glTF/Cube.gltf", pbrShader);
+    auto cubeModel = knot::loadModelGLTF(knot::getSourceRoot() + "assets/Cube/glTF/Cube.gltf", pbrShader);
 
     if (!cubeModel) {
         std::cerr << "[Error] Failed to load Cube.gltf\n";

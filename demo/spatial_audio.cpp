@@ -39,7 +39,7 @@ int main() {
     bool wavLoaded = false;
     bool mp3Loaded = false;
     if (audioReady) {
-        const std::string audioDirectory = knot::getAssetRoot() + "assets/audio/";
+        const std::string audioDirectory = knot::getSourceRoot() + "assets/audio/";
         wavLoaded = audio.load(audioDirectory + "test_wav.wav", "spatialWav");
         mp3Loaded = audio.load(audioDirectory + "test_mp3.mp3", "spatialMp3");
 

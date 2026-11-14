@@ -136,9 +136,9 @@ if(UNIX AND NOT APPLE)
     target_link_libraries(notengine PUBLIC Threads::Threads m)
 endif()
 
-set(NOTENGINE_ASSET_ROOT "${CMAKE_SOURCE_DIR}" CACHE PATH "Path to the asset root directory")
-target_compile_definitions(notengine PUBLIC 
-    NOTENGINE_ASSET_ROOT=\"${NOTENGINE_ASSET_ROOT}\"
+set(NOTENGINE_ENGINE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}" CACHE PATH "Path to the Not Engine source root")
+target_compile_definitions(notengine PRIVATE
+    NOTENGINE_ENGINE_ROOT=\"${NOTENGINE_ENGINE_ROOT}\"
 )
 
 # Demo executables

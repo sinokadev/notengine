@@ -42,7 +42,7 @@ void writeU32(std::ostream& stream, uint32_t value) {
 
 void runTests() {
     Fixtures fixtures;
-    const fs::path assets = fs::path(knot::getAssetRoot()) / "assets";
+    const fs::path assets = fs::path(knot::getSourceRoot()) / "assets";
     const fs::path cubeDir = assets / "Cube/glTF";
     Json cube;
     std::ifstream(cubeDir / "Cube.gltf") >> cube;

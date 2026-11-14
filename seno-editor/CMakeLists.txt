@@ -31,7 +31,7 @@ if(SENO_BUILD_GUI)
     target_link_libraries(seno_imgui PUBLIC glfw OpenGL::GL ${CMAKE_DL_LIBS})
     add_executable(seno-editor main.cpp)
     target_link_libraries(seno-editor PRIVATE seno_imgui notengine)
-    target_compile_definitions(seno-editor PRIVATE SENO_ASSET_ROOT="${KNOT_ROOT}")
+    target_compile_definitions(seno-editor PRIVATE SENO_SOURCE_ROOT="${KNOT_ROOT}")
 endif()
 
 if(BUILD_TESTING AND SENO_BUILD_GUI)

@@ -165,7 +165,7 @@ int main() {
         }
 
         knot::Scene scene;
-        const std::string scenePath = knot::getAssetRoot() + "assets/scene.seno";
+        const std::string scenePath = knot::getSourceRoot() + "assets/scene.seno";
         bool loaded = scene.loadSeno(scenePath);
         assert(loaded);
 

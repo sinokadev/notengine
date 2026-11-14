@@ -17,7 +17,8 @@ int main() {
         check(resolve("models/../textures/sky.hdr") == (sceneDir / "textures/sky.hdr").string(), "Nested HDR path not normalized");
         check(resolve("../shared/model.obj") == (sceneDir.parent_path() / "shared/model.obj").string(), "Parent-relative path not resolved");
         check(resolve(file.string()) == file.string(), "Absolute path changed");
-        check(resolve("{assetRoot}/model.obj") == "assets//model.obj", "Asset-root reference rebased onto scene directory");
+        check(resolve("{sourceRoot}/model.obj") == "assets//model.obj", "Source-root reference rebased onto scene directory");
+        check(resolve("{assetRoot}/model.obj") == "assets//model.obj", "Legacy asset-root reference is not compatible");
         check(resolve("").empty(), "Empty path became a directory");
         // Empty submeshes let us exercise the real loader without an OpenGL context.
         Json input={{"version",10},{"models",Json::array({{{"submeshes",Json::array()}}})},

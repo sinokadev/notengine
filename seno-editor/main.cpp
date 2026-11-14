@@ -114,7 +114,7 @@ public:
             item={{"type",kind},{"color",{1,1,1}},{"intensity",1.0}};
             if(kind=="DirLight") item["rotation"]={1,0,0,0}; else { item["position"]={0,3,0}; item["castsShadow"]=true; }
         } else if(collection=="materials") item={{"shader","pbrShader"},{"albedo",{0.7,0.7,0.7}},{"metallic",0.0},{"roughness",0.5},{"ao",1.0}};
-        else if(collection=="meshes") item="{assetRoot}/assets/notbox.obj";
+        else if(collection=="meshes") item="{sourceRoot}/assets/notbox.obj";
         else {
             if(next["meshes"].empty()||next["materials"].empty()) {message="Add a mesh and a material first."; return;}
             item={{"mesh",0},{"material",0}};
@@ -190,7 +190,7 @@ public:
             auto resolve=[&](Json& path) {
                 if(!path.is_string()) return;
                 std::string p=path.get<std::string>();
-                if(p.find("{assetRoot}")==std::string::npos && fs::path(p).is_relative())
+                if(p.find("{sourceRoot}")==std::string::npos && p.find("{assetRoot}")==std::string::npos && fs::path(p).is_relative())
                     path=((doc.path.empty()?directory:doc.path.parent_path())/p).lexically_normal().string();
             };
             if(preview.contains("sky") && preview["sky"].contains("path"))resolve(preview["sky"]["path"]);
@@ -420,7 +420,7 @@ public:
                 for(auto key:{"sky","camera"}) {
                     if(draft.contains(key))field(key,draft[key]);
                     else {std::string label=std::string("Add ")+key;if(ImGui::Button(label.c_str())) {
-                        if(std::string(key)=="sky")draft[key]={{"type","HDR"},{"path","{assetRoot}/assets/DaySkyHDRI015A_2K_HDR.hdr"}};
+                        if(std::string(key)=="sky")draft[key]={{"type","HDR"},{"path","{sourceRoot}/assets/DaySkyHDRI015A_2K_HDR.hdr"}};
                         else draft[key]={{"type","PerspectiveCamera"},{"position",{0,2,5}},{"rotation",{1,0,0,0}},{"near",0.1},{"far",1000.0},{"fov",45.0}};
                     }}
                 }
@@ -462,7 +462,7 @@ int main(int argc,char** argv) {
     if(!window){glfwTerminate();return 1;}
     glfwSetWindowSizeLimits(window,960,600,GLFW_DONT_CARE,GLFW_DONT_CARE);
     glfwMakeContextCurrent(window);glfwSwapInterval(1);
-    knot::setAssetRoot(fs::absolute(SENO_ASSET_ROOT).lexically_normal().string());
+    knot::setSourceRoot(fs::absolute(SENO_SOURCE_ROOT).lexically_normal().string());
     auto& renderer=knot::Renderer::get();
     if(!renderer.init(reinterpret_cast<GLADloadfunc>(glfwGetProcAddress))) {glfwDestroyWindow(window);glfwTerminate();return 1;}
     IMGUI_CHECKVERSION();ImGui::CreateContext();

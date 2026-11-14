@@ -19,17 +19,34 @@ unsigned int createSolidColorTexture(glm::vec3 color);
 
 namespace {
 
-#ifdef NOTENGINE_ASSET_ROOT
-std::string assetRoot = []() {
-    std::string root = NOTENGINE_ASSET_ROOT;
-    if (!root.empty() && root.back() != '/') {
-        root += '/';
-    }
-    return root;
-}();
+std::string sourceRoot;
+
+#ifdef NOTENGINE_ENGINE_ROOT
+constexpr const char* kDefaultEngineRoot = NOTENGINE_ENGINE_ROOT;
 #else
-std::string assetRoot = "";
+constexpr const char* kDefaultEngineRoot = "";
 #endif
+
+std::string normalizeRoot(const std::string& root) {
+    const std::filesystem::path path = root.empty() ? std::filesystem::current_path() : std::filesystem::absolute(root);
+    std::string normalized = path.lexically_normal().string();
+    if (!normalized.empty() && normalized.back() != '/' && normalized.back() != '\\') {
+        normalized += std::filesystem::path::preferred_separator;
+    }
+    return normalized;
+}
+
+std::string engineRoot = normalizeRoot(kDefaultEngineRoot);
+
+std::string loadShaderSource(const std::string& path) {
+    std::ifstream file(path, std::ios::binary);
+    if (!file) {
+        return {};
+    }
+    std::ostringstream source;
+    source << file.rdbuf();
+    return source.str();
+}
 
 unsigned int compileShader(unsigned int type, const char* source, const char* label) {
     unsigned int shader = glCreateShader(type);
@@ -51,33 +68,44 @@ unsigned int compileShader(unsigned int type, const char* source, const char* la
 
 } // namespace
 
-void setAssetRoot(const std::string& root) {
-    assetRoot = root;
-    if (!assetRoot.empty() && assetRoot.back() != '/') {
-        assetRoot += '/';
-    }
+void setSourceRoot(const std::string& root) {
+    sourceRoot = normalizeRoot(root);
 }
 
-const std::string& getAssetRoot() {
-    return assetRoot;
+const std::string& getSourceRoot() {
+    if (sourceRoot.empty()) {
+        sourceRoot = normalizeRoot("");
+    }
+    return sourceRoot;
+}
+
+void setEngineRoot(const std::string& root) {
+    engineRoot = normalizeRoot(root.empty() ? kDefaultEngineRoot : root);
+}
+
+const std::string& getEngineRoot() {
+    return engineRoot;
 }
 
 ShaderSource::ShaderSource(std::string v, std::string f) : vertexPath(v), fragmentPath(f) {
-    // 1. 파일 이름만 추출 (디렉토리 경로 제거)
     std::string vName = std::filesystem::path(v).filename().string();
     std::string fName = std::filesystem::path(f).filename().string();
 
-    // 2. 파일 이름으로 Registry 검색
     if (Shaders::Registry.count(vName)) {
         vertexSourceCode = Shaders::Registry.at(vName);
     } else {
-        std::cerr << "[Error] Failed to find shader in Registry: " << vName << std::endl;
+        vertexSourceCode = loadShaderSource(v);
     }
-
     if (Shaders::Registry.count(fName)) {
         fragmentSourceCode = Shaders::Registry.at(fName);
     } else {
-        std::cerr << "[Error] Failed to find shader in Registry: " << fName << std::endl;
+        fragmentSourceCode = loadShaderSource(f);
+    }
+    if (vertexSourceCode.empty()) {
+        std::cerr << "[Error] Failed to load vertex shader source: " << v << std::endl;
+    }
+    if (fragmentSourceCode.empty()) {
+        std::cerr << "[Error] Failed to load fragment shader source: " << f << std::endl;
     }
 }
 bool ShaderSource::isValid() const {
@@ -203,15 +231,15 @@ unsigned int Shader::getShaderProgram() const {
 }
 
 ShaderSource AlphaShader::GetSource() {
-    return ShaderSource(getAssetRoot() + "shaders/alpha.vert", getAssetRoot() + "shaders/alpha.frag");
+    return ShaderSource(getEngineRoot() + "shaders/alpha.vert", getEngineRoot() + "shaders/alpha.frag");
 }
 
 ShaderSource PbrShader::GetSource() {
-    return ShaderSource(getAssetRoot() + "shaders/alpha.vert", getAssetRoot() + "shaders/pbr.frag");
+    return ShaderSource(getEngineRoot() + "shaders/alpha.vert", getEngineRoot() + "shaders/pbr.frag");
 }
 
 ShaderSource ParticleShader::GetSource() {
-    return ShaderSource(getAssetRoot() + "shaders/particle.vert", getAssetRoot() + "shaders/particle.frag");
+    return ShaderSource(getEngineRoot() + "shaders/particle.vert", getEngineRoot() + "shaders/particle.frag");
 }
 
 Model::Model(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material) {
