@@ -4,6 +4,9 @@ Resources API
 Shaders
 -------
 
+.. doxygenclass:: knot::ShaderRegistry
+   :members:
+
 .. doxygenclass:: knot::ShaderSource
    :members:
 

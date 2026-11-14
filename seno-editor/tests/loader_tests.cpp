@@ -1,5 +1,6 @@
 #include "../document.h"
 #include <knot/utility/scene_asset_path.h>
+#include <knot/resources.h>
 #include <knot/scene.h>
 #include <glm/gtc/constants.hpp>
 #include <iostream>
@@ -9,6 +10,18 @@ void check(bool ok,const char* message) { if(!ok)throw std::runtime_error(messag
 int main() {
     const auto file=fs::temp_directory_path()/("seno-loader-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count())+".seno");
     try {
+        const std::string vertexKey="runtime-tests/custom.vert", fragmentKey="runtime-tests/custom.frag";
+        const std::string vertexSource="#version 330 core\nvoid main() {}";
+        const std::string fragmentSource="#version 330 core\nout vec4 color; void main() { color = vec4(1.0); }";
+        check(knot::ShaderRegistry::registerSource(vertexKey,vertexSource),"Runtime vertex shader registration failed");
+        check(knot::ShaderRegistry::registerSource(fragmentKey,fragmentSource),"Runtime fragment shader registration failed");
+        check(!knot::ShaderRegistry::registerSource(vertexKey,vertexSource),"Duplicate runtime shader key accepted");
+        knot::ShaderSource registered(knot::getSourceRoot()+vertexKey,knot::getSourceRoot()+fragmentKey);
+        check(registered.isValid() && registered.vertexSourceCode==vertexSource &&
+              registered.fragmentSourceCode==fragmentSource,"ShaderSource did not load runtime registry entries");
+        check(knot::ShaderRegistry::unregisterSource(vertexKey) &&
+              knot::ShaderRegistry::unregisterSource(fragmentKey),"Runtime shader removal failed");
+
         const auto sceneDir = file.parent_path() / "scene folder";
         auto resolve = [&](const std::string& path) {
             return knot::resolveSceneAssetPath(path, sceneDir, "assets/");

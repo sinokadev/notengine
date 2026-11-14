@@ -7,6 +7,8 @@
 #include <filesystem>
 #include <cmath>
 #include <limits>
+#include <mutex>
+#include <unordered_map>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -20,6 +22,8 @@ unsigned int createSolidColorTexture(glm::vec3 color);
 namespace {
 
 std::string sourceRoot;
+std::mutex runtimeShaderSourcesMutex;
+std::unordered_map<std::string, std::string> runtimeShaderSources;
 
 #ifdef NOTENGINE_ENGINE_ROOT
 constexpr const char* kDefaultEngineRoot = NOTENGINE_ENGINE_ROOT;
@@ -46,6 +50,18 @@ std::string loadShaderSource(const std::string& path) {
     std::ostringstream source;
     source << file.rdbuf();
     return source.str();
+}
+
+std::string normalizeShaderKey(const std::string& key) {
+    std::filesystem::path normalized(key);
+    if (normalized.is_absolute()) {
+        const std::filesystem::path root = std::filesystem::path(getSourceRoot()).lexically_normal();
+        const std::filesystem::path relative = normalized.lexically_normal().lexically_relative(root);
+        if (!relative.empty() && relative.is_relative() && *relative.begin() != "..") {
+            normalized = relative;
+        }
+    }
+    return normalized.lexically_normal().generic_string();
 }
 
 unsigned int compileShader(unsigned int type, const char* source, const char* label) {
@@ -87,18 +103,61 @@ const std::string& getEngineRoot() {
     return engineRoot;
 }
 
+bool ShaderRegistry::registerSource(const std::string& key, const std::string& source) {
+    if (key.empty() || source.empty()) {
+        return false;
+    }
+
+    const std::string normalizedKey = normalizeShaderKey(key);
+    if (normalizedKey.empty() || normalizedKey == "." || std::filesystem::path(normalizedKey).is_absolute()) {
+        return false;
+    }
+    const std::string filename = std::filesystem::path(normalizedKey).filename().string();
+    if (Shaders::Registry.count(filename)) {
+        return false;
+    }
+
+    std::lock_guard<std::mutex> lock(runtimeShaderSourcesMutex);
+    return runtimeShaderSources.emplace(normalizedKey, source).second;
+}
+
+bool ShaderRegistry::unregisterSource(const std::string& key) {
+    if (key.empty()) {
+        return false;
+    }
+
+    const std::string normalizedKey = normalizeShaderKey(key);
+    std::lock_guard<std::mutex> lock(runtimeShaderSourcesMutex);
+    return runtimeShaderSources.erase(normalizedKey) != 0;
+}
+
+bool ShaderRegistry::findSource(const std::string& key, std::string& source) {
+    if (key.empty()) {
+        return false;
+    }
+
+    const std::string normalizedKey = normalizeShaderKey(key);
+    std::lock_guard<std::mutex> lock(runtimeShaderSourcesMutex);
+    const auto found = runtimeShaderSources.find(normalizedKey);
+    if (found == runtimeShaderSources.end()) {
+        return false;
+    }
+    source = found->second;
+    return true;
+}
+
 ShaderSource::ShaderSource(std::string v, std::string f) : vertexPath(v), fragmentPath(f) {
     std::string vName = std::filesystem::path(v).filename().string();
     std::string fName = std::filesystem::path(f).filename().string();
 
     if (Shaders::Registry.count(vName)) {
         vertexSourceCode = Shaders::Registry.at(vName);
-    } else {
+    } else if (!ShaderRegistry::findSource(v, vertexSourceCode)) {
         vertexSourceCode = loadShaderSource(v);
     }
     if (Shaders::Registry.count(fName)) {
         fragmentSourceCode = Shaders::Registry.at(fName);
-    } else {
+    } else if (!ShaderRegistry::findSource(f, fragmentSourceCode)) {
         fragmentSourceCode = loadShaderSource(f);
     }
     if (vertexSourceCode.empty()) {

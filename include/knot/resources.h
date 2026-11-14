@@ -33,6 +33,24 @@ void setEngineRoot(const std::string& root);
 /** @brief Returns the Not Engine source root configured by CMake or set by the application. */
 const std::string& getEngineRoot();
 
+/** @brief Registers game-owned shader source code under a SourceRoot-relative key. */
+class ShaderRegistry {
+public:
+    /** @brief Registers a runtime shader source.
+     *
+     * Keys are paths relative to SourceRoot, such as "shaders/effect.frag".
+     * Registration fails for empty input, duplicate keys, or keys whose filename
+     * already exists in the built-in shader registry.
+     */
+    static bool registerSource(const std::string& key, const std::string& source);
+    /** @brief Removes a runtime shader source by key. */
+    static bool unregisterSource(const std::string& key);
+
+private:
+    static bool findSource(const std::string& key, std::string& source);
+    friend class ShaderSource;
+};
+
 /** @brief Loads vertex and fragment shader source files. */
 class ShaderSource {
 public:
@@ -45,7 +63,7 @@ public:
     /** @brief Loaded fragment shader source text. */
     std::string fragmentSourceCode;
 
-    /** @brief Loads source text from the supplied vertex and fragment paths. */
+    /** @brief Loads each shader from the built-in registry, runtime registry, then file path. */
     ShaderSource(std::string v, std::string f);
     /** @brief Reports whether both shader source strings were loaded. */
     bool isValid() const;
