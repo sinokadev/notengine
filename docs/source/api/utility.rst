@@ -2,8 +2,8 @@ Utility header
 ==============
 
 ``knot/utility.h`` is a convenience header that includes mesh, texture,
-cubemap, and scene asset path helpers. Other small utilities have dedicated
-headers and are listed here as well.
+cubemap, scene asset path, and debug UI helpers. Other small utilities have
+dedicated headers and are listed here as well.
 
 .. toctree::
    :maxdepth: 1
@@ -14,5 +14,6 @@ headers and are listed here as well.
    scene-asset-path
    tween
    loading-splash
+   debug-ui
    unifont
 

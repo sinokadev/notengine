@@ -9,11 +9,13 @@
 #include <knot/scene.h>
 #include <knot/state.h>
 #include <knot/utility.h>
+#include <knot/utility/debug_ui.h>
 #include <GLFW/glfw3.h>
 
 #include <cmath>
 #include <iostream>
 #include <memory>
+#include <string>
 #include <unordered_map>
 
 namespace {
@@ -112,6 +114,7 @@ int main() {
     float orbitAngle = 0.0f;
 
     knot::s.reflection_probe = true;
+    knot::s.point_shadow_bias = 0.095;
 
     engine.setEventCallback([&](knot::Event& event) {
         if (event.type == knot::KeyInput) {

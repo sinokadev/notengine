@@ -13,7 +13,7 @@
 #include <knot/scene.h>
 #include <knot/state.h>
 #include <knot/utility.h>
-#include <knot/utility/unifont.h>
+#include <knot/utility/debug_ui.h>
 
 enum UserEvent : uint32_t { PRINT_FPS };
 
@@ -160,7 +160,13 @@ int main() {
             camera->move(glm::normalize(moveDir) * speedMul, dt);
     });
 
-    engine.setRenderLoopCallback([&](float) { knot::utility::drawText(12, 12, "FPS: " + std::to_string(fps)); });
+    engine.setRenderLoopCallback([&](float) {
+        knot::utility::drawText(12, 12, "FPS: " + std::to_string(fps));
+        knot::utility::drawText(12, 32, "Point shadow bias: " + std::to_string(knot::s.point_shadow_bias));
+        knot::utility::drawSlider(engine.getWindow().getHandle(), 12, 52, 192, knot::s.point_shadow_bias, 0.0f, 0.1f);
+        if (knot::utility::drawButton(engine.getWindow().getHandle(), 12, 76, "Reset bias"))
+            knot::s.point_shadow_bias = 0.008f;
+    });
 
     engine.setScene(scene);
     return engine.run();
