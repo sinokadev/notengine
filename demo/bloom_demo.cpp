@@ -80,8 +80,8 @@ int main() {
     auto& shaderManager = knot::ShaderManager::get();
     auto extractShader = shaderManager.createShader(
         std::make_shared<knot::ShaderSource>(bloomVertex, knot::getEngineRoot() + "shaders/bloom_extract.frag"), "demo.bloom.extract");
-    auto blurShader = shaderManager.createShader(
-        std::make_shared<knot::ShaderSource>(bloomVertex, knot::getEngineRoot() + "shaders/bloom_blur.frag"), "demo.bloom.blur");
+    auto blurShader = shaderManager.createShader(std::make_shared<knot::ShaderSource>(bloomVertex, knot::getEngineRoot() + "shaders/bloom_blur.frag"),
+                                                 "demo.bloom.blur");
     auto compositeShader = shaderManager.createShader(
         std::make_shared<knot::ShaderSource>(bloomVertex, knot::getEngineRoot() + "shaders/bloom_composite.frag"), "demo.bloom.composite");
     if (!extractShader || !blurShader || !compositeShader) {
@@ -90,9 +90,8 @@ int main() {
     }
 
     auto& renderer = knot::Renderer::get();
-    if (!renderer.addPostProcessShader(extractShader, [](const knot::Shader& shader, GLuint, GLuint, const glm::ivec2&) {
-            shader.set("u_Threshold", 0.78f);
-        })) {
+    if (!renderer.addPostProcessShader(extractShader,
+                                       [](const knot::Shader& shader, GLuint, GLuint, const glm::ivec2&) { shader.set("u_Threshold", 0.78f); })) {
         std::cerr << "[Error] Failed to register the bloom extraction pass.\n";
         return 1;
     }
@@ -100,38 +99,31 @@ int main() {
     constexpr int blurPairs = 6;
     for (int i = 0; i < blurPairs; ++i) {
         const bool horizontal = true;
-        if (!renderer.addPostProcessShader(blurShader, [horizontal](const knot::Shader& shader, GLuint, GLuint, const glm::ivec2&) {
-                shader.set("u_Horizontal", horizontal);
-            }) ||
-            !renderer.addPostProcessShader(blurShader, [](const knot::Shader& shader, GLuint, GLuint, const glm::ivec2&) {
-                shader.set("u_Horizontal", false);
-            })) {
+        if (!renderer.addPostProcessShader(blurShader, [horizontal](const knot::Shader& shader, GLuint, GLuint,
+                                                                    const glm::ivec2&) { shader.set("u_Horizontal", horizontal); }) ||
+            !renderer.addPostProcessShader(
+                blurShader, [](const knot::Shader& shader, GLuint, GLuint, const glm::ivec2&) { shader.set("u_Horizontal", false); })) {
             std::cerr << "[Error] Failed to register a bloom blur pass.\n";
             return 1;
         }
     }
 
-    if (!renderer.addPostProcessShader(compositeShader, [](const knot::Shader& shader, GLuint, GLuint, const glm::ivec2&) {
-            shader.set("u_BloomIntensity", 1.35f);
-        })) {
+    if (!renderer.addPostProcessShader(
+            compositeShader, [](const knot::Shader& shader, GLuint, GLuint, const glm::ivec2&) { shader.set("u_BloomIntensity", 1.35f); })) {
         std::cerr << "[Error] Failed to register the bloom composite pass.\n";
         return 1;
     }
 
     auto plane = knot::createPlane(12.0f, 12.0f);
-    addRoomPlane(scene, plane, pbrShader, {0.0f, 0.0f, 0.0f}, glm::angleAxis(-glm::half_pi<float>(), glm::vec3(1, 0, 0)),
-                 {0.045f, 0.055f, 0.08f});
+    addRoomPlane(scene, plane, pbrShader, {0.0f, 0.0f, 0.0f}, glm::angleAxis(-glm::half_pi<float>(), glm::vec3(1, 0, 0)), {0.045f, 0.055f, 0.08f});
     addRoomPlane(scene, plane, pbrShader, {0.0f, 4.5f, -5.0f}, glm::quat(1, 0, 0, 0), {0.06f, 0.075f, 0.11f});
-    addRoomPlane(scene, plane, pbrShader, {-6.0f, 2.25f, 0.0f}, glm::angleAxis(glm::half_pi<float>(), glm::vec3(0, 1, 0)),
-                 {0.09f, 0.035f, 0.055f});
-    addRoomPlane(scene, plane, pbrShader, {6.0f, 2.25f, 0.0f}, glm::angleAxis(-glm::half_pi<float>(), glm::vec3(0, 1, 0)),
-                 {0.035f, 0.07f, 0.09f});
+    addRoomPlane(scene, plane, pbrShader, {-6.0f, 2.25f, 0.0f}, glm::angleAxis(glm::half_pi<float>(), glm::vec3(0, 1, 0)), {0.09f, 0.035f, 0.055f});
+    addRoomPlane(scene, plane, pbrShader, {6.0f, 2.25f, 0.0f}, glm::angleAxis(-glm::half_pi<float>(), glm::vec3(0, 1, 0)), {0.035f, 0.07f, 0.09f});
 
     auto sphere = knot::createSphere(32, 24);
-    auto emissiveShader = shaderManager.createShader(
-        std::make_shared<knot::ShaderSource>(knot::getEngineRoot() + "shaders/emissive_surface.vert",
-                                             knot::getEngineRoot() + "shaders/emissive_surface.frag"),
-        "demo.emissiveSurface");
+    auto emissiveShader = shaderManager.createShader(std::make_shared<knot::ShaderSource>(knot::getEngineRoot() + "shaders/emissive_surface.vert",
+                                                                                          knot::getEngineRoot() + "shaders/emissive_surface.frag"),
+                                                     "demo.emissiveSurface");
     if (!emissiveShader) {
         std::cerr << "[Error] Failed to compile the emissive scene shader.\n";
         return 1;

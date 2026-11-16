@@ -66,8 +66,7 @@ public:
      *  @param sceneColorTexture Original scene color texture before post-processing.
      *  @param sceneDepthTexture Original scene depth texture before post-processing.
      *  @param resolution Active framebuffer dimensions. */
-    using PostProcessSetup =
-        std::function<void(const Shader&, GLuint sceneColorTexture, GLuint sceneDepthTexture, const glm::ivec2& resolution)>;
+    using PostProcessSetup = std::function<void(const Shader&, GLuint sceneColorTexture, GLuint sceneDepthTexture, const glm::ivec2& resolution)>;
 
     /** @brief Get the singleton instance of the Renderer.
      * @return Reference to the single Renderer instance. */

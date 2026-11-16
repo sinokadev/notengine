@@ -10,7 +10,8 @@ struct EngineSettings {
     bool shadow = true;
     /** @brief Enables screen-space ambient occlusion. */
     bool ssao = true;
-    /** @brief Enables screen-space indirect diffuse lighting. (Experimental feature) @warning This feature is currently broken and does not work properly. */
+    /** @brief Enables screen-space indirect diffuse lighting. (Experimental feature) @warning This feature is currently broken and does not work
+     * properly. */
     bool ssgi = false;
     /** @brief Screen-space indirect diffuse lighting intensity. */
     float ssgi_intensity = 0.35f;
