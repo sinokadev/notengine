@@ -38,6 +38,14 @@ struct EngineSettings {
     float point_shadow_slope_bias = 0.03f;
     /** @brief PCF kernel radius: 0 = 1x1, 1 = 3x3; values are clamped to [0, 4]. */
     int shadow_pcf_steps = 1;
+    /** @brief Enables Percentage-Closer Soft Shadows (PCSS) for directional light. */
+    bool pcss = true;
+    /** @brief Virtual light source size for PCSS penumbra calculation in normalized UV space. */
+    float pcss_light_size = 0.025f;
+    /** @brief Number of samples used during PCSS blocker search (clamped to [4, 64]). */
+    int pcss_blocker_samples = 16;
+    /** @brief Number of samples used during PCSS PCF filtering (clamped to [4, 64]). */
+    int pcss_pcf_samples = 16;
 };
 
 /** @brief Global renderer settings used by the engine. */

@@ -1180,6 +1180,10 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
         glBindTexture(GL_TEXTURE_2D, depthMap);
         shader->set("shadowMap", 11);
 
+        glActiveTexture(GL_TEXTURE6);
+        glBindTexture(GL_TEXTURE_2D, depthMap);
+        shader->set("shadowMapRaw", 6);
+
         glActiveTexture(GL_TEXTURE12);
         glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointDepthMap);
         shader->set("pointShadowMap", 12);
@@ -1189,6 +1193,10 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
         shader->set("pointShadowBias", std::max(0.0f, s.point_shadow_bias));
         shader->set("pointShadowSlopeBias", std::max(0.0f, s.point_shadow_slope_bias));
         shader->set("shadowPCFSteps", std::clamp(s.shadow_pcf_steps, 0, 4));
+        shader->set("pcssEnabled", s.pcss);
+        shader->set("pcssLightSize", std::max(0.0f, s.pcss_light_size));
+        shader->set("pcssBlockerSamples", std::clamp(s.pcss_blocker_samples, 4, 64));
+        shader->set("pcssPCFSamples", std::clamp(s.pcss_pcf_samples, 4, 64));
 
         glActiveTexture(GL_TEXTURE13);
         glBindTexture(GL_TEXTURE_2D, ssaoBlurTexture);

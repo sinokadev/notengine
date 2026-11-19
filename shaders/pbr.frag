@@ -55,6 +55,7 @@ uniform bool ssgiEnabled;
 uniform bool ssgiRadiancePass;
 uniform float ssgiIntensity;
 uniform sampler2DShadow shadowMap;
+uniform sampler2D shadowMapRaw;
 uniform samplerCubeArrayShadow pointShadowMap;
 uniform int pointShadowCount;
 uniform float dirShadowBias;
@@ -62,6 +63,10 @@ uniform float dirShadowSlopeBias;
 uniform float pointShadowBias;
 uniform float pointShadowSlopeBias;
 uniform int shadowPCFSteps;
+uniform bool pcssEnabled;
+uniform float pcssLightSize;
+uniform int pcssBlockerSamples;
+uniform int pcssPCFSamples;
 uniform samplerCube irradianceMap;
 uniform samplerCube prefilterMap;
 uniform samplerCube reflectionProbeIrradianceMap;
@@ -198,11 +203,49 @@ float calcPointShadow(int index, vec3 normal, vec3 lightDir) {
     return shadow / float(sampleCount);
 }
 
+// Interleaved Gradient Noise for sample rotation
+float interleavedGradientNoise(vec2 screenPos) {
+    vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);
+    return fract(magic.z * fract(dot(screenPos, magic.xy)));
+}
+
+// Vogel Disk Sample generation in unit disk
+vec2 vogelDiskSample(int sampleIndex, int sampleCount, float phi) {
+    float goldenAngle = 2.39996323; // radians: PI * (3.0 - sqrt(5.0))
+    float r = sqrt((float(sampleIndex) + 0.5) / float(sampleCount));
+    float theta = float(sampleIndex) * goldenAngle + phi;
+    return vec2(r * cos(theta), r * sin(theta));
+}
+
+// Blocker search: returns average blocker depth, or -1.0 if no blocker was found
+float findBlocker(vec2 uv, float currentDepth, float bias, float searchRadius, int sampleCount, float randomAngle) {
+    int blockerCount = 0;
+    float blockerSum = 0.0;
+    ivec2 mapSize = textureSize(shadowMapRaw, 0);
+
+    for (int i = 0; i < sampleCount; ++i) {
+        vec2 offset = vogelDiskSample(i, sampleCount, randomAngle) * searchRadius;
+        vec2 sampleUV = clamp(uv + offset, vec2(0.0), vec2(1.0));
+        ivec2 texelCoord = clamp(ivec2(sampleUV * vec2(mapSize)), ivec2(0), mapSize - 1);
+        float blockerDepth = texelFetch(shadowMapRaw, texelCoord, 0).r;
+
+        if (blockerDepth < currentDepth - bias) {
+            blockerSum += blockerDepth;
+            blockerCount++;
+        }
+    }
+
+    if (blockerCount == 0)
+        return -1.0;
+
+    return blockerSum / float(blockerCount);
+}
+
 float calcDirShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
     vec3 projCoords = lightSpaceFragPos.xyz / lightSpaceFragPos.w;
     projCoords = projCoords * 0.5 + 0.5;
 
-    if (projCoords.z > 1.0)
+    if (projCoords.z > 1.0 || projCoords.x < 0.0 || projCoords.x > 1.0 || projCoords.y < 0.0 || projCoords.y > 1.0)
         return 0.0;
 
     float currentDepth = projCoords.z;
@@ -210,23 +253,57 @@ float calcDirShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
 
     float bias = max(dirShadowSlopeBias * (1.0 - normalLightAlignment), dirShadowBias);
     float compareDepth = currentDepth - bias;
-
-    float shadow = 0.0;
     vec2 texelSize = 1.0 / vec2(textureSize(shadowMap, 0));
 
-    int pcfSteps = clamp(shadowPCFSteps, 0, 4);
-    int sampleCount = 0;
-    for (int x = -pcfSteps; x <= pcfSteps; ++x) {
-        for (int y = -pcfSteps; y <= pcfSteps; ++y) {
-            vec2 offset = vec2(x, y) * texelSize;
+    if (!pcssEnabled) {
+        float shadow = 0.0;
+        int pcfSteps = clamp(shadowPCFSteps, 0, 4);
+        int sampleCount = 0;
+        for (int x = -pcfSteps; x <= pcfSteps; ++x) {
+            for (int y = -pcfSteps; y <= pcfSteps; ++y) {
+                vec2 offset = vec2(x, y) * texelSize;
 
-            float lightFactor = texture(shadowMap, vec3(projCoords.xy + offset, compareDepth));
-            shadow += (1.0 - lightFactor);
-            ++sampleCount;
+                float lightFactor = texture(shadowMap, vec3(projCoords.xy + offset, compareDepth));
+                shadow += (1.0 - lightFactor);
+                ++sampleCount;
+            }
         }
+
+        return shadow / float(sampleCount);
     }
 
-    return shadow / float(sampleCount);
+    // --- PCSS (Percentage-Closer Soft Shadows) ---
+    float randomAngle = interleavedGradientNoise(gl_FragCoord.xy) * 6.28318530718;
+
+    // Step 1: Blocker Search
+    int blockerSamples = clamp(pcssBlockerSamples, 4, 64);
+    float searchRadius = max(pcssLightSize * currentDepth, texelSize.x * 2.0);
+    float avgBlockerDepth = findBlocker(projCoords.xy, currentDepth, bias, searchRadius, blockerSamples, randomAngle);
+
+    // Early out: no occluder found in search radius -> fully lit
+    if (avgBlockerDepth < 0.0)
+        return 0.0;
+
+    // Step 2: Penumbra Estimation
+    float depthDiff = currentDepth - avgBlockerDepth;
+    if (depthDiff <= 0.0)
+        return 0.0;
+
+    float penumbraRadius = depthDiff * pcssLightSize;
+    float minPenumbra = texelSize.x * 1.0;
+    float maxPenumbra = pcssLightSize;
+    penumbraRadius = clamp(penumbraRadius, minPenumbra, maxPenumbra);
+
+    // Step 3: Percentage-Closer Filtering (PCF) with variable penumbra radius
+    float shadow = 0.0;
+    int pcfSamples = clamp(pcssPCFSamples, 4, 64);
+    for (int i = 0; i < pcfSamples; ++i) {
+        vec2 offset = vogelDiskSample(i, pcfSamples, randomAngle) * penumbraRadius;
+        float lightFactor = texture(shadowMap, vec3(projCoords.xy + offset, compareDepth));
+        shadow += (1.0 - lightFactor);
+    }
+
+    return shadow / float(pcfSamples);
 }
 
 void main() {

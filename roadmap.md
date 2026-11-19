@@ -24,7 +24,7 @@
 - [x] Dir Shadow Map
 - [x] Point Shadow Map
 - [ ] Cascaded Shadow Maps - 12월
-- [ ] PCSS
+- [x] PCSS
 - [ ] Cascaded PCSS
 - [x] SSAO
 - [ ] 다이나믹 큐브맵
