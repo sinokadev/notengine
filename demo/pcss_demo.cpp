@@ -50,9 +50,9 @@ int main() {
 
     knot::s.shadow = true;
     knot::s.pcss = true;
-    knot::s.pcss_light_size = 0.025f;
+    knot::s.pcss_light_size = 0.035f;
     knot::s.pcss_blocker_samples = 16;
-    knot::s.pcss_pcf_samples = 16;
+    knot::s.pcss_pcf_samples = 24;
     knot::s.ambient = 0.25f;
 
     knot::Scene scene;

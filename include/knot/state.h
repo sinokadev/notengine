@@ -41,11 +41,11 @@ struct EngineSettings {
     /** @brief Enables Percentage-Closer Soft Shadows (PCSS) for directional light. */
     bool pcss = true;
     /** @brief Virtual light source size for PCSS penumbra calculation in normalized UV space. */
-    float pcss_light_size = 0.025f;
+    float pcss_light_size = 0.035f;
     /** @brief Number of samples used during PCSS blocker search (clamped to [4, 64]). */
     int pcss_blocker_samples = 16;
     /** @brief Number of samples used during PCSS PCF filtering (clamped to [4, 64]). */
-    int pcss_pcf_samples = 16;
+    int pcss_pcf_samples = 24;
 };
 
 /** @brief Global renderer settings used by the engine. */
