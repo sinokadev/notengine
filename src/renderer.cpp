@@ -119,10 +119,12 @@ bool Renderer::init(GLADloadfunc loadProc) {
     // Shadow Map
     glGenFramebuffers(1, &depthMapFBO);
 
-    // depth map texture gen
+    // depth map texture gen (sampler2DShadow: comparison mode for PCF)
     glGenTextures(1, &depthMap);
     glBindTexture(GL_TEXTURE_2D, depthMap);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, s.dir_shadow_res, s.dir_shadow_res, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    // Immutable storage is required so the same depth image can be exposed
+    // through a non-comparison texture view for the PCSS blocker search.
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT24, s.dir_shadow_res, s.dir_shadow_res);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -133,6 +135,17 @@ bool Renderer::init(GLADloadfunc loadProc) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 
     float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+    // Raw depth texture view (sampler2D: no comparison, for PCSS blocker search)
+    glGenTextures(1, &depthMapRaw);
+    glTextureView(depthMapRaw, GL_TEXTURE_2D, depthMap, GL_DEPTH_COMPONENT24, 0, 1, 0, 1);
+    glBindTexture(GL_TEXTURE_2D, depthMapRaw);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
     // depth map bind
@@ -455,10 +468,11 @@ void Renderer::shutdown() {
     if (hasContext) {
         glDeleteFramebuffers(1, &depthMapFBO);
         glDeleteFramebuffers(1, &pointDepthFBO);
+        glDeleteTextures(1, &depthMapRaw);
         glDeleteTextures(1, &depthMap);
         glDeleteTextures(1, &pointDepthMap);
     }
-    depthMapFBO = depthMap = pointDepthFBO = pointDepthMap = 0;
+    depthMapFBO = depthMap = depthMapRaw = pointDepthFBO = pointDepthMap = 0;
     pointShadowCount = 0;
     pointShadowCapacity = 0;
     shadowedPointLights.clear();
@@ -1181,7 +1195,7 @@ void Renderer::renderObjects(Scene& scene, const std::unordered_map<const Model*
         shader->set("shadowMap", 11);
 
         glActiveTexture(GL_TEXTURE6);
-        glBindTexture(GL_TEXTURE_2D, depthMap);
+        glBindTexture(GL_TEXTURE_2D, depthMapRaw);
         shader->set("shadowMapRaw", 6);
 
         glActiveTexture(GL_TEXTURE12);

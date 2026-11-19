@@ -217,17 +217,21 @@ vec2 vogelDiskSample(int sampleIndex, int sampleCount, float phi) {
     return vec2(r * cos(theta), r * sin(theta));
 }
 
-// Receiver plane depth bias to avoid self-shadowing and collapsed penumbra on slopes
+// Receiver plane depth bias to avoid self-shadowing on slopes during wide-radius sampling
 vec2 getReceiverPlaneDepthBias(vec3 projCoords) {
     vec3 dx = dFdx(projCoords);
     vec3 dy = dFdy(projCoords);
     float det = dx.x * dy.y - dx.y * dy.x;
     if (abs(det) < 0.0000001)
         return vec2(0.0);
-    return vec2(
+    vec2 bias = vec2(
         (dy.y * dx.z - dx.y * dy.z) / det,
         (dx.x * dy.z - dy.x * dx.z) / det
     );
+    // Clamp to prevent light leaks on silhouette edges where dz/duv explodes
+    float maxSlope = 1.5;
+    bias = clamp(bias, vec2(-maxSlope), vec2(maxSlope));
+    return bias;
 }
 
 // Blocker search: returns average blocker depth, or -1.0 if no blocker was found
@@ -238,13 +242,18 @@ float findBlocker(vec2 uv, float currentDepth, vec2 dz_duv, float bias, float se
 
     for (int i = 0; i < sampleCount; ++i) {
         vec2 offset = vogelDiskSample(i, sampleCount, randomAngle) * searchRadius;
-        vec2 sampleUV = clamp(uv + offset, vec2(0.0), vec2(1.0));
-        ivec2 texelCoord = clamp(ivec2(sampleUV * vec2(mapSize)), ivec2(0), mapSize - 1);
+        vec2 sampleUV = uv + offset;
+        if (sampleUV.x < 0.0 || sampleUV.x > 1.0 || sampleUV.y < 0.0 || sampleUV.y > 1.0)
+            continue;
+        ivec2 texelCoord = ivec2(sampleUV * vec2(mapSize));
+        texelCoord = clamp(texelCoord, ivec2(0), mapSize - 1);
         float blockerDepth = texelFetch(shadowMapRaw, texelCoord, 0).r;
         float expectedDepth = currentDepth + dot(dz_duv, offset);
 
         if (blockerDepth < expectedDepth - bias) {
-            blockerSum += blockerDepth;
+            // Compare all blockers at the receiver's center so a sloped
+            // receiver does not make the penumbra depend on sample layout.
+            blockerSum += blockerDepth - dot(dz_duv, offset);
             blockerCount++;
         }
     }
@@ -270,19 +279,19 @@ float calcDirShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
     vec2 dz_duv = getReceiverPlaneDepthBias(projCoords);
 
     if (!pcssEnabled) {
+        // Classic grid PCF
         float shadow = 0.0;
         int pcfSteps = clamp(shadowPCFSteps, 0, 4);
         int sampleCount = 0;
         for (int x = -pcfSteps; x <= pcfSteps; ++x) {
             for (int y = -pcfSteps; y <= pcfSteps; ++y) {
-                vec2 offset = vec2(x, y) * texelSize * 1.5;
-                float compareDepth = currentDepth + dot(dz_duv, offset) - bias;
-                float lightFactor = texture(shadowMap, vec3(projCoords.xy + offset, compareDepth));
+                vec2 offset = vec2(x, y) * texelSize;
+                float receiverDepth = currentDepth + dot(dz_duv, offset) - bias;
+                float lightFactor = texture(shadowMap, vec3(projCoords.xy + offset, receiverDepth));
                 shadow += (1.0 - lightFactor);
                 ++sampleCount;
             }
         }
-
         return shadow / float(sampleCount);
     }
 
@@ -294,28 +303,21 @@ float calcDirShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
     float searchRadius = max(pcssLightSize, texelSize.x * 2.0);
     float avgBlockerDepth = findBlocker(projCoords.xy, currentDepth, dz_duv, bias, searchRadius, blockerSamples, randomAngle);
 
-    // Early out: no occluder found in search radius -> fully lit
+    // No occluder found -> fully lit
     if (avgBlockerDepth < 0.0)
         return 0.0;
 
-    // Step 2: Penumbra Estimation (Fernando PCSS formula: penumbra proportional to distance ratio)
-    float depthDiff = currentDepth - avgBlockerDepth;
-    if (depthDiff <= 0.0)
-        return 0.0;
+    // Step 2: Penumbra Estimation (Fernando PCSS formula)
+    float penumbraRadius = (currentDepth - avgBlockerDepth) * pcssLightSize / max(avgBlockerDepth, 0.001);
+    penumbraRadius = clamp(penumbraRadius, texelSize.x * 1.5, pcssLightSize * 3.0);
 
-    float penumbraRatio = depthDiff / max(avgBlockerDepth, 0.001);
-    float penumbraRadius = penumbraRatio * pcssLightSize;
-    float minPenumbra = texelSize.x * 1.5;
-    float maxPenumbra = pcssLightSize * 2.5;
-    penumbraRadius = clamp(penumbraRadius, minPenumbra, maxPenumbra);
-
-    // Step 3: Percentage-Closer Filtering (PCF) with variable penumbra radius
+    // Step 3: Variable-radius PCF with receiver plane bias
     float shadow = 0.0;
     int pcfSamples = clamp(pcssPCFSamples, 4, 64);
     for (int i = 0; i < pcfSamples; ++i) {
         vec2 offset = vogelDiskSample(i, pcfSamples, randomAngle) * penumbraRadius;
-        float compareDepth = currentDepth + dot(dz_duv, offset) - bias;
-        float lightFactor = texture(shadowMap, vec3(projCoords.xy + offset, compareDepth));
+        float receiverDepth = currentDepth + dot(dz_duv, offset) - bias;
+        float lightFactor = texture(shadowMap, vec3(projCoords.xy + offset, receiverDepth));
         shadow += (1.0 - lightFactor);
     }
 

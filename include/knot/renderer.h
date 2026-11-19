@@ -265,6 +265,7 @@ private:
 
     unsigned int depthMapFBO = 0;
     unsigned int depthMap = 0;
+    unsigned int depthMapRaw = 0;
     unsigned int pointDepthFBO = 0;
     unsigned int pointDepthMap = 0;
     int pointShadowCount = 0;
