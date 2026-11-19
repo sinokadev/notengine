@@ -198,7 +198,7 @@ float calcPointShadow(int index, vec3 normal, vec3 lightDir) {
     return shadow / float(sampleCount);
 }
 
-float calcShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
+float calcDirShadow(vec4 lightSpaceFragPos, vec3 normal, vec3 lightDir) {
     vec3 projCoords = lightSpaceFragPos.xyz / lightSpaceFragPos.w;
     projCoords = projCoords * 0.5 + 0.5;
 
@@ -255,7 +255,7 @@ void main() {
 
     // Directional Light
     vec3 L_dir = normalize(-dirLight.direction);
-    float dirShadow = calcShadow(LightSpaceFragPos, geometricNormal, L_dir);
+    float dirShadow = calcDirShadow(LightSpaceFragPos, geometricNormal, L_dir);
     vec3 directLighting = calcPbrLight(N, V, L_dir, dirLight.diffuse, albedo, metallic, roughness, F0, dirShadow);
 
     // Point Lights
