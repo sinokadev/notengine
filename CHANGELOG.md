@@ -31,45 +31,47 @@
 
 ## 0.2.2 - 2026-10-23
 
-## What's Changed
-* Added depth-prepass SSAO with blur and an O-key toggle in the scene renderer.
-* Added PCF point-light shadows and improved shadow quality while keeping point-shadow maps at 512 for performance.
-* Added a PNG screenshot capture API.
-* Added glTF model and scene support, sample assets, group-level transforms, and transparent-material rendering.
-* Improved PBR shading, roughness-map LOD handling, and renderer performance.
-* Simplified build configuration and centralized the version in a single `VERSION` file.
+### Added
+- Added depth-prepass SSAO with blur and an O-key toggle in the scene renderer.
+- Added PCF point-light shadows and improved shadow quality while keeping point-shadow maps at 512 for performance.
+- Added a PNG screenshot capture API.
+- Added glTF model and scene support, sample assets, group-level transforms, and transparent-material rendering.
+
+### Changed
+- Improved PBR shading, roughness-map LOD handling, and renderer performance.
+- Simplified build configuration and centralized the version in a single `VERSION` file.
 
 ## 0.2.1 - 2026-09-27
 
-## What's Changed
-* chore: separate CMake deps file from CMakeLists.txt by @choonarine in https://github.com/sinokadev/notengine/pull/5
-* Performance improvement
-* Add tween animation
+### Added
+- Added tween animation.
 
-## New Contributors
-* @choonarine made their first contribution in https://github.com/sinokadev/notengine/pull/5
+### Changed
+- Separated CMake deps file from `CMakeLists.txt` by @choonarine in https://github.com/sinokadev/notengine/pull/5
+- Improved overall performance.
+
+### New Contributors
+- @choonarine made their first contribution in https://github.com/sinokadev/notengine/pull/5
 
 ## 0.2.0 - 2026-09-02
+*Not Engine Beta release*
 
-# Not Engine Beta!!
-
-## Added
-- completely new camera system
+### Added
+- Implemented a completely new camera system.
 
 ## 0.1.12 - 2026-09-01
 
-## What's Changed
-* CMakePresets.json 추가 by @watta0 in https://github.com/sinokadev/notengine/pull/2
-* Implaments audio.h by @watta0 in https://github.com/sinokadev/notengine/pull/3
+### Added
+- Added `CMakePresets.json` by @watta0 in https://github.com/sinokadev/notengine/pull/2
+- Implemented `audio.h` by @watta0 in https://github.com/sinokadev/notengine/pull/3
 
-## New Contributors
-* @watta0 made their first contribution in https://github.com/sinokadev/notengine/pull/2
+### New Contributors
+- @watta0 made their first contribution in https://github.com/sinokadev/notengine/pull/2
 
 ## 0.1.11 - 2026-08-29
 
-# Change
-
-- add Dir Shadow Map
+### Added
+- Added directional shadow map.
 
 ## 0.1.10 - 2026-08-23
 
@@ -82,7 +84,7 @@
 
 ### Changed
 - Added Seno format versions 3 and 4 with backward compatibility.
-- Added and adjusted render exposure and lighting behavior.
+- Adjusted render exposure and lighting behavior.
 - Updated demo code and removed obsolete test files.
 
 ### Fixed
@@ -90,9 +92,7 @@
 - Fixed VSync documentation and configuration values.
 - Fixed Read the Docs configuration and Doxygen setup.
 
-## 0.1.8.1 - 2026-08-20
-
-HOTFIX
+## 0.1.8.1 - 2026-08-20 (Hotfix)
 
 ### Fixed
 - Fixed Seno loading so it uses the current format.
@@ -101,15 +101,16 @@ HOTFIX
 
 ## 0.1.8 - 2026-08-20
 
-# Changelog
+### Added
+- Developed scene format and created scene loader.
 
+### Changed
 - Applied optimization to disable instancing for single objects.
+
+### Fixed
 - Fixed a structural issue arising from Lights and Cameras inheriting from Object.
-- Scene format development and loader creation
 
-## 0.1.7.1 - 2026-08-18
-
-HOTFIX
+## 0.1.7.1 - 2026-08-18 (Hotfix)
 
 ### Fixed
 - Fixed scene camera copying.
@@ -117,16 +118,20 @@ HOTFIX
 
 ## 0.1.7 - 2026-08-18
 
-# Changelog
-- Added `quit` function
+### Added
+- Added `quit` function.
+
+### Fixed
 - Fixed an issue where resources were not automatically closed upon termination.
 
-## 1.4-alpha - 2026-06-26
+## Alpha 1.4 - 2026-06-26
 
 ### Added
 - Added OBJ model loading and sample models.
 - Added Phong and PBR shaders, with support for multiple lights.
 - Added the event system and a Pong demo.
+
+### Fixed
 - Fixed window sizing on scaled displays.
 
 ## Alpha 1.3 - 2026-06-18
