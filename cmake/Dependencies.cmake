@@ -112,7 +112,7 @@ if(NOT TARGET OpenAL::OpenAL)
     FetchContent_Declare(
         openal
         GIT_REPOSITORY https://github.com/kcat/openal-soft.git
-        GIT_TAG        1.25.2
+        GIT_TAG        master
         GIT_SHALLOW    TRUE
     )
 
